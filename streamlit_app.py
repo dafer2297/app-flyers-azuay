@@ -86,6 +86,7 @@ def set_design():
             font-size: 16px;
             color: black !important;
             margin-bottom: 2px;
+            margin-top: 10px; /* Un poco de aire arriba */
             text-shadow: none !important;
         }}
         .label-blanco {{
@@ -194,24 +195,25 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
     # --- DERECHA: FORMULARIO ---
     with col_der:
         
-        # A. DESCRIPCIÓN 1 (AHORA ES TEXT AREA)
+        # A. DESCRIPCIÓN 1 (Cuadro Grande)
         st.markdown('<div class="label-negro">DESCRIPCIÓN</div>', unsafe_allow_html=True)
         st.text_area("lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150)
         
-        # B. DESCRIPCIÓN 2 (AHORA ES TEXT AREA)
+        # B. DESCRIPCIÓN 2 (Cuadro Mediano)
         st.markdown('<div class="label-negro">DESCRIPCIÓN 2 <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         st.text_area("lbl_desc2", label_visibility="collapsed", placeholder="Información extra...", height=100)
         
-        # C. FECHAS (CALENDARIOS)
+        # C. FECHAS (Formato Día/Mes/Año)
         c_f1, c_f2 = st.columns(2)
         with c_f1:
             st.markdown('<div class="label-negro">FECHA INICIO</div>', unsafe_allow_html=True)
-            st.date_input("lbl_fecha1", label_visibility="collapsed")
+            # format="DD/MM/YYYY" fuerza el orden latino
+            st.date_input("lbl_fecha1", label_visibility="collapsed", format="DD/MM/YYYY")
         with c_f2:
             st.markdown('<div class="label-negro">FECHA FINAL <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
-            st.date_input("lbl_fecha2", label_visibility="collapsed", value=None)
+            st.date_input("lbl_fecha2", label_visibility="collapsed", value=None, format="DD/MM/YYYY")
             
-        # D. HORARIOS (RELOJES)
+        # D. HORARIOS
         c_h1, c_h2 = st.columns(2)
         with c_h1:
             st.markdown('<div class="label-negro">HORARIO INICIO</div>', unsafe_allow_html=True)
@@ -224,14 +226,14 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         st.markdown('<div class="label-negro">DIRECCIÓN</div>', unsafe_allow_html=True)
         st.text_input("lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento")
         
-        # F. ARCHIVOS
-        st.markdown("---")
-        st.markdown('<div class="label-negro">SUBIR IMAGEN DE FONDO</div>', unsafe_allow_html=True)
+        # F. ARCHIVOS (Pegado a Dirección, sin separador)
+        st.markdown('<div class="label-negro" style="margin-top: 15px;">SUBIR IMAGEN DE FONDO</div>', unsafe_allow_html=True)
         st.file_uploader("lbl_img", type=['jpg', 'png'], label_visibility="collapsed")
         
         st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(MÁX 2)</span></div>', unsafe_allow_html=True)
         st.file_uploader("lbl_logos", accept_multiple_files=True, label_visibility="collapsed")
         
+        st.write("")
         st.write("")
         if st.button("✨ GENERAR FLYER ✨", type="primary", use_container_width=True):
              st.query_params["area"] = "Final"

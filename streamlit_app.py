@@ -2,6 +2,9 @@ import streamlit as st
 import base64
 import os
 import datetime
+from PIL import Image
+# IMPORTAMOS LA NUEVA HERRAMIENTA DE RECORTE
+from streamlit_cropper import st_cropper
 
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="Generador Azuay", layout="wide")
@@ -13,7 +16,6 @@ def get_base64_of_bin_file(bin_file):
     return base64.b64encode(data).decode()
 
 def set_design():
-    # A. Fondo
     bg_style = "background-color: #1E88E5;" 
     if os.path.exists("fondo_app.png"):
         bin_str = get_base64_of_bin_file("fondo_app.png")
@@ -24,7 +26,6 @@ def set_design():
             background-attachment: fixed;
         """
 
-    # B. Fuente Canaro
     font_css = ""
     if os.path.exists("Canaro-Black.ttf"):
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
@@ -35,21 +36,18 @@ def set_design():
         }}
         """
 
-    # D. INYECCIÓN CSS
     st.markdown(
         f"""
         <style>
         .stApp {{ {bg_style} }}
         {font_css}
         
-        /* TÍTULOS */
         h1, h2, h3 {{
             font-family: 'Canaro', sans-serif !important;
             color: white !important;
             text-transform: uppercase;
         }}
         
-        /* BOTONES */
         .stButton > button {{
             background-color: transparent;
             color: white;
@@ -63,7 +61,6 @@ def set_design():
             border-color: #D81B60;
         }}
         
-        /* INPUTS (Cajas Blancas) */
         .stTextInput > div > div > input, 
         .stTextArea > div > div > textarea,
         .stDateInput > div > div > input,
@@ -74,12 +71,10 @@ def set_design():
             border: none;
         }}
         
-        /* Ocultar etiquetas por defecto */
         .stTextInput label, .stTextArea label, .stDateInput label, .stTimeInput label {{
             display: none;
         }}
 
-        /* ETIQUETAS PERSONALIZADAS */
         .label-negro {{
             font-family: 'Canaro', sans-serif;
             font-weight: bold;
@@ -97,11 +92,9 @@ def set_design():
             margin-left: 5px;
         }}
         
-        /* Zoom Iconos Inicio */
         .zoom-img {{ transition: transform 0.3s; }}
         .zoom-img:hover {{ transform: scale(1.1); }}
         
-        /* Ocultar menús */
         #MainMenu, footer, header {{visibility: hidden;}}
         </style>
         """, unsafe_allow_html=True
@@ -156,13 +149,11 @@ if not area_seleccionada:
                 """, unsafe_allow_html=True
             )
             
-    # FIRMA EN EL PIE DE PÁGINA (PÁGINA 1) - TAMAÑO AUMENTADO
     st.write("")
     st.write("")
     c_f1, c_f2, c_f3 = st.columns([1, 1, 1])
     with c_f1:
          if os.path.exists("firma_jota.png"):
-            # AQUI CAMBIAMOS EL TAMAÑO A 300
             st.image("firma_jota.png", width=300)
 
 # =================================================
@@ -176,68 +167,94 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
 
     col_izq, col_der = st.columns([1, 2], gap="large")
     
-    # --- IZQUIERDA: ICONO + FIRMA ---
     with col_izq:
         st.write("")
-        st.write("")
-        # 1. EL ICONO
         icono = "icono_cultura.png" if area_seleccionada == "Cultura" else "icono_recreacion.png"
         if os.path.exists(icono):
             st.image(icono, width=350) 
         
-        # 2. ESPACIO
         st.write("") 
-        st.write("")
-        
-        # 3. LA FIRMA
         if os.path.exists("firma_jota.png"):
             st.image("firma_jota.png", width=200)
 
-    # --- DERECHA: FORMULARIO ---
     with col_der:
         
-        # A. DESCRIPCIÓN 1 (Cuadro Grande)
+        # CAMPOS DE TEXTO
         st.markdown('<div class="label-negro">DESCRIPCIÓN</div>', unsafe_allow_html=True)
-        st.text_area("lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150)
+        st.text_area("lbl_desc", key="lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150)
         
-        # B. DESCRIPCIÓN 2 (Cuadro Mediano)
         st.markdown('<div class="label-negro">DESCRIPCIÓN 2 <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
-        st.text_area("lbl_desc2", label_visibility="collapsed", placeholder="Información extra...", height=100)
+        st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="Información extra...", height=100)
         
-        # C. FECHAS (Formato Día/Mes/Año)
         c_f1, c_f2 = st.columns(2)
         with c_f1:
             st.markdown('<div class="label-negro">FECHA INICIO</div>', unsafe_allow_html=True)
-            st.date_input("lbl_fecha1", label_visibility="collapsed", format="DD/MM/YYYY")
+            st.date_input("lbl_fecha1", key="lbl_fecha1", label_visibility="collapsed", format="DD/MM/YYYY", value=None)
         with c_f2:
             st.markdown('<div class="label-negro">FECHA FINAL <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
-            st.date_input("lbl_fecha2", label_visibility="collapsed", value=None, format="DD/MM/YYYY")
+            st.date_input("lbl_fecha2", key="lbl_fecha2", label_visibility="collapsed", value=None, format="DD/MM/YYYY")
             
-        # D. HORARIOS
         c_h1, c_h2 = st.columns(2)
         with c_h1:
             st.markdown('<div class="label-negro">HORARIO INICIO</div>', unsafe_allow_html=True)
-            st.time_input("lbl_hora1", label_visibility="collapsed", value=datetime.time(9, 00))
+            st.time_input("lbl_hora1", key="lbl_hora1", label_visibility="collapsed", value=datetime.time(9, 00))
         with c_h2:
             st.markdown('<div class="label-negro">HORARIO FINAL <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
-            st.time_input("lbl_hora2", label_visibility="collapsed", value=None)
+            st.time_input("lbl_hora2", key="lbl_hora2", label_visibility="collapsed", value=None)
             
-        # E. DIRECCIÓN
         st.markdown('<div class="label-negro">DIRECCIÓN</div>', unsafe_allow_html=True)
-        st.text_input("lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento")
+        st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento")
         
-        # F. ARCHIVOS
-        st.markdown('<div class="label-negro" style="margin-top: 15px;">SUBIR IMAGEN DE FONDO</div>', unsafe_allow_html=True)
-        st.file_uploader("lbl_img", type=['jpg', 'png'], label_visibility="collapsed")
+        # --- AQUÍ EMPIEZA LA MAGIA DEL RECORTE ---
+        st.markdown('<div class="label-negro" style="margin-top: 15px;">SUBIR Y RECORTAR IMAGEN DE FONDO</div>', unsafe_allow_html=True)
+        
+        # 1. Subida del archivo
+        archivo_subido = st.file_uploader("lbl_img", type=['jpg', 'png', 'jpeg'], label_visibility="collapsed")
+        
+        imagen_recortada_final = None # Variable para guardar el resultado
+
+        if archivo_subido:
+            # 2. Si hay archivo, mostramos el editor
+            st.info("✂️ Ajusta el recuadro rojo para seleccionar la parte que saldrá en el flyer.")
+            imagen_original = Image.open(archivo_subido)
+            
+            # 3. Herramienta de Recorte (Bloqueada a 4:5 vertical)
+            # box_color='red' pone el marco rojo
+            # aspect_ratio=(4, 5) fuerza el rectángulo vertical del flyer
+            imagen_recortada_final = st_cropper(
+                imagen_original, 
+                realtime_update=True, 
+                box_color='#FF0000',
+                aspect_ratio=(4, 5) 
+            )
+            
+            # 4. Mostrar vista previa pequeña
+            st.write("Vista previa del recorte:")
+            st.image(imagen_recortada_final, width=150)
+            
+            # Guardamos la imagen recortada en la memoria para la siguiente página
+            st.session_state['imagen_lista_para_flyer'] = imagen_recortada_final
         
         st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(MÁX 2)</span></div>', unsafe_allow_html=True)
-        st.file_uploader("lbl_logos", accept_multiple_files=True, label_visibility="collapsed")
+        st.file_uploader("lbl_logos", key="lbl_logos", accept_multiple_files=True, label_visibility="collapsed")
         
         st.write("")
         st.write("")
+        
+        # --- BOTÓN DE VALIDACIÓN ---
         if st.button("✨ GENERAR FLYER ✨", type="primary", use_container_width=True):
-             st.query_params["area"] = "Final"
-             st.rerun()
+            errores = []
+            if not st.session_state.lbl_desc: errores.append("Falta la Descripción")
+            if not st.session_state.lbl_fecha1: errores.append("Falta la Fecha de Inicio")
+            # Validamos si tenemos la imagen YA recortada
+            if 'imagen_lista_para_flyer' not in st.session_state or st.session_state.imagen_lista_para_flyer is None:
+                errores.append("Falta subir y recortar la Imagen de Fondo")
+                
+            if len(errores) > 0:
+                st.error(f"⚠️ {', '.join(errores)}")
+            else:
+                st.query_params["area"] = "Final"
+                st.rerun()
 
 # =================================================
 # 📥 PÁGINA 3: RESULTADO FINAL
@@ -249,23 +266,22 @@ elif area_seleccionada == "Final":
     
     col_arte, col_flyer, col_descarga = st.columns([1.3, 1.5, 0.8])
     
-    # --- IZQUIERDA: CHOLA GRANDE + FIRMA ---
     with col_arte:
         st.write("") 
         if os.path.exists("mascota_pincel.png"):
             st.image("mascota_pincel.png", use_container_width=True)
             
-        # Firma GRANDE debajo de la chola
         st.write("")
         if os.path.exists("firma_jota.png"):
-            # AQUI CAMBIAMOS EL TAMAÑO A 280
             st.image("firma_jota.png", width=280)
 
-    # --- CENTRO: FLYER ---
     with col_flyer:
-        st.image("https://via.placeholder.com/600x800.png?text=FLYER+GENERADO", caption="Diseño Final", use_container_width=True)
+        # MOSTRAR LA IMAGEN RECORTADA (Prueba de que funcionó)
+        if 'imagen_lista_para_flyer' in st.session_state:
+            st.image(st.session_state.imagen_lista_para_flyer, caption="Fondo Recortado (Base para el Flyer)", use_container_width=True)
+        else:
+            st.image("https://via.placeholder.com/600x800.png?text=ERROR+IMAGEN", use_container_width=True)
 
-    # --- DERECHA: CHOLA PEQUEÑA + OPCIONES ---
     with col_descarga:
         st.markdown("<h3 style='text-align: center; font-size: 20px;'>OTRAS OPCIONES</h3>", unsafe_allow_html=True)
         
@@ -275,20 +291,15 @@ elif area_seleccionada == "Final":
         
         st.write("---")
         
-        # CHOLA PEQUEÑA
         if os.path.exists("mascota_final.png"):
             st.image("mascota_final.png", width=220) 
         
-        with open("streamlit_app.py", "rb") as file:
-            st.download_button(
-                label="⬇️ DESCARGAR",
-                data=file,
-                file_name="flyer_azuay.png",
-                mime="image/png",
-                use_container_width=True
-            )
+        st.button("⬇️ DESCARGAR (Próximamente)", disabled=True, use_container_width=True)
             
     st.write("---")
     if st.button("🔄 CREAR NUEVO"):
         st.query_params.clear()
+        # Limpiamos la memoria de la imagen para empezar de cero
+        if 'imagen_lista_para_flyer' in st.session_state:
+            del st.session_state['imagen_lista_para_flyer']
         st.rerun()

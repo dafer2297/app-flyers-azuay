@@ -35,16 +35,6 @@ def set_design():
         }}
         """
 
-    # C. Firma Jota (FIXED REAL)
-    firma_html = ""
-    if os.path.exists("firma_jota.png"):
-        firma_b64 = get_base64_of_bin_file("firma_jota.png")
-        firma_html = f"""
-        <div class="firma-jota">
-            <img src="data:image/png;base64,{firma_b64}">
-        </div>
-        """
-
     # D. INYECCIÓN CSS
     st.markdown(
         f"""
@@ -52,21 +42,11 @@ def set_design():
         .stApp {{ {bg_style} }}
         {font_css}
         
-        /* TÍTULOS GENERALES */
+        /* TÍTULOS */
         h1, h2, h3 {{
             font-family: 'Canaro', sans-serif !important;
             color: white !important;
             text-transform: uppercase;
-        }}
-        
-        /* FIRMA FIJA EN LA PANTALLA (NO SE MUEVE CON EL SCROLL) */
-        .firma-jota {{
-            position: fixed;
-            bottom: 15px;
-            left: 15px;
-            width: 180px; 
-            z-index: 99999; /* Siempre encima */
-            pointer-events: none;
         }}
         
         /* BOTONES */
@@ -94,17 +74,17 @@ def set_design():
             border: none;
         }}
         
-        /* Ocultar etiquetas por defecto de Streamlit para usar las nuestras */
+        /* Ocultar etiquetas por defecto */
         .stTextInput label, .stTextArea label, .stDateInput label, .stTimeInput label {{
             display: none;
         }}
 
-        /* ESTILOS PARA NUESTRAS ETIQUETAS PERSONALIZADAS */
+        /* ETIQUETAS PERSONALIZADAS */
         .label-negro {{
             font-family: 'Canaro', sans-serif;
             font-weight: bold;
             font-size: 16px;
-            color: black !important; /* TEXTO NEGRO */
+            color: black !important;
             margin-bottom: 2px;
             text-shadow: none !important;
         }}
@@ -112,7 +92,7 @@ def set_design():
             font-family: 'Canaro', sans-serif;
             font-weight: normal;
             font-size: 12px;
-            color: white !important; /* TEXTO BLANCO */
+            color: white !important;
             margin-left: 5px;
         }}
         
@@ -123,7 +103,6 @@ def set_design():
         /* Ocultar menús */
         #MainMenu, footer, header {{visibility: hidden;}}
         </style>
-        {firma_html}
         """, unsafe_allow_html=True
     )
 
@@ -175,6 +154,14 @@ if not area_seleccionada:
                 </a>
                 """, unsafe_allow_html=True
             )
+            
+    # FIRMA EN EL PIE DE PÁGINA (PÁGINA 1)
+    st.write("")
+    st.write("")
+    c_f1, c_f2, c_f3 = st.columns([1, 1, 1])
+    with c_f1:
+         if os.path.exists("firma_jota.png"):
+            st.image("firma_jota.png", width=180)
 
 # =================================================
 # 📝 PÁGINA 2: FORMULARIO
@@ -187,24 +174,33 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
 
     col_izq, col_der = st.columns([1, 2], gap="large")
     
-    # --- IZQUIERDA ---
+    # --- IZQUIERDA: ICONO + FIRMA ---
     with col_izq:
         st.write("")
         st.write("")
+        # 1. EL ICONO
         icono = "icono_cultura.png" if area_seleccionada == "Cultura" else "icono_recreacion.png"
         if os.path.exists(icono):
             st.image(icono, width=350) 
+        
+        # 2. ESPACIO
+        st.write("") 
+        st.write("")
+        
+        # 3. LA FIRMA (Aquí está fija bajo el icono)
+        if os.path.exists("firma_jota.png"):
+            st.image("firma_jota.png", width=200)
 
-    # --- DERECHA (FORMULARIO CON ETIQUETAS PERSONALIZADAS) ---
+    # --- DERECHA: FORMULARIO ---
     with col_der:
         
-        # A. DESCRIPCIÓN 1
+        # A. DESCRIPCIÓN 1 (AHORA ES TEXT AREA)
         st.markdown('<div class="label-negro">DESCRIPCIÓN</div>', unsafe_allow_html=True)
-        st.text_input("lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...")
+        st.text_area("lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150)
         
-        # B. DESCRIPCIÓN 2 (Negro + Blanco)
+        # B. DESCRIPCIÓN 2 (AHORA ES TEXT AREA)
         st.markdown('<div class="label-negro">DESCRIPCIÓN 2 <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
-        st.text_input("lbl_desc2", label_visibility="collapsed", placeholder="Información extra...")
+        st.text_area("lbl_desc2", label_visibility="collapsed", placeholder="Información extra...", height=100)
         
         # C. FECHAS (CALENDARIOS)
         c_f1, c_f2 = st.columns(2)
@@ -254,6 +250,11 @@ elif area_seleccionada == "Final":
         st.markdown("### ARTE")
         if os.path.exists("mascota_pincel.png"):
             st.image("mascota_pincel.png", use_container_width=True)
+            
+        # Firma también aquí
+        st.write("")
+        if os.path.exists("firma_jota.png"):
+            st.image("firma_jota.png", width=150)
 
     with col_flyer:
         st.image("https://via.placeholder.com/600x800.png?text=FLYER+GENERADO", caption="Diseño Final", use_container_width=True)

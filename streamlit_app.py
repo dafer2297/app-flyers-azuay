@@ -12,24 +12,18 @@ def get_base64_of_bin_file(bin_file):
     return base64.b64encode(data).decode()
 
 def set_design():
-    # A. Cargar Fondo
+    # A. Fondo
+    bg_style = "background-color: #1E88E5;" # Azul por defecto
     if os.path.exists("fondo_app.png"):
         bin_str = get_base64_of_bin_file("fondo_app.png")
-        bg_img = f'''
-        <style>
-        .stApp {{
+        bg_style = f"""
             background-image: url("data:image/png;base64,{bin_str}");
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-        }}
-        </style>
-        '''
-        st.markdown(bg_img, unsafe_allow_html=True)
-    else:
-        st.markdown('<style>.stApp {background-color: #1E88E5;}</style>', unsafe_allow_html=True)
+        """
 
-    # B. Cargar Fuente Canaro (Si existe)
+    # B. Fuente Canaro
     font_css = ""
     if os.path.exists("Canaro-Black.ttf"):
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
@@ -40,7 +34,7 @@ def set_design():
         }}
         """
 
-    # C. Cargar Firma Jota (HTML Puro para que no falle)
+    # C. Firma Jota (HTML Puro)
     firma_html = ""
     if os.path.exists("firma_jota.png"):
         firma_b64 = get_base64_of_bin_file("firma_jota.png")
@@ -50,69 +44,81 @@ def set_design():
         </div>
         """
 
-    # D. INYECCIÓN CSS (ESTILOS GLOBALES)
+    # D. INYECCIÓN CSS (CORREGIDO PARA FORMULARIO Y BOTONES)
     st.markdown(
         f"""
         <style>
+        .stApp {{ {bg_style} }}
         {font_css}
         
-        /* Aplicar fuente Canaro a títulos */
+        /* Títulos */
         h1, h2, h3, .titulo-custom {{
             font-family: 'Canaro', sans-serif !important;
             color: white !important;
-            text-shadow: 0px 2px 5px rgba(0,0,0,0.3);
             text-transform: uppercase;
+            text-shadow: 0px 2px 4px rgba(0,0,0,0.3);
         }}
         
-        /* Textos generales blancos */
+        /* Textos generales */
         p, label, span, div {{
             color: white !important;
+            font-family: sans-serif;
         }}
         
-        /* FIRMA FLOTANTE */
+        /* FIRMA FIJA (Asegurada en la esquina) */
         .firma-jota {{
             position: fixed;
             bottom: 20px;
             left: 20px;
-            width: 200px;
-            z-index: 999;
-            pointer-events: none;
+            width: 180px; 
+            z-index: 9999; /* Por encima de todo */
+            pointer-events: none; /* Click traspasa */
         }}
-        @media (max-width: 640px) {{
-            .firma-jota {{ width: 120px; bottom: 10px; left: 10px; }}
+        
+        /* Espacio extra abajo para que la firma no tape contenido al hacer scroll */
+        .block-container {{
+            padding-bottom: 150px;
         }}
 
-        /* EFECTO ZOOM EN LOS ICONOS */
-        .zoom-img {{
-            transition: transform 0.3s ease; /* Suavidad */
-            cursor: pointer;
-            filter: drop-shadow(0px 5px 5px rgba(0,0,0,0.5));
-        }}
-        .zoom-img:hover {{
-            transform: scale(1.1); /* Crece un 10% */
-        }}
-        
-        /* TEXTO DEBAJO DE ICONOS */
-        .label-icono {{
-            font-family: 'Canaro', sans-serif;
-            font-size: 24px;
-            text-align: center;
-            margin-top: 10px;
+        /* BOTONES (Incluido el "Volver") */
+        .stButton > button {{
+            background-color: transparent;
+            color: white;
+            border: 2px solid white;
+            border-radius: 15px;
+            padding: 10px 20px;
             font-weight: bold;
-            letter-spacing: 1px;
+            transition: all 0.3s;
+        }}
+        .stButton > button:hover {{
+            background-color: #D81B60; /* Rosa al pasar mouse */
+            border-color: #D81B60;
+            color: white;
         }}
         
-        /* Ocultar elementos extra de Streamlit */
+        /* INPUTS (Cajas de texto blancas) */
+        .stTextInput > div > div > input, .stTextArea > div > div > textarea {{
+            background-color: white;
+            color: #000 !important; /* Texto negro al escribir */
+            border-radius: 8px;
+            border: none;
+        }}
+        
+        /* ETIQUETAS DE INPUTS (Labels) */
+        .stTextInput label, .stTextArea label, .stFileUploader label {{
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }}
+        
+        /* EFECTO ZOOM ICONOS INICIO */
+        .zoom-img {{ transition: transform 0.3s ease; cursor: pointer; }}
+        .zoom-img:hover {{ transform: scale(1.1); }}
+        
+        /* Ocultar elementos de Streamlit */
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         header {{visibility: hidden;}}
-        
-        /* Inputs transparentes bonitos */
-        .stTextInput > div > div > input, .stTextArea > div > div > textarea {{
-            background-color: rgba(255, 255, 255, 0.9);
-            color: #333 !important;
-            border-radius: 10px;
-        }}
         </style>
         {firma_html}
         """, unsafe_allow_html=True
@@ -125,32 +131,29 @@ if os.path.exists("logo_superior.png"):
     c1, c2, c3 = st.columns([1, 2, 1])
     with c2: st.image("logo_superior.png", use_container_width=True)
 
-# --- 4. NAVEGACIÓN (Lógica por URL para clic en imagen) ---
-# Leemos los parámetros de la URL para saber dónde estamos
+# --- 4. NAVEGACIÓN ---
 query_params = st.query_params
 area_seleccionada = query_params.get("area", None)
 
 # =================================================
-# 🏠 PÁGINA 1: INICIO (ICONOS CLICABLES)
+# 🏠 PÁGINA 1: INICIO
 # =================================================
 if not area_seleccionada:
     
-    st.markdown("<h2 style='text-align: center; font-size: 30px;'>Selecciona el departamento:</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; font-size: 30px;'>SELECCIONA EL DEPARTAMENTO:</h2>", unsafe_allow_html=True)
     st.write("---")
 
-    # Usamos HTML para hacer las imágenes clicables y con zoom
     col1, col_cultura, col_recreacion, col4 = st.columns([1, 2, 2, 1])
 
     with col_cultura:
         if os.path.exists("btn_cultura.png"):
             img_b64 = get_base64_of_bin_file("btn_cultura.png")
-            # Esto crea una imagen que al darle clic recarga la página con ?area=Cultura
             st.markdown(
                 f"""
                 <a href="?area=Cultura" target="_self" style="text-decoration: none;">
                     <div style="text-align: center;">
                         <img src="data:image/png;base64,{img_b64}" class="zoom-img" width="100%">
-                        <div class="label-icono">CULTURA</div>
+                        <div style="font-family: 'Canaro'; font-size: 20px; margin-top: 10px; font-weight: bold;">CULTURA</div>
                     </div>
                 </a>
                 """, unsafe_allow_html=True
@@ -164,45 +167,74 @@ if not area_seleccionada:
                 <a href="?area=Recreación" target="_self" style="text-decoration: none;">
                     <div style="text-align: center;">
                         <img src="data:image/png;base64,{img_b64}" class="zoom-img" width="100%">
-                        <div class="label-icono">RECREACIÓN</div>
+                        <div style="font-family: 'Canaro'; font-size: 20px; margin-top: 10px; font-weight: bold;">RECREACIÓN</div>
                     </div>
                 </a>
                 """, unsafe_allow_html=True
             )
 
 # =================================================
-# 📝 PÁGINA 2: FORMULARIO
+# 📝 PÁGINA 2: FORMULARIO (CORREGIDO)
 # =================================================
 elif area_seleccionada in ["Cultura", "Recreación"]:
     
-    # Botón para limpiar la URL y volver al inicio
+    # 1. Botón Volver con estilo mejorado
     if st.button("⬅️ VOLVER AL INICIO"):
         st.query_params.clear()
         st.rerun()
 
-    st.markdown(f"<h1 style='text-align: center; font-size: 50px;'>DATOS DE {area_seleccionada.upper()}</h1>", unsafe_allow_html=True)
+    # 2. Título de la sección
+    # st.markdown(f"<h1 style='text-align: center;'>DATOS DE {area_seleccionada.upper()}</h1>", unsafe_allow_html=True)
     
-    col_izq, col_der = st.columns([1, 2])
+    # 3. Estructura de Columnas (Icono Izquierda - Formulario Derecha)
+    col_izq, col_der = st.columns([1, 2], gap="large")
     
+    # --- COLUMNA IZQUIERDA (ICONO) ---
     with col_izq:
+        st.write("") # Espacio para bajar un poco la imagen
+        st.write("")
         icono = "icono_cultura.png" if area_seleccionada == "Cultura" else "icono_recreacion.png"
-        if os.path.exists(icono): st.image(icono, use_container_width=True)
-    
+        
+        if os.path.exists(icono):
+            # TRUCO: Usamos width=350 para que NO salga gigante
+            st.image(icono, width=350) 
+        else:
+            st.warning(f"Falta {icono}")
+
+    # --- COLUMNA DERECHA (INPUTS EXACTOS A TU DISEÑO) ---
     with col_der:
-        st.text_input("TÍTULO DEL EVENTO:", "TE INVITA")
-        st.text_area("DESCRIPCIÓN:")
         
-        c1, c2 = st.columns(2)
-        with c1: st.text_input("FECHA:")
-        with c2: st.text_input("HORA:")
+        # A. Descripción Principal
+        st.text_input("DESCRIPCIÓN", placeholder="Escribe aquí...")
         
-        st.text_input("LUGAR:")
-        uploaded_file = st.file_uploader("SUBIR IMAGEN DE FONDO:", type=['png', 'jpg', 'jpeg'])
+        # B. Descripción 2 (Opcional)
+        st.text_input("DESCRIPCIÓN 2 (OPCIONAL)", placeholder="Información extra...")
+        
+        # C. Fechas (Lado a Lado)
+        c_f1, c_f2 = st.columns(2)
+        with c_f1:
+            st.text_input("FECHA INICIO", placeholder="Ej: Lunes 12 de Enero")
+        with c_f2:
+            st.text_input("FECHA FINAL (OPCIONAL)", placeholder="Ej: Viernes 16 de Enero")
+            
+        # D. Horarios (Lado a Lado)
+        c_h1, c_h2 = st.columns(2)
+        with c_h1:
+            st.text_input("HORARIO INICIO", placeholder="Ej: 09:00 AM")
+        with c_h2:
+            st.text_input("HORARIO FINAL (OPCIONAL)", placeholder="Ej: 14:00 PM")
+            
+        # E. Dirección
+        st.text_input("DIRECCIÓN", placeholder="Ubicación del evento")
+        
+        # F. Subida de Archivos
+        st.markdown("---")
+        st.file_uploader("SUBIR IMAGEN DE FONDO", type=['jpg', 'png'])
+        st.file_uploader("SUBIR LOGO/S COLABORADOR/ES (OPCIONAL MÁXIMO 2)", accept_multiple_files=True)
         
         st.write("")
-        # Usamos un botón normal de Streamlit para la acción final
+        # Botón Generar (Color Primario)
         if st.button("✨ GENERAR FLYER ✨", type="primary", use_container_width=True):
-             # Cambiamos el parametro de la URL para ir a la pag final
              st.query_params["area"] = "Final"
              st.rerun()
 
@@ -221,7 +253,6 @@ elif area_seleccionada == "Final":
             st.image("mascota_pincel.png", use_container_width=True)
 
     with col_flyer:
-        # Aquí iría la lógica de generación real. Por ahora el placeholder.
         st.image("https://via.placeholder.com/600x800.png?text=FLYER+GENERADO", caption="Diseño Final", use_container_width=True)
 
     with col_descarga:
@@ -231,8 +262,6 @@ elif area_seleccionada == "Final":
         with c2: st.image("https://via.placeholder.com/100/CCCCCC/FFFFFF?text=Op3")
         
         st.write("---")
-        
-        # Chola y botón de descarga
         if os.path.exists("mascota_final.png"):
             st.image("mascota_final.png", use_container_width=True)
         

@@ -205,35 +205,31 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         st.markdown('<div class="label-negro">DIRECCIÓN</div>', unsafe_allow_html=True)
         st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento")
         
-        # --- AQUÍ EMPIEZA LA MAGIA DEL RECORTE ---
+        # --- SECCIÓN DE RECORTE DE IMAGEN ---
         st.markdown('<div class="label-negro" style="margin-top: 15px;">SUBIR Y RECORTAR IMAGEN DE FONDO</div>', unsafe_allow_html=True)
         
-        # 1. Subida del archivo
         archivo_subido = st.file_uploader("lbl_img", type=['jpg', 'png', 'jpeg'], label_visibility="collapsed")
         
-        imagen_recortada_final = None # Variable para guardar el resultado
-
         if archivo_subido:
-            # 2. Si hay archivo, mostramos el editor
-            st.info("✂️ Ajusta el recuadro rojo para seleccionar la parte que saldrá en el flyer.")
+            st.info("✂️ Ajusta el recuadro rojo. El sistema lo convertirá automáticamente a 2400x3000px.")
             imagen_original = Image.open(archivo_subido)
             
-            # 3. Herramienta de Recorte (Bloqueada a 4:5 vertical)
-            # box_color='red' pone el marco rojo
-            # aspect_ratio=(4, 5) fuerza el rectángulo vertical del flyer
-            imagen_recortada_final = st_cropper(
+            # 1. El usuario recorta en pantalla
+            imagen_recortada_previa = st_cropper(
                 imagen_original, 
                 realtime_update=True, 
                 box_color='#FF0000',
                 aspect_ratio=(4, 5) 
             )
             
-            # 4. Mostrar vista previa pequeña
-            st.write("Vista previa del recorte:")
-            st.image(imagen_recortada_final, width=150)
+            # 2. EL SISTEMA FUERZA EL TAMAÑO HD (2400x3000)
+            imagen_final_hd = imagen_recortada_previa.resize((2400, 3000), Image.Resampling.LANCZOS)
             
-            # Guardamos la imagen recortada en la memoria para la siguiente página
-            st.session_state['imagen_lista_para_flyer'] = imagen_recortada_final
+            # 3. Guardamos la versión HD en la memoria
+            st.session_state['imagen_lista_para_flyer'] = imagen_final_hd
+            
+            st.write("✅ Imagen lista para generar el flyer.")
+
         
         st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(MÁX 2)</span></div>', unsafe_allow_html=True)
         st.file_uploader("lbl_logos", key="lbl_logos", accept_multiple_files=True, label_visibility="collapsed")
@@ -246,7 +242,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             errores = []
             if not st.session_state.lbl_desc: errores.append("Falta la Descripción")
             if not st.session_state.lbl_fecha1: errores.append("Falta la Fecha de Inicio")
-            # Validamos si tenemos la imagen YA recortada
+            # Validamos si tenemos la imagen YA recortada en memoria
             if 'imagen_lista_para_flyer' not in st.session_state or st.session_state.imagen_lista_para_flyer is None:
                 errores.append("Falta subir y recortar la Imagen de Fondo")
                 
@@ -276,9 +272,9 @@ elif area_seleccionada == "Final":
             st.image("firma_jota.png", width=280)
 
     with col_flyer:
-        # MOSTRAR LA IMAGEN RECORTADA (Prueba de que funcionó)
+        # MOSTRAR LA IMAGEN RECORTADA HD
         if 'imagen_lista_para_flyer' in st.session_state:
-            st.image(st.session_state.imagen_lista_para_flyer, caption="Fondo Recortado (Base para el Flyer)", use_container_width=True)
+            st.image(st.session_state.imagen_lista_para_flyer, caption="Fondo HD Listo (2400x3000)", use_container_width=True)
         else:
             st.image("https://via.placeholder.com/600x800.png?text=ERROR+IMAGEN", use_container_width=True)
 
@@ -299,7 +295,6 @@ elif area_seleccionada == "Final":
     st.write("---")
     if st.button("🔄 CREAR NUEVO"):
         st.query_params.clear()
-        # Limpiamos la memoria de la imagen para empezar de cero
         if 'imagen_lista_para_flyer' in st.session_state:
             del st.session_state['imagen_lista_para_flyer']
         st.rerun()

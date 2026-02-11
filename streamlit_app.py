@@ -156,13 +156,14 @@ if not area_seleccionada:
                 """, unsafe_allow_html=True
             )
             
-    # FIRMA EN EL PIE DE PÁGINA (PÁGINA 1)
+    # FIRMA EN EL PIE DE PÁGINA (PÁGINA 1) - TAMAÑO AUMENTADO
     st.write("")
     st.write("")
     c_f1, c_f2, c_f3 = st.columns([1, 1, 1])
     with c_f1:
          if os.path.exists("firma_jota.png"):
-            st.image("firma_jota.png", width=180)
+            # AQUI CAMBIAMOS EL TAMAÑO A 300
+            st.image("firma_jota.png", width=300)
 
 # =================================================
 # 📝 PÁGINA 2: FORMULARIO
@@ -188,7 +189,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         st.write("") 
         st.write("")
         
-        # 3. LA FIRMA (Aquí está fija bajo el icono)
+        # 3. LA FIRMA
         if os.path.exists("firma_jota.png"):
             st.image("firma_jota.png", width=200)
 
@@ -239,29 +240,26 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
              st.rerun()
 
 # =================================================
-# 📥 PÁGINA 3: RESULTADO FINAL (MODIFICADO)
+# 📥 PÁGINA 3: RESULTADO FINAL
 # =================================================
 elif area_seleccionada == "Final":
     
-    # 1. TÍTULO ACTUALIZADO
     st.markdown("<h1 style='text-align: center; font-size: 60px;'>¡ARTE LISTO!</h1>", unsafe_allow_html=True)
-    st.write("") # Espacio
+    st.write("") 
     
-    # 2. COLUMNAS AJUSTADAS: [2, 2, 1]
-    # (Izquierda ancha para chola grande, Centro ancho para flyer, Derecha angosta para chola pequeña)
     col_arte, col_flyer, col_descarga = st.columns([1.3, 1.5, 0.8])
     
-    # --- IZQUIERDA: CHOLA GRANDE ---
+    # --- IZQUIERDA: CHOLA GRANDE + FIRMA ---
     with col_arte:
-        st.write("") # Bajar un poquito
+        st.write("") 
         if os.path.exists("mascota_pincel.png"):
-            # use_container_width=True hace que ocupe todo el ancho de la columna grande
             st.image("mascota_pincel.png", use_container_width=True)
             
-        # Firma abajo a la izquierda (Opcional, ya que es fija en la pantalla si quisieras)
+        # Firma GRANDE debajo de la chola
         st.write("")
         if os.path.exists("firma_jota.png"):
-            st.image("firma_jota.png", width=180)
+            # AQUI CAMBIAMOS EL TAMAÑO A 280
+            st.image("firma_jota.png", width=280)
 
     # --- CENTRO: FLYER ---
     with col_flyer:
@@ -277,7 +275,7 @@ elif area_seleccionada == "Final":
         
         st.write("---")
         
-        # CHOLA PEQUEÑA (Controlada con width=220)
+        # CHOLA PEQUEÑA
         if os.path.exists("mascota_final.png"):
             st.image("mascota_final.png", width=220) 
         

@@ -29,6 +29,7 @@ def set_design():
         """
 
     font_css = ""
+    # Cargamos la Black para títulos de la web
     if os.path.exists("Canaro-Black.ttf"):
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
         font_css += f"""@font-face {{ font-family: 'Canaro'; src: url('data:font/ttf;base64,{font_b64}') format('truetype'); }}"""
@@ -62,24 +63,29 @@ set_design()
 # ==============================================================================
 
 def dibujar_texto_sombra(draw, texto, x, y, fuente, color="white", sombra="black", offset=(6,6), anchor="mm"):
-    # Sombra
+    # Sombra (atrás)
     draw.text((x+offset[0], y+offset[1]), texto, font=fuente, fill=sombra, anchor=anchor)
-    # Texto
+    # Texto (adelante)
     draw.text((x, y), texto, font=fuente, fill=color, anchor=anchor)
 
 def obtener_mes_abbr(numero_mes):
     meses = {1: "ENE", 2: "FEB", 3: "MAR", 4: "ABR", 5: "MAY", 6: "JUN", 7: "JUL", 8: "AGO", 9: "SEP", 10: "OCT", 11: "NOV", 12: "DIC"}
     return meses.get(numero_mes, "")
 
+def obtener_mes_nombre(numero_mes):
+    meses = {1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"}
+    return meses.get(numero_mes, "")
+
 def obtener_dia_semana(fecha):
     dias = ["LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO", "DOMINGO"]
     return dias[fecha.weekday()]
 
-# --- PLANTILLA TIPO 1 (CULTURA - 1 FECHA) ---
+# --- PLANTILLA TIPO 1 (CULTURA) ---
 def generar_tipo_1(datos):
     fondo = datos['fondo']
     desc1 = datos['desc1']
     fecha1 = datos['fecha1']
+    fecha2 = datos['fecha2']
     hora1 = datos['hora1']
     hora2 = datos['hora2']
     lugar = datos['lugar']
@@ -95,7 +101,7 @@ def generar_tipo_1(datos):
         sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
-        # Fallback si falta el archivo
+        # Fallback manual por si falla la imagen
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.3), H):
@@ -104,35 +110,36 @@ def generar_tipo_1(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img) 
 
-    # --- FUENTES ---
+    # --- CARGA DE FUENTES (DIRECTA) ---
     try:
-        f_black_base = "Canaro-Black.ttf"
-        f_bold_base = "Canaro-Bold.ttf"
-        f_semibold_base = "Canaro-SemiBold.ttf" if os.path.exists("Canaro-SemiBold.ttf") else "Canaro-Bold.ttf"
-        f_medium_base = "Canaro-Medium.ttf"
-        
-        # Tamaños Base
-        size_invita = 180
-        f_invita = ImageFont.truetype(f_bold_base, size_invita)
+        # Usamos los nombres TAL CUAL están en tu GitHub
+        f_invita = ImageFont.truetype("Canaro-Bold.ttf", 180)
         
         # Fuentes Fecha Caja
-        f_dia_box = ImageFont.truetype(f_black_base, 200) # Número Grande Black
-        f_mes_box = ImageFont.truetype(f_bold_base, 90)   # Mes Bold
-        f_info_fecha = ImageFont.truetype(f_bold_base, 65) # Día semana y hora
-        f_lugar = ImageFont.truetype(f_medium_base, 70)    # Dirección Medium
+        f_dia_box = ImageFont.truetype("Canaro-Black.ttf", 200) 
+        f_mes_box = ImageFont.truetype("Canaro-Bold.ttf", 90)   
+        
+        # Info Fecha (Hora/Día)
+        f_info_fecha = ImageFont.truetype("Canaro-Bold.ttf", 65) 
+        
+        # Dirección
+        f_lugar = ImageFont.truetype("Canaro-Medium.ttf", 70)    
+        
+        # Nombre base para la descripción (se carga dinámicamente según tamaño)
+        font_desc_name = "Canaro-SemiBold.ttf"
         
     except:
+        # Si no encuentra alguna, usa default para no romper la app
         f_invita = f_dia_box = f_mes_box = f_info_fecha = f_lugar = ImageFont.load_default()
-        f_semibold_base = "arial.ttf" # Fallback
+        font_desc_name = None # Usará default
 
-    # --- A. LOGOS HEADER (DIVIDIDOS) ---
+    # --- A. LOGOS HEADER ---
     y_logos = 150
     margin_logos = 100
     
     # 1. Logo Prefectura (Izquierda)
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
-        # Ajuste de tamaño (ej: ancho 700)
         ratio = 700 / logo.width
         h_logo = int(logo.height * ratio)
         logo = logo.resize((700, h_logo), Image.Resampling.LANCZOS)
@@ -141,11 +148,10 @@ def generar_tipo_1(datos):
     # 2. Logo Jota (Derecha)
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
-        # Ajuste de tamaño (ej: ancho 500)
         ratio_f = 500 / firma.width
         h_firma = int(firma.height * ratio_f)
         firma = firma.resize((500, h_firma), Image.Resampling.LANCZOS)
-        img.paste(firma, (W - 500 - margin_logos, y_logos + 20), firma) # Un poquito más abajo para alinear visualmente
+        img.paste(firma, (W - 500 - margin_logos, y_logos + 20), firma)
 
     # --- B. TÍTULO ---
     titulo_texto = "INVITA"
@@ -157,70 +163,91 @@ def generar_tipo_1(datos):
     
     # --- C. DESCRIPCIÓN (AUTO-AJUSTE) ---
     y_desc = y_titulo + 150
-    margen_desc = 200
-    ancho_max_desc = W - (margen_desc * 2)
     
-    # Lógica de tamaño dinámico (Máximo 3/5 del título = 180 * 0.6 = 108)
+    # Tamaño máximo inicial: 3/5 de 180 = 108
     size_desc = 108 
     
-    # Ajustamos el tamaño hasta que quepa bien o llegue a un mínimo
-    f_desc = ImageFont.truetype(f_semibold_base, size_desc)
+    # Cargar fuente descripción
+    if font_desc_name:
+        f_desc = ImageFont.truetype(font_desc_name, size_desc)
+    else:
+        f_desc = ImageFont.load_default()
     
-    # Envolver texto y probar altura
-    lines = textwrap.wrap(desc1, width=30) # Ancho inicial estimado
+    # Envolver texto
+    lines = textwrap.wrap(desc1, width=30)
     
-    # Si hay muchas líneas, reducimos la letra un poco
+    # Si hay muchas líneas, reducimos el tamaño
     if len(lines) > 4:
         size_desc = 90
-        f_desc = ImageFont.truetype(f_semibold_base, size_desc)
-        lines = textwrap.wrap(desc1, width=35) # Recalcular wrap con letra más chica
+        if font_desc_name:
+            f_desc = ImageFont.truetype(font_desc_name, size_desc)
+        lines = textwrap.wrap(desc1, width=35)
     
     for line in lines:
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc)
-        y_desc += int(size_desc * 1.2) # Espaciado dinámico
+        y_desc += int(size_desc * 1.2)
 
     # --- D. CAJA DE FECHA (IZQUIERDA ABAJO) ---
-    # Coordenadas
     x_box = 200
     y_box = 2100 
     
-    if os.path.exists("flyer_caja_fecha.png"):
-        caja = Image.open("flyer_caja_fecha.png").convert("RGBA")
-        caja = caja.resize((450, 450), Image.Resampling.LANCZOS) # Cuadrado grande
-        img.paste(caja, (x_box, y_box), caja)
-        
-        # Contenido de la Caja
-        cx = x_box + 225 # Centro de la caja (450/2)
-        cy = y_box + 225
-        
-        dia_num = str(fecha1.day)
-        mes_txt = obtener_mes_abbr(fecha1.month)
-        
-        # Dibujar Número (Black)
-        draw.text((cx, cy - 40), dia_num, font=f_dia_box, fill="white", anchor="mm")
-        # Dibujar Mes (Bold)
-        draw.text((cx, cy + 90), mes_txt, font=f_mes_box, fill="white", anchor="mm")
-        
-        # Debajo de la caja: Día semana y Hora
-        dia_sem = obtener_dia_semana(fecha1)
-        
-        # Lógica Horario (Inicio o Inicio - Final)
-        str_hora = hora1.strftime('%H:%M %p') # 12:00 PM
-        if hora2:
-            str_hora += f" a {hora2.strftime('%H:%M %p')}"
+    str_hora = hora1.strftime('%H:%M %p')
+    if hora2:
+        str_hora += f" a {hora2.strftime('%H:%M %p')}"
+    
+    # CASO 1: DOS FECHAS
+    if fecha2:
+        if os.path.exists("flyer_caja_fecha_larga.png"):
+            caja = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+            caja = caja.resize((850, 450), Image.Resampling.LANCZOS)
+            img.paste(caja, (x_box, y_box), caja)
             
-        # Dibujar Día
-        y_info = y_box + 450 + 40
-        dibujar_texto_sombra(draw, dia_sem, cx, y_info, f_info_fecha, anchor="mm")
-        # Dibujar Hora
-        dibujar_texto_sombra(draw, str_hora, cx, y_info + 80, f_info_fecha, anchor="mm")
-        
+            cx = x_box + 425
+            cy = y_box + 225
+            
+            dia1, dia2 = str(fecha1.day), str(fecha2.day)
+            mes1, mes2 = obtener_mes_nombre(fecha1.month), obtener_mes_nombre(fecha2.month)
+            
+            txt_nums = f"{dia1} - {dia2}"
+            txt_mes = mes1 if mes1 == mes2 else f"{mes1} - {mes2}"
+            
+            draw.text((cx, cy - 40), txt_nums, font=f_dia_box, fill="white", anchor="mm")
+            
+            # Ajustar mes largo
+            f_mes_uso = f_mes_box
+            if len(txt_mes) > 15:
+                try: f_mes_uso = ImageFont.truetype("Canaro-Bold.ttf", 65)
+                except: pass
+            
+            draw.text((cx, cy + 90), txt_mes, font=f_mes_uso, fill="white", anchor="mm")
+            
+            y_info = y_box + 450 + 40
+            dibujar_texto_sombra(draw, str_hora, cx, y_info, f_info_fecha, anchor="mm")
+            
+    # CASO 2: UNA FECHA
     else:
-        # Fallback texto plano
-        draw.text((x_box, y_box), f"{fecha1.day} {obtener_mes_abbr(fecha1.month)}", font=f_invita, fill="white")
+        if os.path.exists("flyer_caja_fecha.png"):
+            caja = Image.open("flyer_caja_fecha.png").convert("RGBA")
+            caja = caja.resize((450, 450), Image.Resampling.LANCZOS)
+            img.paste(caja, (x_box, y_box), caja)
+            
+            cx = x_box + 225
+            cy = y_box + 225
+            
+            dia_num = str(fecha1.day)
+            mes_txt = obtener_mes_abbr(fecha1.month)
+            
+            draw.text((cx, cy - 40), dia_num, font=f_dia_box, fill="white", anchor="mm")
+            draw.text((cx, cy + 90), mes_txt, font=f_mes_box, fill="white", anchor="mm")
+            
+            dia_sem = obtener_dia_semana(fecha1)
+            y_info = y_box + 450 + 40
+            dibujar_texto_sombra(draw, dia_sem, cx, y_info, f_info_fecha, anchor="mm")
+            dibujar_texto_sombra(draw, str_hora, cx, y_info + 80, f_info_fecha, anchor="mm")
+        else:
+             draw.text((x_box, y_box), f"{fecha1.day}", font=f_dia_box, fill="white")
 
     # --- E. UBICACIÓN (DERECHA ABAJO) ---
-    # Alineado con la caja de fecha visualmente
     x_loc = 1400 
     y_loc = 2250 
     
@@ -229,36 +256,18 @@ def generar_tipo_1(datos):
         icon = icon.resize((100, 100), Image.Resampling.LANCZOS)
         img.paste(icon, (x_loc, y_loc), icon)
         
-        # Texto Dirección (Medium)
-        # Envolvemos si es muy largo
         lines_loc = textwrap.wrap(lugar, width=25)
         y_loc_txt = y_loc + 10
         for l in lines_loc:
-            dibujar_texto_sombra(draw, l, x_loc + 130, y_loc_txt, f_lugar, anchor="lm") # Anchor left-middle
+            dibujar_texto_sombra(draw, l, x_loc + 130, y_loc_txt, f_lugar, anchor="lm")
             y_loc_txt += 80
-            
     else:
         dibujar_texto_sombra(draw, f"📍 {lugar}", x_loc, y_loc, f_lugar, anchor="lm")
 
     return img
 
-# --- RESTO DE PLANTILLAS (POR AHORA USAN LA 1) ---
-def generar_tipo_2(datos): return generar_tipo_1(datos)
-def generar_tipo_3(datos): return generar_tipo_1(datos)
-def generar_tipo_4(datos): return generar_tipo_1(datos)
-def generar_tipo_5(datos): return generar_tipo_1(datos)
-def generar_tipo_6(datos): return generar_tipo_1(datos)
-def generar_tipo_7(datos): return generar_tipo_1(datos)
-def generar_tipo_8(datos): return generar_tipo_1(datos)
-def generar_tipo_9(datos): return generar_tipo_1(datos)
-def generar_tipo_10(datos): return generar_tipo_1(datos)
-def generar_tipo_11(datos): return generar_tipo_1(datos)
-def generar_tipo_12(datos): return generar_tipo_1(datos)
-
-# --- CONTROLADOR MAESTRO ---
+# --- CONTROLADOR ---
 def generar_flyer_automatico(datos):
-    # Por ahora forzamos Tipo 1 para probar tu diseño
-    # Cuando hagamos las otras, descomentamos el árbol de decisión
     return generar_tipo_1(datos)
 
 # ==============================================================================

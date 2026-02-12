@@ -29,9 +29,8 @@ def set_design():
             background-attachment: fixed;
         """
 
-    # Carga de Fuentes CSS (Para que la web se vea bonita)
+    # Carga de Fuentes CSS
     font_css = ""
-    # Intentamos cargar la Black para títulos de la app
     if os.path.exists("Canaro-Black.ttf"):
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
         font_css += f"""@font-face {{ font-family: 'Canaro'; src: url('data:font/ttf;base64,{font_b64}') format('truetype'); }}"""
@@ -42,25 +41,20 @@ def set_design():
         .stApp {{ {bg_style} }}
         {font_css}
         
-        /* Tipografías Web */
         h1, h2, h3 {{ font-family: 'Canaro', sans-serif !important; color: white !important; text-transform: uppercase; }}
         
-        /* Botones */
         .stButton > button {{ background-color: transparent; color: white; border: 2px solid white; border-radius: 15px; padding: 10px 20px; font-weight: bold; }}
         .stButton > button:hover {{ background-color: #D81B60; border-color: #D81B60; }}
         
-        /* Inputs */
         .stTextInput > div > div > input, .stTextArea > div > div > textarea, 
         .stDateInput > div > div > input, .stTimeInput > div > div > input {{
             background-color: white !important; color: black !important; border-radius: 8px; border: none;
         }}
         .stTextInput label, .stTextArea label, .stDateInput label, .stTimeInput label {{ display: none; }}
 
-        /* Etiquetas */
         .label-negro {{ font-family: 'Canaro', sans-serif; font-weight: bold; font-size: 16px; color: black !important; margin-bottom: 2px; margin-top: 10px; text-shadow: none !important; }}
         .label-blanco {{ font-family: 'Canaro', sans-serif; font-weight: normal; font-size: 12px; color: white !important; margin-left: 5px; }}
         
-        /* Contador de Caracteres */
         .contador-ok {{ color: #C6FF00 !important; font-weight: bold; font-size: 14px; }}
         .contador-mal {{ color: #FF5252 !important; font-weight: bold; font-size: 14px; }}
 
@@ -75,31 +69,12 @@ set_design()
 # 2. MOTOR GRÁFICO
 # ==============================================================================
 
-# Función auxiliar para dibujar texto con sombra
 def dibujar_texto_sombra(draw, texto, x, y, fuente, color="white", sombra="black", offset=(5,5), anchor="mm"):
     draw.text((x+offset[0], y+offset[1]), texto, font=fuente, fill=sombra, anchor=anchor)
     draw.text((x, y), texto, font=fuente, fill=color, anchor=anchor)
 
-# --- CARGADOR DE FUENTES PYTHON (PIL) ---
-def cargar_fuentes():
-    fuentes = {}
-    try:
-        # Tamaños base, luego se pueden escalar o pedir tamaño específico
-        # Ajusta los nombres de archivo si los tienes diferentes (ej: Canaro-Medium.otf vs .ttf)
-        fuentes['Medium'] = ImageFont.truetype("Canaro-Medium.ttf", 100)
-        fuentes['SemiBold'] = ImageFont.truetype("Canaro-SemiBold.ttf", 100)
-        fuentes['Bold'] = ImageFont.truetype("Canaro-Bold.ttf", 100)
-        fuentes['ExtraBold'] = ImageFont.truetype("Canaro-ExtraBold.ttf", 100)
-        fuentes['Black'] = ImageFont.truetype("Canaro-Black.ttf", 100)
-    except:
-        # Fallback por si faltan archivos
-        def_font = ImageFont.load_default()
-        fuentes = {k: def_font for k in ['Medium', 'SemiBold', 'Bold', 'ExtraBold', 'Black']}
-    return fuentes
-
 # --- PLANTILLA TIPO 1 (BASE) ---
 def generar_tipo_1(datos):
-    # Desempaquetar datos
     fondo = datos['fondo']
     desc1 = datos['desc1']
     fecha1 = datos['fecha1']
@@ -107,61 +82,54 @@ def generar_tipo_1(datos):
     lugar = datos['lugar']
     logos_colab = datos['logos']
     
-    # 1. Lienzo Base
     W, H = 2400, 3000
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 2. Sombra PNG (Asset externo)
-    if os.path.exists("sombra.png"):
-        sombra_img = Image.open("sombra.png").convert("RGBA")
+    # 1. SOMBRA PNG (Asset específico para el flyer)
+    if os.path.exists("flyer_sombra.png"):
+        sombra_img = Image.open("flyer_sombra.png").convert("RGBA")
         sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
-        # Fallback si no suben la sombra.png (Sombra manual)
+        # Fallback manual si no subes la sombra
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.4), H):
             alpha = int(255 * ((y - H*0.4)/(H*0.6)))
             d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.8)))
         img = Image.alpha_composite(img, overlay)
-        draw = ImageDraw.Draw(img) # Reiniciar draw
+        draw = ImageDraw.Draw(img) 
 
-    # 3. Cargar Fuentes (Tamaños específicos para esta plantilla)
+    # Cargar Fuentes
     try:
-        f_invita = ImageFont.truetype("Canaro-Bold.ttf", 180) # Título siempre Bold
+        f_invita = ImageFont.truetype("Canaro-Bold.ttf", 180) 
         f_desc = ImageFont.truetype("Canaro-Medium.ttf", 110)
         f_dato = ImageFont.truetype("Canaro-SemiBold.ttf", 90)
     except:
         f_invita = f_desc = f_dato = ImageFont.load_default()
 
-    # --- ELEMENTOS VISUALES ---
-
-    # A. Logo Prefectura (Arriba Centro)
-    y_cursor = 150 # Posición vertical inicial
-    if os.path.exists("logo_superior.png"):
-        logo = Image.open("logo_superior.png").convert("RGBA")
+    # A. LOGO PREFECTURA (Asset específico para el flyer)
+    y_cursor = 150 
+    if os.path.exists("flyer_logo.png"):
+        logo = Image.open("flyer_logo.png").convert("RGBA")
         ratio = 1000 / logo.width
         h_logo = int(logo.height * ratio)
         logo = logo.resize((1000, h_logo), Image.Resampling.LANCZOS)
         img.paste(logo, (int((W-1000)/2), y_cursor), logo)
-        y_cursor += h_logo + 50 # Bajamos el cursor
+        y_cursor += h_logo + 50 
 
-    # B. Logos Colaboradores (Si existen)
+    # B. Logos Colaboradores (Placeholder lógica)
     titulo_texto = "INVITA"
     if logos_colab:
-        titulo_texto = "INVITAN" # Cambia el título
-        # Lógica básica para poner logos colaboradores aquí (la definiremos mejor viendo tu diseño)
-        # Por ahora solo reserva espacio
+        titulo_texto = "INVITAN"
         y_cursor += 150 
     
-    # C. Título (INVITA / INVITAN) - Canaro Bold
-    # Se coloca DEBAJO de los logos
+    # C. Título
     w_tit = draw.textlength(titulo_texto, font=f_invita)
     draw.text(((W - w_tit)/2, y_cursor), titulo_texto, font=f_invita, fill="white")
     
     # D. Descripción
-    # Usamos posición fija provisional hasta ver tu diseño
     y_txt = 1400 
     if desc1:
         lines = textwrap.wrap(desc1, width=30)
@@ -174,57 +142,54 @@ def generar_tipo_1(datos):
     txt_fecha = f"{fecha1.day} de {meses[fecha1.month]}   |   {hora1.strftime('%H:%M')}"
     
     y_info = y_txt + 200
-    # Icono calendario/reloj se puede agregar aquí
     dibujar_texto_sombra(draw, txt_fecha, W/2, y_info, f_dato)
     
-    # F. Lugar + Icono
+    # F. Lugar + Icono (Asset específico para el flyer)
     y_lugar = y_info + 200
-    if os.path.exists("icono_lugar.png"):
-        icon_lug = Image.open("icono_lugar.png").convert("RGBA")
+    if os.path.exists("flyer_icono_lugar.png"):
+        icon_lug = Image.open("flyer_icono_lugar.png").convert("RGBA")
         icon_lug = icon_lug.resize((80, 80), Image.Resampling.LANCZOS)
-        # Calcular ancho total para centrar icono + texto
+        
+        # Calcular centro
         w_lug_txt = draw.textlength(lugar, font=f_dato)
         w_total = 80 + 20 + w_lug_txt # Icono + espacio + texto
         start_x = (W - w_total) / 2
         
-        img.paste(icon_lug, (int(start_x), int(y_lugar - 40)), icon_lug)
-        dibujar_texto_sombra(draw, lugar, start_x + 100, y_lugar, f_dato, anchor="lm") # Anchor left-middle
+        # Dibujar icono y texto alineados
+        img.paste(icon_lug, (int(start_x), int(y_lugar - 30)), icon_lug)
+        dibujar_texto_sombra(draw, lugar, start_x + 100, y_lugar, f_dato, anchor="lm")
     else:
+        # Si no está el icono, solo texto
         dibujar_texto_sombra(draw, f"📍 {lugar}", W/2, y_lugar, f_dato)
 
-    # G. Firma Jota (Abajo Izquierda)
-    if os.path.exists("firma_jota.png"):
-        firma = Image.open("firma_jota.png").convert("RGBA")
+    # G. Firma Jota (Asset específico para el flyer)
+    if os.path.exists("flyer_firma.png"):
+        firma = Image.open("flyer_firma.png").convert("RGBA")
         ratio = 600 / firma.width
         firma = firma.resize((600, int(firma.height * ratio)), Image.Resampling.LANCZOS)
         img.paste(firma, (100, H - firma.height - 100), firma)
 
     return img
 
-# --- RESTO DE PLANTILLAS (POR IMPLEMENTAR DETALLES VISUALES) ---
-def generar_tipo_2(datos): return generar_tipo_1(datos) # Placeholder
-def generar_tipo_3(datos): return generar_tipo_1(datos) # Placeholder
-def generar_tipo_4(datos): return generar_tipo_1(datos) # Placeholder
-def generar_tipo_5(datos): return generar_tipo_1(datos) # Placeholder
-def generar_tipo_6(datos): return generar_tipo_1(datos) # Placeholder
-def generar_tipo_7(datos): return generar_tipo_1(datos) # Placeholder
-def generar_tipo_8(datos): return generar_tipo_1(datos) # Placeholder
-def generar_tipo_9(datos): return generar_tipo_1(datos) # Placeholder
-def generar_tipo_10(datos): return generar_tipo_1(datos) # Placeholder
-def generar_tipo_11(datos): return generar_tipo_1(datos) # Placeholder
-def generar_tipo_12(datos): return generar_tipo_1(datos) # Placeholder
+# --- RESTO DE PLANTILLAS ---
+def generar_tipo_2(datos): return generar_tipo_1(datos)
+def generar_tipo_3(datos): return generar_tipo_1(datos)
+def generar_tipo_4(datos): return generar_tipo_1(datos)
+def generar_tipo_5(datos): return generar_tipo_1(datos)
+def generar_tipo_6(datos): return generar_tipo_1(datos)
+def generar_tipo_7(datos): return generar_tipo_1(datos)
+def generar_tipo_8(datos): return generar_tipo_1(datos)
+def generar_tipo_9(datos): return generar_tipo_1(datos)
+def generar_tipo_10(datos): return generar_tipo_1(datos)
+def generar_tipo_11(datos): return generar_tipo_1(datos)
+def generar_tipo_12(datos): return generar_tipo_1(datos)
 
-
-# ==============================================================================
-# 3. CONTROLADOR MAESTRO
-# ==============================================================================
+# --- CONTROLADOR MAESTRO ---
 def generar_flyer_automatico(datos):
-    """ Elige la plantilla correcta (1 al 12) según los datos """
     tiene_desc2 = bool(datos['desc2'])
     tiene_fecha2 = bool(datos['fecha2'])
     num_colabs = len(datos['logos']) if datos['logos'] else 0
     
-    # ÁRBOL DE DECISIÓN
     if num_colabs == 0:
         if not tiene_desc2 and not tiene_fecha2: return generar_tipo_1(datos)
         elif tiene_desc2 and not tiene_fecha2: return generar_tipo_2(datos)
@@ -243,7 +208,7 @@ def generar_flyer_automatico(datos):
         elif not tiene_desc2 and tiene_fecha2: return generar_tipo_11(datos)
         elif tiene_desc2 and tiene_fecha2: return generar_tipo_12(datos)
 
-    return datos['fondo'] # Fallback
+    return datos['fondo']
 
 # ==============================================================================
 # 4. INTERFAZ DE USUARIO
@@ -293,20 +258,18 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=200)
 
     with col_der:
-        # --- DESCRIPCIÓN 1 (NO OBLIGATORIA) ---
         st.markdown('<div class="label-negro">DESCRIPCIÓN</div>', unsafe_allow_html=True)
         desc1 = st.text_area("lbl_desc", key="lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150)
         
-        # --- DESCRIPCIÓN 2 (OPCIONAL) ---
         st.markdown('<div class="label-negro">DESCRIPCIÓN 2 <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         desc2 = st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="Información extra...", height=100)
         
-        # --- VALIDACIÓN DE CARACTERES EN TIEMPO REAL ---
+        # Contador Caracteres Descripciones
         total_chars = len(desc1) + len(desc2)
         if total_chars <= 150:
             st.markdown(f'<div class="contador-ok">Caracteres: {total_chars} / 150 ✅</div>', unsafe_allow_html=True)
         else:
-            st.markdown(f'<div class="contador-mal">Caracteres: {total_chars} / 150 ❌ (Te pasaste por {total_chars - 150})</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="contador-mal">Caracteres: {total_chars} / 150 ❌ (Exceso: {total_chars - 150})</div>', unsafe_allow_html=True)
 
         c_f1, c_f2 = st.columns(2)
         with c_f1:
@@ -325,8 +288,15 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             st.time_input("lbl_hora2", key="lbl_hora2", label_visibility="collapsed", value=None)
             
         st.markdown('<div class="label-negro">DIRECCIÓN</div>', unsafe_allow_html=True)
-        st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento")
+        dir_texto = st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento")
         
+        # --- VALIDACIÓN DIRECCIÓN (75 CARACTERES) ---
+        len_dir = len(dir_texto)
+        if len_dir <= 75:
+            st.markdown(f'<div class="contador-ok" style="font-size:12px;">Dirección: {len_dir} / 75</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="contador-mal">Dirección muy larga: {len_dir} / 75</div>', unsafe_allow_html=True)
+
         st.markdown('<div class="label-negro" style="margin-top: 15px;">SUBIR Y RECORTAR IMAGEN DE FONDO</div>', unsafe_allow_html=True)
         archivo_subido = st.file_uploader("lbl_img", type=['jpg', 'png', 'jpeg'], label_visibility="collapsed")
         
@@ -342,25 +312,37 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         
         st.write("")
         
-        # --- BOTÓN GENERAR CON VALIDACIONES ACTUALIZADAS ---
         if st.button("✨ GENERAR FLYER ✨", type="primary", use_container_width=True):
             errores = []
             
-            # Validación 1: Caracteres máximos 150 (Suma de las dos)
+            # Validaciones
             if (len(st.session_state.lbl_desc) + len(st.session_state.lbl_desc2)) > 150:
-                errores.append("Texto demasiado largo (Máx 150 caracteres entre ambas descripciones)")
+                errores.append("Texto demasiado largo en descripción (Máx 150)")
             
-            # Validación 2: Fecha Obligatoria
+            if len(st.session_state.lbl_dir) > 75:
+                errores.append("Dirección demasiado larga (Máx 75 caracteres)")
+
             if not st.session_state.lbl_fecha1: 
                 errores.append("Falta la Fecha de Inicio")
             
-            # Validación 3: Imagen Obligatoria
             if 'imagen_lista_para_flyer' not in st.session_state: 
                 errores.append("Falta recortar la Imagen de Fondo")
                 
             if errores:
                 st.error(f"⚠️ {', '.join(errores)}")
             else:
+                st.session_state['datos_finales'] = {
+                    'fondo': st.session_state.imagen_lista_para_flyer,
+                    'desc1': st.session_state.lbl_desc,
+                    'desc2': st.session_state.lbl_desc2,
+                    'fecha1': st.session_state.lbl_fecha1,
+                    'fecha2': st.session_state.lbl_fecha2,
+                    'hora1': st.session_state.lbl_hora1,
+                    'hora2': st.session_state.lbl_hora2,
+                    'lugar': st.session_state.lbl_dir,
+                    'logos': st.session_state.get('lbl_logos', []),
+                    'area': area_seleccionada
+                }
                 st.query_params["area"] = "Final"
                 st.rerun()
 
@@ -378,32 +360,20 @@ elif area_seleccionada == "Final":
         if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
 
     with col_flyer:
-        if 'imagen_lista_para_flyer' in st.session_state:
+        if 'datos_finales' in st.session_state:
+            paquete = st.session_state['datos_finales']
             
-            # Empaquetamos todo en un diccionario para pasarlo al Generador
-            paquete = {
-                'fondo': st.session_state.imagen_lista_para_flyer,
-                'desc1': st.session_state.lbl_desc,
-                'desc2': st.session_state.lbl_desc2,
-                'fecha1': st.session_state.lbl_fecha1,
-                'fecha2': st.session_state.lbl_fecha2,
-                'hora1': st.session_state.lbl_hora1,
-                'hora2': st.session_state.lbl_hora2,
-                'lugar': st.session_state.lbl_dir,
-                'logos': st.session_state.get('lbl_logos', []),
-                'area': area_seleccionada
-            }
-            
-            # ¡GENERAR!
             flyer_final = generar_flyer_automatico(paquete)
-            
             st.image(flyer_final, caption="Diseño Generado", use_container_width=True)
             
             buf = io.BytesIO()
             flyer_final.save(buf, format="PNG")
             byte_im = buf.getvalue()
         else:
-            st.error("Datos perdidos. Vuelve al inicio.")
+            st.warning("⚠️ No hay datos para mostrar. Vuelve al inicio.")
+            if st.button("Volver al Inicio"):
+                st.query_params.clear()
+                st.rerun()
 
     with col_descarga:
         st.markdown("<h3 style='text-align: center; font-size: 20px;'>OTRAS OPCIONES</h3>", unsafe_allow_html=True)
@@ -420,5 +390,7 @@ elif area_seleccionada == "Final":
     st.write("---")
     if st.button("🔄 CREAR NUEVO"):
         st.query_params.clear()
-        if 'imagen_lista_para_flyer' in st.session_state: del st.session_state['imagen_lista_para_flyer']
+        keys_borrar = ['imagen_lista_para_flyer', 'datos_finales', 'lbl_desc', 'lbl_desc2']
+        for k in keys_borrar:
+            if k in st.session_state: del st.session_state[k]
         st.rerun()

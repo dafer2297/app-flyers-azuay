@@ -29,13 +29,12 @@ def set_design():
             background-attachment: fixed;
         """
 
-    # Fuente Canaro
+    # Carga de Fuentes CSS (Para que la web se vea bonita)
     font_css = ""
+    # Intentamos cargar la Black para títulos de la app
     if os.path.exists("Canaro-Black.ttf"):
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
-        font_css = f"""
-        @font-face {{ font-family: 'Canaro'; src: url('data:font/ttf;base64,{font_b64}') format('truetype'); }}
-        """
+        font_css += f"""@font-face {{ font-family: 'Canaro'; src: url('data:font/ttf;base64,{font_b64}') format('truetype'); }}"""
 
     st.markdown(
         f"""
@@ -43,7 +42,7 @@ def set_design():
         .stApp {{ {bg_style} }}
         {font_css}
         
-        /* Tipografías */
+        /* Tipografías Web */
         h1, h2, h3 {{ font-family: 'Canaro', sans-serif !important; color: white !important; text-transform: uppercase; }}
         
         /* Botones */
@@ -61,9 +60,10 @@ def set_design():
         .label-negro {{ font-family: 'Canaro', sans-serif; font-weight: bold; font-size: 16px; color: black !important; margin-bottom: 2px; margin-top: 10px; text-shadow: none !important; }}
         .label-blanco {{ font-family: 'Canaro', sans-serif; font-weight: normal; font-size: 12px; color: white !important; margin-left: 5px; }}
         
-        /* Efectos */
-        .zoom-img {{ transition: transform 0.3s; }}
-        .zoom-img:hover {{ transform: scale(1.1); }}
+        /* Contador de Caracteres */
+        .contador-ok {{ color: #C6FF00 !important; font-weight: bold; font-size: 14px; }}
+        .contador-mal {{ color: #FF5252 !important; font-weight: bold; font-size: 14px; }}
+
         #MainMenu, footer, header {{visibility: hidden;}}
         </style>
         """, unsafe_allow_html=True
@@ -72,195 +72,183 @@ def set_design():
 set_design()
 
 # ==============================================================================
-# 2. MOTOR GRÁFICO (LAS 12 PLANTILLAS)
+# 2. MOTOR GRÁFICO
 # ==============================================================================
 
-# Herramienta auxiliar para sombras en texto
+# Función auxiliar para dibujar texto con sombra
 def dibujar_texto_sombra(draw, texto, x, y, fuente, color="white", sombra="black", offset=(5,5), anchor="mm"):
     draw.text((x+offset[0], y+offset[1]), texto, font=fuente, fill=sombra, anchor=anchor)
     draw.text((x, y), texto, font=fuente, fill=color, anchor=anchor)
 
-# --- PLANTILLA TIPO 1 (YA PROGRAMADA) ---
-def generar_tipo_1(fondo, titulo, desc1, fecha1, hora1, lugar, area):
-    # 1. Base
+# --- CARGADOR DE FUENTES PYTHON (PIL) ---
+def cargar_fuentes():
+    fuentes = {}
+    try:
+        # Tamaños base, luego se pueden escalar o pedir tamaño específico
+        # Ajusta los nombres de archivo si los tienes diferentes (ej: Canaro-Medium.otf vs .ttf)
+        fuentes['Medium'] = ImageFont.truetype("Canaro-Medium.ttf", 100)
+        fuentes['SemiBold'] = ImageFont.truetype("Canaro-SemiBold.ttf", 100)
+        fuentes['Bold'] = ImageFont.truetype("Canaro-Bold.ttf", 100)
+        fuentes['ExtraBold'] = ImageFont.truetype("Canaro-ExtraBold.ttf", 100)
+        fuentes['Black'] = ImageFont.truetype("Canaro-Black.ttf", 100)
+    except:
+        # Fallback por si faltan archivos
+        def_font = ImageFont.load_default()
+        fuentes = {k: def_font for k in ['Medium', 'SemiBold', 'Bold', 'ExtraBold', 'Black']}
+    return fuentes
+
+# --- PLANTILLA TIPO 1 (BASE) ---
+def generar_tipo_1(datos):
+    # Desempaquetar datos
+    fondo = datos['fondo']
+    desc1 = datos['desc1']
+    fecha1 = datos['fecha1']
+    hora1 = datos['hora1']
+    lugar = datos['lugar']
+    logos_colab = datos['logos']
+    
+    # 1. Lienzo Base
     W, H = 2400, 3000
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
-    
-    # 2. Sombra inferior (Oscurecer para leer)
-    overlay = Image.new('RGBA', (W, H), (0,0,0,0))
-    d_over = ImageDraw.Draw(overlay)
-    for y in range(int(H*0.4), H):
-        alpha = int(255 * ((y - H*0.4)/(H*0.6)))
-        d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.8)))
-    img = Image.alpha_composite(img, overlay)
     draw = ImageDraw.Draw(img)
     
-    # 3. Fuentes
-    try:
-        f_tit = ImageFont.truetype("Canaro-Black.ttf", 250)
-        f_desc = ImageFont.truetype("Canaro-Medium.ttf", 110)
-        f_dato = ImageFont.truetype("Canaro-Bold.ttf", 90)
-    except:
-        f_tit = f_desc = f_dato = ImageFont.load_default()
+    # 2. Sombra PNG (Asset externo)
+    if os.path.exists("sombra.png"):
+        sombra_img = Image.open("sombra.png").convert("RGBA")
+        sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
+        img.paste(sombra_img, (0, 0), sombra_img)
+    else:
+        # Fallback si no suben la sombra.png (Sombra manual)
+        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+        d_over = ImageDraw.Draw(overlay)
+        for y in range(int(H*0.4), H):
+            alpha = int(255 * ((y - H*0.4)/(H*0.6)))
+            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.8)))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img) # Reiniciar draw
 
-    # 4. Elementos
-    # Logo Superior
+    # 3. Cargar Fuentes (Tamaños específicos para esta plantilla)
+    try:
+        f_invita = ImageFont.truetype("Canaro-Bold.ttf", 180) # Título siempre Bold
+        f_desc = ImageFont.truetype("Canaro-Medium.ttf", 110)
+        f_dato = ImageFont.truetype("Canaro-SemiBold.ttf", 90)
+    except:
+        f_invita = f_desc = f_dato = ImageFont.load_default()
+
+    # --- ELEMENTOS VISUALES ---
+
+    # A. Logo Prefectura (Arriba Centro)
+    y_cursor = 150 # Posición vertical inicial
     if os.path.exists("logo_superior.png"):
         logo = Image.open("logo_superior.png").convert("RGBA")
         ratio = 1000 / logo.width
-        logo = logo.resize((1000, int(logo.height*ratio)), Image.Resampling.LANCZOS)
-        img.paste(logo, (int((W-1000)/2), 150), logo)
+        h_logo = int(logo.height * ratio)
+        logo = logo.resize((1000, h_logo), Image.Resampling.LANCZOS)
+        img.paste(logo, (int((W-1000)/2), y_cursor), logo)
+        y_cursor += h_logo + 50 # Bajamos el cursor
 
-    # Título
-    dibujar_texto_sombra(draw, titulo, W/2, 900, f_tit)
-
-    # Descripción 1
-    lines = textwrap.wrap(desc1, width=30)
-    y_txt = 1350
-    for line in lines:
-        dibujar_texto_sombra(draw, line, W/2, y_txt, f_desc)
-        y_txt += 130
+    # B. Logos Colaboradores (Si existen)
+    titulo_texto = "INVITA"
+    if logos_colab:
+        titulo_texto = "INVITAN" # Cambia el título
+        # Lógica básica para poner logos colaboradores aquí (la definiremos mejor viendo tu diseño)
+        # Por ahora solo reserva espacio
+        y_cursor += 150 
+    
+    # C. Título (INVITA / INVITAN) - Canaro Bold
+    # Se coloca DEBAJO de los logos
+    w_tit = draw.textlength(titulo_texto, font=f_invita)
+    draw.text(((W - w_tit)/2, y_cursor), titulo_texto, font=f_invita, fill="white")
+    
+    # D. Descripción
+    # Usamos posición fija provisional hasta ver tu diseño
+    y_txt = 1400 
+    if desc1:
+        lines = textwrap.wrap(desc1, width=30)
+        for line in lines:
+            dibujar_texto_sombra(draw, line, W/2, y_txt, f_desc)
+            y_txt += 130
         
-    # Fecha y Hora (Caja Rosa)
+    # E. Fecha y Hora
     meses = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
-    txt_fecha = f"📅 {fecha1.day} de {meses[fecha1.month]}   |   🕒 {hora1.strftime('%H:%M')}"
+    txt_fecha = f"{fecha1.day} de {meses[fecha1.month]}   |   {hora1.strftime('%H:%M')}"
     
     y_info = y_txt + 200
-    bbox = draw.textbbox((0,0), txt_fecha, font=f_dato)
-    w_bx = bbox[2]-bbox[0]
-    draw.rounded_rectangle([(W-w_bx)/2 - 40, y_info-60, (W+w_bx)/2 + 40, y_info+60], radius=30, fill="#D81B60")
-    draw.text((W/2, y_info), txt_fecha, font=f_dato, fill="white", anchor="mm")
+    # Icono calendario/reloj se puede agregar aquí
+    dibujar_texto_sombra(draw, txt_fecha, W/2, y_info, f_dato)
     
-    # Lugar
-    dibujar_texto_sombra(draw, f"📍 {lugar}", W/2, y_info + 200, f_dato)
+    # F. Lugar + Icono
+    y_lugar = y_info + 200
+    if os.path.exists("icono_lugar.png"):
+        icon_lug = Image.open("icono_lugar.png").convert("RGBA")
+        icon_lug = icon_lug.resize((80, 80), Image.Resampling.LANCZOS)
+        # Calcular ancho total para centrar icono + texto
+        w_lug_txt = draw.textlength(lugar, font=f_dato)
+        w_total = 80 + 20 + w_lug_txt # Icono + espacio + texto
+        start_x = (W - w_total) / 2
+        
+        img.paste(icon_lug, (int(start_x), int(y_lugar - 40)), icon_lug)
+        dibujar_texto_sombra(draw, lugar, start_x + 100, y_lugar, f_dato, anchor="lm") # Anchor left-middle
+    else:
+        dibujar_texto_sombra(draw, f"📍 {lugar}", W/2, y_lugar, f_dato)
 
-    # Firma Jota
+    # G. Firma Jota (Abajo Izquierda)
     if os.path.exists("firma_jota.png"):
         firma = Image.open("firma_jota.png").convert("RGBA")
         ratio = 600 / firma.width
-        firma = firma.resize((600, int(firma.height*ratio)), Image.Resampling.LANCZOS)
+        firma = firma.resize((600, int(firma.height * ratio)), Image.Resampling.LANCZOS)
         img.paste(firma, (100, H - firma.height - 100), firma)
 
     return img
 
-# --- RESTO DE PLANTILLAS (PLACEHOLDERS) ---
-# Aquí iremos pegando el código de cada una cuando las diseñemos
-
-def generar_tipo_2(fondo, titulo, desc1, desc2, fecha1, hora1, lugar, area):
-    # Lógica: 2 Párrafos, 1 Fecha, 0 Colab
-    return fondo # Retorna fondo limpio por ahora
-
-def generar_tipo_3(fondo, titulo, desc1, fecha1, fecha2, hora1, hora2, lugar, area):
-    # Lógica: 1 Párrafo, 2 Fechas, 0 Colab
-    return fondo
-
-def generar_tipo_4(fondo, titulo, desc1, desc2, fecha1, fecha2, hora1, hora2, lugar, area):
-    # Lógica: 2 Párrafos, 2 Fechas, 0 Colab
-    return fondo
-
-def generar_tipo_5(fondo, titulo, desc1, fecha1, hora1, lugar, collab1, area):
-    # Lógica: 1 Párrafo, 1 Fecha, 1 Colab
-    return fondo
-
-def generar_tipo_6(fondo, titulo, desc1, desc2, fecha1, hora1, lugar, collab1, area):
-    # Lógica: 2 Párrafos, 1 Fecha, 1 Colab
-    return fondo
-
-def generar_tipo_7(fondo, titulo, desc1, fecha1, fecha2, hora1, hora2, lugar, collab1, area):
-    # Lógica: 1 Párrafo, 2 Fechas, 1 Colab
-    return fondo
-
-def generar_tipo_8(fondo, titulo, desc1, desc2, fecha1, fecha2, hora1, hora2, lugar, collab1, area):
-    # Lógica: 2 Párrafos, 2 Fechas, 1 Colab
-    return fondo
-
-def generar_tipo_9(fondo, titulo, desc1, fecha1, hora1, lugar, collab1, collab2, area):
-    # Lógica: 1 Párrafo, 1 Fecha, 2 Colab
-    return fondo
-
-def generar_tipo_10(fondo, titulo, desc1, desc2, fecha1, hora1, lugar, collab1, collab2, area):
-    # Lógica: 2 Párrafos, 1 Fecha, 2 Colab
-    return fondo
-
-def generar_tipo_11(fondo, titulo, desc1, fecha1, fecha2, hora1, hora2, lugar, collab1, collab2, area):
-    # Lógica: 1 Párrafo, 2 Fechas, 2 Colab
-    return fondo
-
-def generar_tipo_12(fondo, titulo, desc1, desc2, fecha1, fecha2, hora1, hora2, lugar, collab1, collab2, area):
-    # Lógica: 2 Párrafos, 2 Fechas, 2 Colab
-    return fondo
+# --- RESTO DE PLANTILLAS (POR IMPLEMENTAR DETALLES VISUALES) ---
+def generar_tipo_2(datos): return generar_tipo_1(datos) # Placeholder
+def generar_tipo_3(datos): return generar_tipo_1(datos) # Placeholder
+def generar_tipo_4(datos): return generar_tipo_1(datos) # Placeholder
+def generar_tipo_5(datos): return generar_tipo_1(datos) # Placeholder
+def generar_tipo_6(datos): return generar_tipo_1(datos) # Placeholder
+def generar_tipo_7(datos): return generar_tipo_1(datos) # Placeholder
+def generar_tipo_8(datos): return generar_tipo_1(datos) # Placeholder
+def generar_tipo_9(datos): return generar_tipo_1(datos) # Placeholder
+def generar_tipo_10(datos): return generar_tipo_1(datos) # Placeholder
+def generar_tipo_11(datos): return generar_tipo_1(datos) # Placeholder
+def generar_tipo_12(datos): return generar_tipo_1(datos) # Placeholder
 
 
 # ==============================================================================
-# 3. CONTROLADOR MAESTRO (EL CEREBRO QUE ELIGE)
+# 3. CONTROLADOR MAESTRO
 # ==============================================================================
 def generar_flyer_automatico(datos):
-    """
-    Analiza los datos y decide cuál de las 12 funciones llamar.
-    """
-    # 1. Analizar Variables
+    """ Elige la plantilla correcta (1 al 12) según los datos """
     tiene_desc2 = bool(datos['desc2'])
     tiene_fecha2 = bool(datos['fecha2'])
     num_colabs = len(datos['logos']) if datos['logos'] else 0
     
-    fondo = datos['fondo'] # Ya viene en 2400x3000
-    tit = "TE INVITA" # O datos['desc1'] si lo usas de titulo
-    
-    # 2. ÁRBOL DE DECISIÓN (MATRIX DE 12 TIPOS)
-    
-    # --- GRUPO: SIN COLABORADORES ---
+    # ÁRBOL DE DECISIÓN
     if num_colabs == 0:
-        if not tiene_desc2 and not tiene_fecha2:
-            return generar_tipo_1(fondo, tit, datos['desc1'], datos['fecha1'], datos['hora1'], datos['lugar'], datos['area'])
-        
-        elif tiene_desc2 and not tiene_fecha2:
-            return generar_tipo_2(fondo, tit, datos['desc1'], datos['desc2'], datos['fecha1'], datos['hora1'], datos['lugar'], datos['area'])
-            
-        elif not tiene_desc2 and tiene_fecha2:
-            return generar_tipo_3(fondo, tit, datos['desc1'], datos['fecha1'], datos['fecha2'], datos['hora1'], datos['hora2'], datos['lugar'], datos['area'])
-            
-        elif tiene_desc2 and tiene_fecha2:
-            return generar_tipo_4(fondo, tit, datos['desc1'], datos['desc2'], datos['fecha1'], datos['fecha2'], datos['hora1'], datos['hora2'], datos['lugar'], datos['area'])
+        if not tiene_desc2 and not tiene_fecha2: return generar_tipo_1(datos)
+        elif tiene_desc2 and not tiene_fecha2: return generar_tipo_2(datos)
+        elif not tiene_desc2 and tiene_fecha2: return generar_tipo_3(datos)
+        elif tiene_desc2 and tiene_fecha2: return generar_tipo_4(datos)
 
-    # --- GRUPO: 1 COLABORADOR ---
     elif num_colabs == 1:
-        c1 = datos['logos'][0]
-        if not tiene_desc2 and not tiene_fecha2:
-            return generar_tipo_5(fondo, tit, datos['desc1'], datos['fecha1'], datos['hora1'], datos['lugar'], c1, datos['area'])
-            
-        elif tiene_desc2 and not tiene_fecha2:
-            return generar_tipo_6(fondo, tit, datos['desc1'], datos['desc2'], datos['fecha1'], datos['hora1'], datos['lugar'], c1, datos['area'])
-            
-        elif not tiene_desc2 and tiene_fecha2:
-            return generar_tipo_7(fondo, tit, datos['desc1'], datos['fecha1'], datos['fecha2'], datos['hora1'], datos['hora2'], datos['lugar'], c1, datos['area'])
-            
-        elif tiene_desc2 and tiene_fecha2:
-            return generar_tipo_8(fondo, tit, datos['desc1'], datos['desc2'], datos['fecha1'], datos['fecha2'], datos['hora1'], datos['hora2'], datos['lugar'], c1, datos['area'])
+        if not tiene_desc2 and not tiene_fecha2: return generar_tipo_5(datos)
+        elif tiene_desc2 and not tiene_fecha2: return generar_tipo_6(datos)
+        elif not tiene_desc2 and tiene_fecha2: return generar_tipo_7(datos)
+        elif tiene_desc2 and tiene_fecha2: return generar_tipo_8(datos)
 
-    # --- GRUPO: 2 COLABORADORES ---
     elif num_colabs >= 2:
-        c1 = datos['logos'][0]
-        c2 = datos['logos'][1]
-        if not tiene_desc2 and not tiene_fecha2:
-            return generar_tipo_9(fondo, tit, datos['desc1'], datos['fecha1'], datos['hora1'], datos['lugar'], c1, c2, datos['area'])
-            
-        elif tiene_desc2 and not tiene_fecha2:
-            return generar_tipo_10(fondo, tit, datos['desc1'], datos['desc2'], datos['fecha1'], datos['hora1'], datos['lugar'], c1, c2, datos['area'])
-            
-        elif not tiene_desc2 and tiene_fecha2:
-            return generar_tipo_11(fondo, tit, datos['desc1'], datos['fecha1'], datos['fecha2'], datos['hora1'], datos['hora2'], datos['lugar'], c1, c2, datos['area'])
-            
-        elif tiene_desc2 and tiene_fecha2:
-            return generar_tipo_12(fondo, tit, datos['desc1'], datos['desc2'], datos['fecha1'], datos['fecha2'], datos['hora1'], datos['hora2'], datos['lugar'], c1, c2, datos['area'])
+        if not tiene_desc2 and not tiene_fecha2: return generar_tipo_9(datos)
+        elif tiene_desc2 and not tiene_fecha2: return generar_tipo_10(datos)
+        elif not tiene_desc2 and tiene_fecha2: return generar_tipo_11(datos)
+        elif tiene_desc2 and tiene_fecha2: return generar_tipo_12(datos)
 
-    return fondo # Fallback
-
+    return datos['fondo'] # Fallback
 
 # ==============================================================================
-# 4. INTERFAZ DE USUARIO (NAVEGACIÓN)
+# 4. INTERFAZ DE USUARIO
 # ==============================================================================
 
-# Logos superiores
 if os.path.exists("logo_superior.png"):
     c1, c2, c3 = st.columns([1, 2, 1])
     with c2: st.image("logo_superior.png", use_container_width=True)
@@ -305,12 +293,21 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=200)
 
     with col_der:
+        # --- DESCRIPCIÓN 1 (NO OBLIGATORIA) ---
         st.markdown('<div class="label-negro">DESCRIPCIÓN</div>', unsafe_allow_html=True)
-        st.text_area("lbl_desc", key="lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150)
+        desc1 = st.text_area("lbl_desc", key="lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150)
         
+        # --- DESCRIPCIÓN 2 (OPCIONAL) ---
         st.markdown('<div class="label-negro">DESCRIPCIÓN 2 <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
-        st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="Información extra...", height=100)
+        desc2 = st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="Información extra...", height=100)
         
+        # --- VALIDACIÓN DE CARACTERES EN TIEMPO REAL ---
+        total_chars = len(desc1) + len(desc2)
+        if total_chars <= 150:
+            st.markdown(f'<div class="contador-ok">Caracteres: {total_chars} / 150 ✅</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="contador-mal">Caracteres: {total_chars} / 150 ❌ (Te pasaste por {total_chars - 150})</div>', unsafe_allow_html=True)
+
         c_f1, c_f2 = st.columns(2)
         with c_f1:
             st.markdown('<div class="label-negro">FECHA INICIO</div>', unsafe_allow_html=True)
@@ -334,24 +331,33 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         archivo_subido = st.file_uploader("lbl_img", type=['jpg', 'png', 'jpeg'], label_visibility="collapsed")
         
         if archivo_subido:
-            st.info("✂️ Ajusta el recuadro rojo para que encaje en el flyer.")
+            st.info("✂️ Ajusta el recuadro rojo. Se convertirá a HD automáticamente.")
             img_orig = Image.open(archivo_subido)
             img_crop = st_cropper(img_orig, realtime_update=True, box_color='#FF0000', aspect_ratio=(4, 5))
-            # FORZAR HD
-            img_hd = img_crop.resize((2400, 3000), Image.Resampling.LANCZOS)
-            st.session_state['imagen_lista_para_flyer'] = img_hd
+            st.session_state['imagen_lista_para_flyer'] = img_crop.resize((2400, 3000), Image.Resampling.LANCZOS)
             st.write("✅ Imagen lista.")
 
         st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(MÁX 2)</span></div>', unsafe_allow_html=True)
         st.file_uploader("lbl_logos", key="lbl_logos", accept_multiple_files=True, label_visibility="collapsed")
         
         st.write("")
+        
+        # --- BOTÓN GENERAR CON VALIDACIONES ACTUALIZADAS ---
         if st.button("✨ GENERAR FLYER ✨", type="primary", use_container_width=True):
             errores = []
-            if not st.session_state.lbl_desc: errores.append("Falta la Descripción")
-            if not st.session_state.lbl_fecha1: errores.append("Falta la Fecha de Inicio")
-            if 'imagen_lista_para_flyer' not in st.session_state: errores.append("Falta recortar la Imagen")
             
+            # Validación 1: Caracteres máximos 150 (Suma de las dos)
+            if (len(st.session_state.lbl_desc) + len(st.session_state.lbl_desc2)) > 150:
+                errores.append("Texto demasiado largo (Máx 150 caracteres entre ambas descripciones)")
+            
+            # Validación 2: Fecha Obligatoria
+            if not st.session_state.lbl_fecha1: 
+                errores.append("Falta la Fecha de Inicio")
+            
+            # Validación 3: Imagen Obligatoria
+            if 'imagen_lista_para_flyer' not in st.session_state: 
+                errores.append("Falta recortar la Imagen de Fondo")
+                
             if errores:
                 st.error(f"⚠️ {', '.join(errores)}")
             else:
@@ -372,11 +378,10 @@ elif area_seleccionada == "Final":
         if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
 
     with col_flyer:
-        # AQUÍ OCURRE LA MAGIA AUTOMÁTICA
         if 'imagen_lista_para_flyer' in st.session_state:
             
-            # 1. Empaquetar datos para el Cerebro
-            paquete_datos = {
+            # Empaquetamos todo en un diccionario para pasarlo al Generador
+            paquete = {
                 'fondo': st.session_state.imagen_lista_para_flyer,
                 'desc1': st.session_state.lbl_desc,
                 'desc2': st.session_state.lbl_desc2,
@@ -389,17 +394,16 @@ elif area_seleccionada == "Final":
                 'area': area_seleccionada
             }
             
-            # 2. El Cerebro elige el Tipo (1 al 12) y lo genera
-            flyer_final = generar_flyer_automatico(paquete_datos)
+            # ¡GENERAR!
+            flyer_final = generar_flyer_automatico(paquete)
             
-            # 3. Mostrar y preparar descarga
             st.image(flyer_final, caption="Diseño Generado", use_container_width=True)
             
             buf = io.BytesIO()
             flyer_final.save(buf, format="PNG")
             byte_im = buf.getvalue()
         else:
-            st.error("Error: Datos perdidos. Vuelve al inicio.")
+            st.error("Datos perdidos. Vuelve al inicio.")
 
     with col_descarga:
         st.markdown("<h3 style='text-align: center; font-size: 20px;'>OTRAS OPCIONES</h3>", unsafe_allow_html=True)

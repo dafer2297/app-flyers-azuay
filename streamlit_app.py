@@ -29,7 +29,7 @@ def set_design():
             background-attachment: fixed;
         """
 
-    # Carga de Fuentes CSS
+    # Carga de Fuente para la Interfaz Web (Solo Black)
     font_css = ""
     if os.path.exists("Canaro-Black.ttf"):
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
@@ -86,13 +86,13 @@ def generar_tipo_1(datos):
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 1. SOMBRA PNG (Asset específico para el flyer)
+    # 1. SOMBRA PNG
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA")
         sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
-        # Fallback manual si no subes la sombra
+        # Fallback manual
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.4), H):
@@ -101,15 +101,18 @@ def generar_tipo_1(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img) 
 
-    # Cargar Fuentes
+    # --- CARGA DE LAS 5 FUENTES CANARO (AHORA SÍ TODAS) ---
     try:
-        f_invita = ImageFont.truetype("Canaro-Bold.ttf", 180) 
-        f_desc = ImageFont.truetype("Canaro-Medium.ttf", 110)
-        f_dato = ImageFont.truetype("Canaro-SemiBold.ttf", 90)
+        f_black = ImageFont.truetype("Canaro-Black.ttf", 180)      
+        f_extrabold = ImageFont.truetype("Canaro-ExtraBold.ttf", 180) 
+        f_bold = ImageFont.truetype("Canaro-Bold.ttf", 180)        
+        f_semibold = ImageFont.truetype("Canaro-SemiBold.ttf", 90) # ¡Agregada!
+        f_medium = ImageFont.truetype("Canaro-Medium.ttf", 110)    
     except:
-        f_invita = f_desc = f_dato = ImageFont.load_default()
+        # Si falla alguna, usamos default
+        f_black = f_extrabold = f_bold = f_semibold = f_medium = ImageFont.load_default()
 
-    # A. LOGO PREFECTURA (Asset específico para el flyer)
+    # A. LOGO PREFECTURA (Asset Flyer)
     y_cursor = 150 
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
@@ -119,50 +122,47 @@ def generar_tipo_1(datos):
         img.paste(logo, (int((W-1000)/2), y_cursor), logo)
         y_cursor += h_logo + 50 
 
-    # B. Logos Colaboradores (Placeholder lógica)
+    # B. LOGOS COLABORADORES
     titulo_texto = "INVITA"
     if logos_colab:
         titulo_texto = "INVITAN"
         y_cursor += 150 
     
-    # C. Título
-    w_tit = draw.textlength(titulo_texto, font=f_invita)
-    draw.text(((W - w_tit)/2, y_cursor), titulo_texto, font=f_invita, fill="white")
+    # C. TÍTULO (Usamos Bold)
+    w_tit = draw.textlength(titulo_texto, font=f_bold)
+    draw.text(((W - w_tit)/2, y_cursor), titulo_texto, font=f_bold, fill="white")
     
-    # D. Descripción
+    # D. DESCRIPCIÓN (Usamos Medium)
     y_txt = 1400 
     if desc1:
         lines = textwrap.wrap(desc1, width=30)
         for line in lines:
-            dibujar_texto_sombra(draw, line, W/2, y_txt, f_desc)
+            dibujar_texto_sombra(draw, line, W/2, y_txt, f_medium)
             y_txt += 130
         
-    # E. Fecha y Hora
+    # E. FECHA Y HORA (Usamos SemiBold ahora que ya está)
     meses = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
     txt_fecha = f"{fecha1.day} de {meses[fecha1.month]}   |   {hora1.strftime('%H:%M')}"
     
     y_info = y_txt + 200
-    dibujar_texto_sombra(draw, txt_fecha, W/2, y_info, f_dato)
+    dibujar_texto_sombra(draw, txt_fecha, W/2, y_info, f_semibold)
     
-    # F. Lugar + Icono (Asset específico para el flyer)
+    # F. LUGAR + ICONO (Usamos SemiBold)
     y_lugar = y_info + 200
     if os.path.exists("flyer_icono_lugar.png"):
         icon_lug = Image.open("flyer_icono_lugar.png").convert("RGBA")
         icon_lug = icon_lug.resize((80, 80), Image.Resampling.LANCZOS)
         
-        # Calcular centro
-        w_lug_txt = draw.textlength(lugar, font=f_dato)
-        w_total = 80 + 20 + w_lug_txt # Icono + espacio + texto
+        w_lug_txt = draw.textlength(lugar, font=f_semibold)
+        w_total = 80 + 20 + w_lug_txt
         start_x = (W - w_total) / 2
         
-        # Dibujar icono y texto alineados
         img.paste(icon_lug, (int(start_x), int(y_lugar - 30)), icon_lug)
-        dibujar_texto_sombra(draw, lugar, start_x + 100, y_lugar, f_dato, anchor="lm")
+        dibujar_texto_sombra(draw, lugar, start_x + 100, y_lugar, f_semibold, anchor="lm")
     else:
-        # Si no está el icono, solo texto
-        dibujar_texto_sombra(draw, f"📍 {lugar}", W/2, y_lugar, f_dato)
+        dibujar_texto_sombra(draw, f"📍 {lugar}", W/2, y_lugar, f_semibold)
 
-    # G. Firma Jota (Asset específico para el flyer)
+    # G. FIRMA JOTA (Asset Flyer)
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
         ratio = 600 / firma.width
@@ -264,7 +264,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         st.markdown('<div class="label-negro">DESCRIPCIÓN 2 <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         desc2 = st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="Información extra...", height=100)
         
-        # Contador Caracteres Descripciones
+        # Contador
         total_chars = len(desc1) + len(desc2)
         if total_chars <= 150:
             st.markdown(f'<div class="contador-ok">Caracteres: {total_chars} / 150 ✅</div>', unsafe_allow_html=True)
@@ -290,7 +290,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         st.markdown('<div class="label-negro">DIRECCIÓN</div>', unsafe_allow_html=True)
         dir_texto = st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento")
         
-        # --- VALIDACIÓN DIRECCIÓN (75 CARACTERES) ---
+        # Validación Dirección
         len_dir = len(dir_texto)
         if len_dir <= 75:
             st.markdown(f'<div class="contador-ok" style="font-size:12px;">Dirección: {len_dir} / 75</div>', unsafe_allow_html=True)
@@ -315,7 +315,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         if st.button("✨ GENERAR FLYER ✨", type="primary", use_container_width=True):
             errores = []
             
-            # Validaciones
             if (len(st.session_state.lbl_desc) + len(st.session_state.lbl_desc2)) > 150:
                 errores.append("Texto demasiado largo en descripción (Máx 150)")
             
@@ -331,6 +330,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             if errores:
                 st.error(f"⚠️ {', '.join(errores)}")
             else:
+                # --- SOLUCIÓN: GUARDAR DATOS ANTES DE CAMBIAR DE PÁGINA ---
                 st.session_state['datos_finales'] = {
                     'fondo': st.session_state.imagen_lista_para_flyer,
                     'desc1': st.session_state.lbl_desc,
@@ -360,6 +360,7 @@ elif area_seleccionada == "Final":
         if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
 
     with col_flyer:
+        # --- AQUÍ RECUPERAMOS LOS DATOS DE LA "CAJA FUERTE" ---
         if 'datos_finales' in st.session_state:
             paquete = st.session_state['datos_finales']
             
@@ -370,7 +371,7 @@ elif area_seleccionada == "Final":
             flyer_final.save(buf, format="PNG")
             byte_im = buf.getvalue()
         else:
-            st.warning("⚠️ No hay datos para mostrar. Vuelve al inicio.")
+            st.warning("⚠️ No hay datos. Vuelve al inicio.")
             if st.button("Volver al Inicio"):
                 st.query_params.clear()
                 st.rerun()
@@ -390,6 +391,7 @@ elif area_seleccionada == "Final":
     st.write("---")
     if st.button("🔄 CREAR NUEVO"):
         st.query_params.clear()
+        # Borrar datos viejos
         keys_borrar = ['imagen_lista_para_flyer', 'datos_finales', 'lbl_desc', 'lbl_desc2']
         for k in keys_borrar:
             if k in st.session_state: del st.session_state[k]

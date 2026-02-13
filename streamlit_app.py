@@ -115,7 +115,7 @@ def generar_tipo_1(datos):
     # --- CARGA DE FUENTES (TAMAÑOS MASIVOS) ---
     try:
         # TÍTULOS
-        f_invita = ImageFont.truetype("Canaro-Bold.ttf", 350) # AUMENTADO
+        f_invita = ImageFont.truetype("Canaro-Bold.ttf", 700) # AUMENTADO
         
         # CAJA DE FECHA
         f_dia_box = ImageFont.truetype("Canaro-Black.ttf", 320) # AUMENTADO

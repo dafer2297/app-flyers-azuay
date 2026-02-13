@@ -4,7 +4,7 @@ import os
 import datetime
 import io
 import textwrap
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 from streamlit_cropper import st_cropper
 
 # ==============================================================================
@@ -58,34 +58,16 @@ def set_design():
 set_design()
 
 # ==============================================================================
-# 2. MOTOR GRÁFICO (LÓGICA MEJORADA)
+# 2. MOTOR GRÁFICO (LÓGICA SIMPLIFICADA)
 # ==============================================================================
 
-# --- FUNCIÓN SOMBRA SUPER INTENSA ---
-def dibujar_texto_super_sombra(base_img, draw_base, texto, x, y, fuente, color="white", sombra_color="black", offset=(10,10), anchor="mm"):
-    """
-    Dibuja el texto con una sombra SÓLIDA Y OSCURA.
-    """
-    W, H = base_img.size
-    
-    # 1. Capa para la sombra
-    sombra_layer = Image.new('RGBA', (W, H), (0,0,0,0))
-    draw_sombra = ImageDraw.Draw(sombra_layer)
-    
-    # 2. Dibujar texto NEGRO (Sombra)
-    # Dibujamos varias veces para "engrosar" la sombra y que sea bien negra
-    draw_sombra.text((x+offset[0], y+offset[1]), texto, font=fuente, fill="black", anchor=anchor)
-    
-    # 3. Desenfoque suave (Radio menor para que no se disperse tanto)
-    # Antes usábamos 25 o 30, ahora usamos 10 para que sea más definida
-    sombra_blur = sombra_layer.filter(ImageFilter.GaussianBlur(radius=10))
-    
-    # 4. Pegar la sombra 2 VECES para que sea más oscura (Multiplicar intensidad)
-    base_img.paste(sombra_blur, (0,0), sombra_blur)
-    base_img.paste(sombra_blur, (0,0), sombra_blur) 
-    
-    # 5. Texto Blanco encima
-    draw_base.text((x, y), texto, font=fuente, fill=color, anchor=anchor)
+# --- FUNCIÓN DE SOMBRA SIMPLE Y NÍTIDA ---
+# Solo para el texto. Crea una copia negra movida unos pixeles.
+def dibujar_texto_sombra_simple(draw, texto, x, y, fuente, color="white", sombra="black", offset=(6,6), anchor="mm"):
+    # 1. Dibujar sombra (atrás)
+    draw.text((x+offset[0], y+offset[1]), texto, font=fuente, fill=sombra, anchor=anchor)
+    # 2. Dibujar texto principal (adelante)
+    draw.text((x, y), texto, font=fuente, fill=color, anchor=anchor)
 
 def obtener_mes_abbr(numero_mes):
     meses = {1: "ENE", 2: "FEB", 3: "MAR", 4: "ABR", 5: "MAY", 6: "JUN", 7: "JUL", 8: "AGO", 9: "SEP", 10: "OCT", 11: "NOV", 12: "DIC"}
@@ -117,7 +99,7 @@ def generar_tipo_1(datos):
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 1. SOMBRA SUPERPUESTA (PNG)
+    # 1. SOMBRA SUPERPUESTA (PNG del fondo)
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA")
         sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
@@ -145,15 +127,17 @@ def generar_tipo_1(datos):
         f_invita = f_dia_box = f_mes_box = f_info_fecha = f_lugar = ImageFont.load_default()
         font_desc_path = None
 
-    # --- A. LOGOS HEADER ---
+    # --- A. LOGOS HEADER (SIN SOMBRA) ---
     y_logos = 150
     margin_logos = 120
     
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
+        # Se usa LANCZOS para la mejor calidad posible al redimensionar
         ratio = 850 / logo.width
         h_logo = int(logo.height * ratio)
         logo = logo.resize((850, h_logo), Image.Resampling.LANCZOS)
+        # Se pega directamente, sin efectos
         img.paste(logo, (margin_logos, y_logos), logo)
     
     if os.path.exists("flyer_firma.png"):
@@ -163,15 +147,16 @@ def generar_tipo_1(datos):
         firma = firma.resize((650, h_firma), Image.Resampling.LANCZOS)
         img.paste(firma, (W - 650 - margin_logos, y_logos + 20), firma)
 
-    # --- B. TÍTULO (Sombra Intensa) ---
+    # --- B. TÍTULO (CON SOMBRA SIMPLE) ---
     titulo_texto = "INVITA"
     if logos_colab:
         titulo_texto = "INVITAN"
     
     y_titulo = 750
-    dibujar_texto_super_sombra(img, draw, titulo_texto, W/2, y_titulo, f_invita, offset=(15,15))
+    # Usamos la nueva función simple. Offset (8,8) es una sombra pequeña y nítida.
+    dibujar_texto_sombra_simple(draw, titulo_texto, W/2, y_titulo, f_invita, offset=(8,8))
     
-    # --- C. DESCRIPCIÓN (Sombra Intensa) ---
+    # --- C. DESCRIPCIÓN (CON SOMBRA SIMPLE) ---
     y_desc = y_titulo + 220
     size_desc = 150
     
@@ -189,10 +174,10 @@ def generar_tipo_1(datos):
         lines = textwrap.wrap(desc1, width=30)
     
     for line in lines:
-        dibujar_texto_super_sombra(img, draw, line, W/2, y_desc, f_desc, offset=(10,10))
+        dibujar_texto_sombra_simple(draw, line, W/2, y_desc, f_desc, offset=(6,6))
         y_desc += int(size_desc * 1.3)
 
-    # --- D. CAJA DE FECHA ---
+    # --- D. CAJA DE FECHA (SIN SOMBRA EN LA CAJA) ---
     x_box = 200
     y_box = 2100 
     
@@ -205,6 +190,7 @@ def generar_tipo_1(datos):
         if os.path.exists("flyer_caja_fecha_larga.png"):
             caja = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
             caja = caja.resize((1000, 550), Image.Resampling.LANCZOS)
+            # Se pega directamente
             img.paste(caja, (x_box, y_box), caja)
             color_fecha = "white"
         else:
@@ -220,6 +206,7 @@ def generar_tipo_1(datos):
         txt_nums = f"{dia1} - {dia2}"
         txt_mes = mes1 if mes1 == mes2 else f"{mes1} - {mes2}"
         
+        # Texto dentro de la caja: SIN SOMBRA (plano)
         draw.text((cx, cy - 60), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
         
         f_mes_uso = f_mes_box
@@ -229,8 +216,9 @@ def generar_tipo_1(datos):
         
         draw.text((cx, cy + 120), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
         
+        # Info debajo de la caja: CON SOMBRA SIMPLE
         y_info = y_box + 550 + 60
-        dibujar_texto_super_sombra(img, draw, str_hora, cx, y_info, f_info_fecha, offset=(8,8))
+        dibujar_texto_sombra_simple(draw, str_hora, cx, y_info, f_info_fecha, offset=(5,5))
             
     # 1 FECHA
     else:
@@ -249,36 +237,39 @@ def generar_tipo_1(datos):
         dia_num = str(fecha1.day)
         mes_txt = obtener_mes_abbr(fecha1.month)
         
+        # Texto dentro de la caja: SIN SOMBRA
         draw.text((cx, cy - 60), dia_num, font=f_dia_box, fill=color_fecha, anchor="mm")
         draw.text((cx, cy + 120), mes_txt, font=f_mes_box, fill=color_fecha, anchor="mm")
         
         dia_sem = obtener_dia_semana(fecha1)
         y_info = y_box + 550 + 60
         
-        # Info con sombra intensa
-        dibujar_texto_super_sombra(img, draw, dia_sem, cx, y_info, f_info_fecha, offset=(8,8))
-        dibujar_texto_super_sombra(img, draw, str_hora, cx, y_info + 130, f_info_fecha, offset=(8,8))
+        # Info debajo de la caja: CON SOMBRA SIMPLE
+        dibujar_texto_sombra_simple(draw, dia_sem, cx, y_info, f_info_fecha, offset=(5,5))
+        dibujar_texto_sombra_simple(draw, str_hora, cx, y_info + 130, f_info_fecha, offset=(5,5))
 
-    # --- E. UBICACIÓN (CORREGIDO PROPORCIÓN) ---
+    # --- E. UBICACIÓN (SIN SOMBRA EN ICONO) ---
     x_loc = 1400 
     y_loc = 2250 
     
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA")
-        # Redimensión proporcional
         nuevo_ancho = 150
         ratio = nuevo_ancho / icon.width
         nuevo_alto = int(icon.height * ratio)
         icon = icon.resize((nuevo_ancho, nuevo_alto), Image.Resampling.LANCZOS)
         y_loc_ajustado = y_loc - int(nuevo_alto / 4)
+        # Se pega directamente
         img.paste(icon, (x_loc, y_loc_ajustado), icon)
     else:
-        dibujar_texto_super_sombra(img, draw, "📍", x_loc, y_loc, f_lugar, anchor="mm")
+        # Fallback: emoji con sombra simple
+        dibujar_texto_sombra_simple(draw, "📍", x_loc, y_loc, f_lugar, anchor="mm")
 
     lines_loc = textwrap.wrap(lugar, width=22)
     y_loc_txt = y_loc + 30
     for l in lines_loc:
-        dibujar_texto_super_sombra(img, draw, l, x_loc + 180, y_loc_txt, f_lugar, anchor="lm", offset=(8,8))
+        # Texto de dirección: CON SOMBRA SIMPLE
+        dibujar_texto_sombra_simple(draw, l, x_loc + 180, y_loc_txt, f_lugar, anchor="lm", offset=(5,5))
         y_loc_txt += 110
 
     return img

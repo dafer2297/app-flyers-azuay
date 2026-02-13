@@ -244,19 +244,33 @@ def generar_tipo_1(datos):
         dia_sem = obtener_dia_semana(fecha1)
         y_info = y_box + 550 + 60
         dibujar_texto_sombra(draw, dia_sem, cx, y_info, f_info_fecha, anchor="mm")
-        dibujar_texto_sombra(draw, str_hora, cx, y_info + 130, f_info_fecha, anchor="mm")
-
-    # --- E. UBICACIÓN ---
+        dibujar_texto_sombra(draw, str_hora, cx, y_info + 130, f_info_fecha, anchor="  
+        # --- E. UBICACIÓN (CORREGIDO) ---
     x_loc = 1400 
     y_loc = 2250 
     
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA")
-        icon = icon.resize((150, 150), Image.Resampling.LANCZOS)
-        img.paste(icon, (x_loc, y_loc), icon)
-    else:
-        dibujar_texto_sombra(draw, "📍", x_loc, y_loc, f_lugar, anchor="mm")
+        
+        # --- CÓDIGO NUEVO PARA MANTENER PROPORCIÓN ---
+        # Definimos el ancho deseado (ej: 150 pixeles)
+        nuevo_ancho = 150
+        # Calculamos el alto proporcional automáticamente
+        ratio = nuevo_ancho / icon.width
+        nuevo_alto = int(icon.height * ratio)
+        # Redimensionamos usando las medidas proporcionales
+        icon = icon.resize((nuevo_ancho, nuevo_alto), Image.Resampling.LANCZOS)
+        # ---------------------------------------------
 
+        # Ajustamos un poquito la posición Y para centrarlo mejor si cambió la altura
+        y_loc_ajustado = y_loc - int(nuevo_alto / 4)
+
+        img.paste(icon, (x_loc, y_loc_ajustado), icon)
+    else:
+        # Fallback si no hay imagen, usamos un emoji
+        dibujar_texto_sombra(draw, "📍", x_loc + 75, y_loc, f_lugar, anchor="mm")
+
+    # El texto de la dirección sigue igual...
     lines_loc = textwrap.wrap(lugar, width=22)
     y_loc_txt = y_loc + 30
     for l in lines_loc:

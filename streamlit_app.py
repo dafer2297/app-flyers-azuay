@@ -160,7 +160,7 @@ def generar_tipo_1(datos):
     
     # --- C. DESCRIPCIÓN ---
     y_desc = y_titulo + 220
-    size_desc = 120
+    size_desc = 150
     
     try:
         f_desc = ImageFont.truetype(ruta_abs("Canaro-SemiBold.ttf"), size_desc)

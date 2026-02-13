@@ -7,6 +7,20 @@ import textwrap
 from PIL import Image, ImageDraw, ImageFont
 from streamlit_cropper import st_cropper
 
+# --- BLOQUE DE DIAGNÓSTICO ---
+import os
+st.write("📂 ARCHIVOS ENCONTRADOS EN EL SISTEMA:")
+archivos = os.listdir('.')
+st.write(archivos) # Muestra la lista en pantalla
+
+# Prueba específica de la fuente
+if "Canaro-Bold.ttf" in archivos:
+    st.success("✅ Canaro-Bold.ttf EXISTE y el nombre es correcto.")
+else:
+    st.error("❌ NO ENCUENTRO 'Canaro-Bold.ttf'. Revisa mayúsculas o si está en otra carpeta.")
+# -----------------------------
+
+
 # ==============================================================================
 # 1. CONFIGURACIÓN INICIAL
 # ==============================================================================

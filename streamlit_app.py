@@ -104,6 +104,7 @@ def generar_tipo_1(datos):
             sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
+        # Fallback
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.3), H):
@@ -125,25 +126,28 @@ def generar_tipo_1(datos):
         f_invita = f_dia_box = f_mes_box = f_info_fecha = f_lugar = ImageFont.load_default()
         font_desc_path = None
 
-    # --- A. LOGOS HEADER (MODO RAW - SIN REDIMENSIÓN) ---
+    # --- A. LOGOS HEADER (ESTRATEGIA DE APILADO) ---
     y_logos = 150
     margin_logos = 120
     
-    # LOGO PREFECTURA - TAL CUAL VIENE DEL ARCHIVO
+    # >>>>>> LOGO PREFECTURA (APILADO 3 VECES) <<<<<<
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
-        # ⚠️ NO HACEMOS RESIZE. Se pega al 100% de su tamaño original.
-        img.paste(logo, (margin_logos, y_logos), logo)
+        
+        # Pegamos el mismo logo 3 veces en el mismo lugar.
+        # Esto satura el color si el PNG tiene transparencias débiles.
+        for _ in range(3):
+            img.paste(logo, (margin_logos, y_logos), logo)
+    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     
-    # LOGO JOTA - TAL CUAL VIENE DEL ARCHIVO (Opcional, si quieres ver este también raw)
+    # LOGO JOTA (Se mantiene igual, una sola vez)
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
-        # Para evitar que se superponga si es gigante, este lo dejamos con lógica segura básica,
-        # o lo pegamos raw también si prefieres. Lo dejaré con resize suave para no romper el layout derecho.
-        if firma.width > 650:
-             ratio_f = 650 / firma.width
+        target_w_f = 650
+        if firma.width > target_w_f:
+             ratio_f = target_w_f / firma.width
              h_firma = int(firma.height * ratio_f)
-             firma = firma.resize((650, h_firma), Image.Resampling.LANCZOS)
+             firma = firma.resize((target_w_f, h_firma), Image.Resampling.LANCZOS)
         img.paste(firma, (W - firma.width - margin_logos, y_logos + 20), firma)
 
     # --- B. TÍTULO ---
@@ -354,7 +358,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         if archivo_subido:
             img_orig = Image.open(archivo_subido)
             st.info("Ajusta el recorte. Recuerda usar imágenes de buena calidad.")
-            # RECORTADOR ESTÁNDAR (Sin cálculos automáticos que dan error)
             img_crop = st_cropper(
                 img_orig, 
                 realtime_update=True, 

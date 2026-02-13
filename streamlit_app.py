@@ -117,7 +117,7 @@ def generar_tipo_1(datos):
     # --- CARGA DE FUENTES (RUTAS ABSOLUTAS) ---
     try:
         # TÍTULOS
-        f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 320)
+        f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 600)
         
         # CAJA DE FECHA
         f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 300) 

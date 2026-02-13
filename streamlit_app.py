@@ -104,7 +104,6 @@ def generar_tipo_1(datos):
             sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
-        # Fallback
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.3), H):
@@ -126,26 +125,32 @@ def generar_tipo_1(datos):
         f_invita = f_dia_box = f_mes_box = f_info_fecha = f_lugar = ImageFont.load_default()
         font_desc_path = None
 
-    # --- A. LOGOS HEADER (Estándar LANCZOS) ---
+    # --- A. LOGOS HEADER (PRUEBA RAW - SIN REDIMENSIÓN) ---
     y_logos = 150
     margin_logos = 120
     
-    # LOGO PREFECTURA
+    # >>>>>> LOGO PREFECTURA (MODO DIAGNÓSTICO) <<<<<<
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
-        # Forzamos redimensionado de alta calidad al tamaño exacto
-        ratio = 850 / logo.width
-        h_logo = int(logo.height * ratio)
-        logo = logo.resize((850, h_logo), Image.Resampling.LANCZOS)
+        
+        # ⚠️ IMPORTANTE: Aquí eliminamos cualquier redimensionado (resize).
+        # Lo pegamos tal cual viene del archivo original.
+        # Si el archivo es HD, saldrá GIGANTE. Si es malo, saldrá pequeño/pixelado.
+        
         img.paste(logo, (margin_logos, y_logos), logo)
+    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     
-    # LOGO JOTA
+    # LOGO JOTA (Mantenemos la lógica segura por ahora)
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
-        ratio_f = 650 / firma.width
-        h_firma = int(firma.height * ratio_f)
-        firma = firma.resize((650, h_firma), Image.Resampling.LANCZOS)
-        img.paste(firma, (W - 650 - margin_logos, y_logos + 20), firma)
+        target_w_f = 650
+        # Este sí lo ajustamos para que no rompa el diseño por ahora
+        if firma.width > target_w_f:
+            ratio_f = target_w_f / firma.width
+            h_firma = int(firma.height * ratio_f)
+            firma = firma.resize((target_w_f, h_firma), Image.Resampling.LANCZOS)
+            
+        img.paste(firma, (W - firma.width - margin_logos, y_logos + 20), firma)
 
     # --- B. TÍTULO ---
     titulo_texto = "INVITA"
@@ -355,13 +360,13 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         if archivo_subido:
             img_orig = Image.open(archivo_subido)
             st.info("Ajusta el recorte. Recuerda usar imágenes de buena calidad.")
-            # VOLVEMOS A LA CONFIGURACIÓN ORIGINAL ESTABLE
+            # CONFIGURACIÓN ORIGINAL ESTABLE (Sin auto-cálculo)
             img_crop = st_cropper(
                 img_orig, 
                 realtime_update=True, 
                 box_color='#FF0000', 
                 aspect_ratio=(4, 5),
-                should_resize_image=False # ESTO ES CLAVE PARA QUE NO SE PIXELE
+                should_resize_image=False 
             )
             st.session_state['imagen_lista_para_flyer'] = img_crop.resize((2400, 3000), Image.Resampling.LANCZOS)
             st.write("✅ Imagen lista.")

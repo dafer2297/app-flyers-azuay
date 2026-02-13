@@ -7,28 +7,10 @@ import textwrap
 from PIL import Image, ImageDraw, ImageFont
 from streamlit_cropper import st_cropper
 
-# --- BLOQUE DE DIAGNÓSTICO ---
-import os
-st.write("📂 ARCHIVOS ENCONTRADOS EN EL SISTEMA:")
-archivos = os.listdir('.')
-st.write(archivos) # Muestra la lista en pantalla
-
-# Prueba específica de la fuente
-if "Canaro-Bold.ttf" in archivos:
-    st.success("✅ Canaro-Bold.ttf EXISTE y el nombre es correcto.")
-else:
-    st.error("❌ NO ENCUENTRO 'Canaro-Bold.ttf'. Revisa mayúsculas o si está en otra carpeta.")
-# -----------------------------
-
-
 # ==============================================================================
-# 1. CONFIGURACIÓN INICIAL
+# 1. CONFIGURACIÓN
 # ==============================================================================
 st.set_page_config(page_title="Generador Azuay", layout="wide")
-
-# ==============================================================================
-# 2. FUNCIONES BASE
-# ==============================================================================
 
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
@@ -46,7 +28,7 @@ def set_design():
             background-attachment: fixed;
         """
 
-    # Cargamos fuente para la interfaz web si existe
+    # Fuente interfaz web (Decorativo)
     font_css = ""
     if os.path.exists("Canaro-Black.ttf"):
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
@@ -77,12 +59,13 @@ def set_design():
 set_design()
 
 # ==============================================================================
-# 3. MOTOR GRÁFICO (LÓGICA)
+# 2. MOTOR GRÁFICO
 # ==============================================================================
 
 def dibujar_texto_sombra(draw, texto, x, y, fuente, color="white", sombra="black", offset=(10,10), anchor="mm"):
-    # Sombra más gruesa
+    # Sombra
     draw.text((x+offset[0], y+offset[1]), texto, font=fuente, fill=sombra, anchor=anchor)
+    # Texto
     draw.text((x, y), texto, font=fuente, fill=color, anchor=anchor)
 
 def obtener_mes_abbr(numero_mes):
@@ -96,6 +79,10 @@ def obtener_mes_nombre(numero_mes):
 def obtener_dia_semana(fecha):
     dias = ["LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO", "DOMINGO"]
     return dias[fecha.weekday()]
+
+# Función Auxiliar para Rutas Absolutas
+def ruta_abs(nombre_archivo):
+    return os.path.join(os.getcwd(), nombre_archivo)
 
 # --- PLANTILLA TIPO 1 ---
 def generar_tipo_1(datos):
@@ -118,6 +105,7 @@ def generar_tipo_1(datos):
         sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
+        # Fallback oscuro
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.3), H):
@@ -126,43 +114,41 @@ def generar_tipo_1(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img) 
 
-    # --- CARGA DE FUENTES (TAMAÑOS MASIVOS) ---
+    # --- CARGA DE FUENTES (RUTAS ABSOLUTAS) ---
     try:
         # TÍTULOS
-        f_invita = ImageFont.truetype("Canaro-Bold.ttf", 1700) # AUMENTADO
+        f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 320)
         
         # CAJA DE FECHA
-        f_dia_box = ImageFont.truetype("Canaro-Black.ttf", 320) # AUMENTADO
-        f_mes_box = ImageFont.truetype("Canaro-Black.ttf", 150)  # AUMENTADO
+        f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 300) 
+        f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 110) 
         
         # INFO
-        f_info_fecha = ImageFont.truetype("Canaro-Bold.ttf", 100) # AUMENTADO
-        f_lugar = ImageFont.truetype("Canaro-Medium.ttf", 110) # AUMENTADO
-        
-        font_desc_path = "Canaro-SemiBold.ttf"
+        f_info_fecha = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 90)
+        f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), 100)
         
     except Exception as e:
-        print(f"Error fuentes: {e}")
+        # Si falla, mostramos el error en el flyer para saber qué pasó
+        print(f"Error Fuentes: {e}")
         f_invita = f_dia_box = f_mes_box = f_info_fecha = f_lugar = ImageFont.load_default()
-        font_desc_path = None
 
-    # --- A. LOGOS HEADER ---
+    # --- A. LOGOS ---
     y_logos = 150
     margin_logos = 120
     
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
-        ratio = 850 / logo.width
+        ratio = 800 / logo.width
         h_logo = int(logo.height * ratio)
-        logo = logo.resize((850, h_logo), Image.Resampling.LANCZOS)
+        logo = logo.resize((800, h_logo), Image.Resampling.LANCZOS)
         img.paste(logo, (margin_logos, y_logos), logo)
     
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
-        ratio_f = 650 / firma.width
+        ratio_f = 600 / firma.width
         h_firma = int(firma.height * ratio_f)
-        firma = firma.resize((650, h_firma), Image.Resampling.LANCZOS)
-        img.paste(firma, (W - 650 - margin_logos, y_logos + 20), firma)
+        firma = firma.resize((600, h_firma), Image.Resampling.LANCZOS)
+        img.paste(firma, (W - 600 - margin_logos, y_logos + 20), firma)
 
     # --- B. TÍTULO ---
     titulo_texto = "INVITA"
@@ -174,21 +160,20 @@ def generar_tipo_1(datos):
     
     # --- C. DESCRIPCIÓN ---
     y_desc = y_titulo + 220
-    size_desc = 150 # AUMENTADO
+    size_desc = 120
     
-    if font_desc_path and os.path.exists(font_desc_path):
-        f_desc = ImageFont.truetype(font_desc_path, size_desc)
-    else:
-        f_desc = ImageFont.load_default()
+    try:
+        f_desc = ImageFont.truetype(ruta_abs("Canaro-SemiBold.ttf"), size_desc)
+    except:
+        f_desc = f_invita # Usar Bold si falla SemiBold
     
-    # Reducimos el ancho del wrap para que con letra grande no se salga
-    lines = textwrap.wrap(desc1, width=25) 
+    lines = textwrap.wrap(desc1, width=28)
     
     if len(lines) > 4:
-        size_desc = 120
-        if font_desc_path and os.path.exists(font_desc_path):
-            f_desc = ImageFont.truetype(font_desc_path, size_desc)
-        lines = textwrap.wrap(desc1, width=30)
+        size_desc = 100
+        try: f_desc = ImageFont.truetype(ruta_abs("Canaro-SemiBold.ttf"), size_desc)
+        except: pass
+        lines = textwrap.wrap(desc1, width=32)
     
     for line in lines:
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc)
@@ -208,8 +193,11 @@ def generar_tipo_1(datos):
             caja = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
             caja = caja.resize((1000, 550), Image.Resampling.LANCZOS)
             img.paste(caja, (x_box, y_box), caja)
+            color_fecha = "white"
         else:
+            # Fallback
             draw.rectangle([x_box, y_box, x_box+1000, y_box+550], fill="white")
+            color_fecha = "black"
 
         cx = x_box + 500
         cy = y_box + 275
@@ -220,13 +208,12 @@ def generar_tipo_1(datos):
         txt_nums = f"{dia1} - {dia2}"
         txt_mes = mes1 if mes1 == mes2 else f"{mes1} - {mes2}"
         
-        color_fecha = "white" if os.path.exists("flyer_caja_fecha_larga.png") else "black"
-        
+        # Ajuste vertical
         draw.text((cx, cy - 60), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
         
         f_mes_uso = f_mes_box
         if len(txt_mes) > 15:
-            try: f_mes_uso = ImageFont.truetype("Canaro-Black.ttf", 90)
+            try: f_mes_uso = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 80)
             except: pass
         
         draw.text((cx, cy + 120), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
@@ -257,7 +244,7 @@ def generar_tipo_1(datos):
         dia_sem = obtener_dia_semana(fecha1)
         y_info = y_box + 550 + 60
         dibujar_texto_sombra(draw, dia_sem, cx, y_info, f_info_fecha, anchor="mm")
-        dibujar_texto_sombra(draw, str_hora, cx, y_info + 120, f_info_fecha, anchor="mm")
+        dibujar_texto_sombra(draw, str_hora, cx, y_info + 130, f_info_fecha, anchor="mm")
 
     # --- E. UBICACIÓN ---
     x_loc = 1400 

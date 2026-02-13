@@ -4,7 +4,7 @@ import os
 import datetime
 import io
 import textwrap
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from streamlit_cropper import st_cropper
 
 # ==============================================================================
@@ -58,15 +58,12 @@ def set_design():
 set_design()
 
 # ==============================================================================
-# 2. MOTOR GRÁFICO (LÓGICA SIMPLE Y SOLIDA)
+# 2. MOTOR GRÁFICO
 # ==============================================================================
 
-# --- FUNCIÓN DE SOMBRA SIMPLE (Hard Shadow) ---
-# Aumentamos el offset a 12 para que se note en 2400px
+# --- SOMBRA SIMPLE Y NÍTIDA ---
 def dibujar_texto_sombra_simple(draw, texto, x, y, fuente, color="white", sombra="black", offset=(12,12), anchor="mm"):
-    # 1. Dibujar sombra (atrás)
     draw.text((x+offset[0], y+offset[1]), texto, font=fuente, fill=sombra, anchor=anchor)
-    # 2. Dibujar texto principal (adelante)
     draw.text((x, y), texto, font=fuente, fill=color, anchor=anchor)
 
 def obtener_mes_abbr(numero_mes):
@@ -96,23 +93,25 @@ def generar_tipo_1(datos):
     logos_colab = datos['logos']
     
     W, H = 2400, 3000
+    
+    # IMPORTANTE: Forzamos la conversión a RGBA y el tamaño exacto con la mejor calidad
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 1. SOMBRA SUPERPUESTA (PNG del fondo)
+    # 1. SOMBRA SUPERPUESTA (PNG)
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA")
-        sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
+        if sombra_img.size != (W, H):
+            sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
-        # Fallback manual
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.3), H):
             alpha = int(255 * ((y - H*0.3)/(H*0.7)))
             d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
         img = Image.alpha_composite(img, overlay)
-        draw = ImageDraw.Draw(img) 
+        draw = ImageDraw.Draw(img) # Reiniciar draw sobre la nueva imagen compuesta
 
     # --- CARGA DE FUENTES ---
     try:
@@ -127,25 +126,38 @@ def generar_tipo_1(datos):
         f_invita = f_dia_box = f_mes_box = f_info_fecha = f_lugar = ImageFont.load_default()
         font_desc_path = None
 
-    # --- A. LOGOS HEADER (SIN SOMBRA) ---
+    # --- A. LOGOS HEADER (Lógica de Calidad Mejorada) ---
     y_logos = 150
     margin_logos = 120
     
+    # LOGO PREFECTURA
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
-        ratio = 850 / logo.width
-        h_logo = int(logo.height * ratio)
-        logo = logo.resize((850, h_logo), Image.Resampling.LANCZOS)
+        target_w = 850
+        
+        # SOLUCIÓN CALIDAD: Solo redimensionar si es ESTRICTAMENTE necesario (muy grande)
+        # Si el logo es pequeño (ej: 800px), NO lo tocamos para no perder calidad al interpolar.
+        if logo.width > target_w:
+            ratio = target_w / logo.width
+            h_logo = int(logo.height * ratio)
+            logo = logo.resize((target_w, h_logo), Image.Resampling.LANCZOS)
+        
+        # Si es menor a 850px, se pega tal cual en su máxima calidad original.
         img.paste(logo, (margin_logos, y_logos), logo)
     
+    # LOGO JOTA
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
-        ratio_f = 650 / firma.width
-        h_firma = int(firma.height * ratio_f)
-        firma = firma.resize((650, h_firma), Image.Resampling.LANCZOS)
-        img.paste(firma, (W - 650 - margin_logos, y_logos + 20), firma)
+        target_w_f = 650
+        
+        if firma.width > target_w_f:
+            ratio_f = target_w_f / firma.width
+            h_firma = int(firma.height * ratio_f)
+            firma = firma.resize((target_w_f, h_firma), Image.Resampling.LANCZOS)
+            
+        img.paste(firma, (W - firma.width - margin_logos, y_logos + 20), firma)
 
-    # --- B. TÍTULO (CON SOMBRA SIMPLE - AUMENTADA A 12px) ---
+    # --- B. TÍTULO ---
     titulo_texto = "INVITA"
     if logos_colab:
         titulo_texto = "INVITAN"
@@ -153,7 +165,7 @@ def generar_tipo_1(datos):
     y_titulo = 750
     dibujar_texto_sombra_simple(draw, titulo_texto, W/2, y_titulo, f_invita, offset=(12,12))
     
-    # --- C. DESCRIPCIÓN (CON SOMBRA SIMPLE) ---
+    # --- C. DESCRIPCIÓN ---
     y_desc = y_titulo + 220
     size_desc = 150
     
@@ -174,7 +186,7 @@ def generar_tipo_1(datos):
         dibujar_texto_sombra_simple(draw, line, W/2, y_desc, f_desc, offset=(10,10))
         y_desc += int(size_desc * 1.3)
 
-    # --- D. CAJA DE FECHA (SIN SOMBRA EN LA CAJA) ---
+    # --- D. CAJA DE FECHA ---
     x_box = 200
     y_box = 2100 
     
@@ -240,7 +252,7 @@ def generar_tipo_1(datos):
         dibujar_texto_sombra_simple(draw, dia_sem, cx, y_info, f_info_fecha, offset=(8,8))
         dibujar_texto_sombra_simple(draw, str_hora, cx, y_info + 130, f_info_fecha, offset=(8,8))
 
-    # --- E. UBICACIÓN (SIN SOMBRA EN ICONO) ---
+    # --- E. UBICACIÓN ---
     x_loc = 1400 
     y_loc = 2250 
     
@@ -258,11 +270,10 @@ def generar_tipo_1(datos):
     lines_loc = textwrap.wrap(lugar, width=22)
     y_loc_txt = y_loc + 30
     for l in lines_loc:
-        dibujar_texto_sombra_simple(draw, l, x_loc + 180, y_loc_txt, f_lugar, anchor="lm", offset=(8,8))
+        dibujar_texto_sombra_simple(draw, l, x_loc + 180, y_loc_txt, f_lugar, anchor="lm", offset=(5,5))
         y_loc_txt += 110
 
-    # --- PASO FINAL CRÍTICO: APLANAR IMAGEN ---
-    # Esto elimina el canal alfa y la vuelve sólida (RGB), evitando que Procreate ponga fondo blanco a las transparencias.
+    # --- PASO FINAL: APLANAR A RGB (Solución Procreate) ---
     img_final = img.convert("RGB")
     
     return img_final
@@ -348,15 +359,27 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         else:
             st.markdown(f'<div class="contador-mal">Dirección muy larga: {len_dir} / 75</div>', unsafe_allow_html=True)
 
-        st.markdown('<div class="label-negro" style="margin-top: 15px;">SUBIR Y RECORTAR IMAGEN DE FONDO</div>', unsafe_allow_html=True)
+        st.markdown('<div class="label-negro" style="margin-top: 15px;">SUBIR Y RECORTAR IMAGEN DE FONDO (MAX 4:5)</div>', unsafe_allow_html=True)
         archivo_subido = st.file_uploader("lbl_img", type=['jpg', 'png', 'jpeg'], label_visibility="collapsed")
         
         if archivo_subido:
-            st.info("✂️ Ajusta el recuadro rojo. Se convertirá a HD automáticamente.")
             img_orig = Image.open(archivo_subido)
+            # BLOQUEO DE CALIDAD PARA CROPPER
+            # Si la imagen es muy pequeña, avisamos
+            if img_orig.width < 1200:
+                st.warning("⚠️ La imagen que subiste es pequeña. Para mejor calidad usa imágenes de más de 2000px de ancho.")
+            
+            st.info("Ajusta el recuadro. El sistema intentará mantener la máxima calidad posible.")
+            # aspect_ratio=(4, 5) fija la proporción para que siempre cuadre en el flyer
             img_crop = st_cropper(img_orig, realtime_update=True, box_color='#FF0000', aspect_ratio=(4, 5))
+            
+            # Verificación post-recorte
+            if img_crop.width < 1000:
+                st.error("⚠️ El recorte seleccionado es muy pequeño. El flyer saldrá borroso. Intenta seleccionar un área más grande.")
+            else:
+                st.success(f"✅ Recorte de buena calidad ({img_crop.width}x{img_crop.height}px)")
+                
             st.session_state['imagen_lista_para_flyer'] = img_crop.resize((2400, 3000), Image.Resampling.LANCZOS)
-            st.write("✅ Imagen lista.")
 
         st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(MÁX 2)</span></div>', unsafe_allow_html=True)
         st.file_uploader("lbl_logos", key="lbl_logos", accept_multiple_files=True, label_visibility="collapsed")

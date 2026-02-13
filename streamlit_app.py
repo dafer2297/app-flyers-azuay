@@ -93,24 +93,24 @@ def generar_tipo_1(datos):
     
     W, H = 2400, 3000
     
-    # IMPORTANTE: Forzamos la conversión a RGBA y el tamaño exacto con la mejor calidad
+    # LIENZO BASE
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 1. SOMBRA SUPERPUESTA (PNG)
+    # 1. SOMBRA PNG
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA")
         if sombra_img.size != (W, H):
             sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
+        # Fallback
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.3), H):
             alpha = int(255 * ((y - H*0.3)/(H*0.7)))
             d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
         img = Image.alpha_composite(img, overlay)
-        # Reiniciar draw sobre la nueva imagen compuesta
         draw = ImageDraw.Draw(img) 
 
     # --- CARGA DE FUENTES ---
@@ -126,35 +126,26 @@ def generar_tipo_1(datos):
         f_invita = f_dia_box = f_mes_box = f_info_fecha = f_lugar = ImageFont.load_default()
         font_desc_path = None
 
-    # --- A. LOGOS HEADER (SIN FILTROS RAROS, SOLO REDIMENSIÓN SUAVE) ---
+    # --- A. LOGOS HEADER (Estándar LANCZOS) ---
     y_logos = 150
     margin_logos = 120
     
     # LOGO PREFECTURA
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
-        target_w = 850
-        
-        # Solo redimensionamos si es estrictamente necesario
-        if logo.width > target_w:
-            ratio = target_w / logo.width
-            h_logo = int(logo.height * ratio)
-            # Usamos LANCZOS que es el mejor estándar, sin sharpening extra
-            logo = logo.resize((target_w, h_logo), Image.Resampling.LANCZOS)
-        
+        # Forzamos redimensionado de alta calidad al tamaño exacto
+        ratio = 850 / logo.width
+        h_logo = int(logo.height * ratio)
+        logo = logo.resize((850, h_logo), Image.Resampling.LANCZOS)
         img.paste(logo, (margin_logos, y_logos), logo)
     
     # LOGO JOTA
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
-        target_w_f = 650
-        
-        if firma.width > target_w_f:
-            ratio_f = target_w_f / firma.width
-            h_firma = int(firma.height * ratio_f)
-            firma = firma.resize((target_w_f, h_firma), Image.Resampling.LANCZOS)
-            
-        img.paste(firma, (W - firma.width - margin_logos, y_logos + 20), firma)
+        ratio_f = 650 / firma.width
+        h_firma = int(firma.height * ratio_f)
+        firma = firma.resize((650, h_firma), Image.Resampling.LANCZOS)
+        img.paste(firma, (W - 650 - margin_logos, y_logos + 20), firma)
 
     # --- B. TÍTULO ---
     titulo_texto = "INVITA"
@@ -363,51 +354,15 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         
         if archivo_subido:
             img_orig = Image.open(archivo_subido)
-            
-            # --- CÁLCULO INTELIGENTE DEL RECUADRO MÁXIMO ---
-            TARGET_RATIO = 4/5 
-            img_w, img_h = img_orig.size
-            img_ratio = img_w / img_h
-            
-            if img_ratio > TARGET_RATIO:
-                # Más ancha
-                box_h = img_h
-                box_w = int(img_h * TARGET_RATIO)
-                left = (img_w - box_w) // 2
-                top = 0
-            else:
-                # Más alta
-                box_w = img_w
-                box_h = int(img_w / TARGET_RATIO)
-                left = 0
-                top = (img_h - box_h) // 2
-            
-            # CLAMPING DE SEGURIDAD (Corrección del ValueError)
-            # Aseguramos que las coordenadas nunca se salgan ni 1 pixel
-            right = min(left + box_w, img_w)
-            bottom = min(top + box_h, img_h)
-            left = max(0, left)
-            top = max(0, top)
-            
-            box_tuple = (left, top, right, bottom)
-            
-            st.info("💡 Se ha seleccionado el área máxima para garantizar calidad HD (2400x3000).")
-            
-            # Pasamos la 'box' inicial calculada al cropper
-            # should_resize_image=False es VITAL para que no se pixele el flyer final
+            st.info("Ajusta el recorte. Recuerda usar imágenes de buena calidad.")
+            # VOLVEMOS A LA CONFIGURACIÓN ORIGINAL ESTABLE
             img_crop = st_cropper(
                 img_orig, 
                 realtime_update=True, 
                 box_color='#FF0000', 
                 aspect_ratio=(4, 5),
-                should_resize_image=False, 
-                default_coords=box_tuple 
+                should_resize_image=False # ESTO ES CLAVE PARA QUE NO SE PIXELE
             )
-            
-            # Verificar calidad
-            if img_crop.width < 1000:
-                st.warning(f"⚠️ Calidad baja ({img_crop.width}px). El flyer podría verse borroso.")
-            
             st.session_state['imagen_lista_para_flyer'] = img_crop.resize((2400, 3000), Image.Resampling.LANCZOS)
             st.write("✅ Imagen lista.")
 

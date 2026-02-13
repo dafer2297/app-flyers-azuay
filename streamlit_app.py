@@ -8,9 +8,47 @@ from PIL import Image, ImageDraw, ImageFont
 from streamlit_cropper import st_cropper
 
 # ==============================================================================
-# 1. CONFIGURACIÓN Y ESTILOS
+# 1. CONFIGURACIÓN Y DIAGNÓSTICO
 # ==============================================================================
 st.set_page_config(page_title="Generador Azuay", layout="wide")
+
+# --- FUNCIÓN DIAGNÓSTICO VISUAL ---
+def verificar_archivo(nombre):
+    return os.path.exists(nombre)
+
+# BARRA LATERAL: SEMÁFORO DE ARCHIVOS
+st.sidebar.title("📁 Control de Archivos")
+st.sidebar.write("Verifica que todo esté en VERDE ✅:")
+
+archivos_necesarios = {
+    "Canaro-Black.ttf": "Fuente Black",
+    "Canaro-Bold.ttf": "Fuente Bold",
+    "Canaro-SemiBold.ttf": "Fuente SemiBold",
+    "Canaro-Medium.ttf": "Fuente Medium",
+    "flyer_logo.png": "Logo Prefectura",
+    "flyer_firma.png": "Firma Jota",
+    "flyer_caja_fecha.png": "Caja Fecha (Cuadrada)",
+    "flyer_caja_fecha_larga.png": "Caja Fecha (Larga)",
+    "flyer_icono_lugar.png": "Icono Lugar",
+    "flyer_sombra.png": "Sombra PNG"
+}
+
+faltantes = []
+for archivo, desc in archivos_necesarios.items():
+    if verificar_archivo(archivo):
+        st.sidebar.success(f"✅ {desc}")
+    else:
+        st.sidebar.error(f"❌ {desc} (Falta {archivo})")
+        faltantes.append(desc)
+
+if faltantes:
+    st.sidebar.warning("⚠️ Faltan archivos importantes. El diseño saldrá incompleto.")
+
+st.sidebar.write("---")
+
+# ==============================================================================
+# 2. FUNCIONES BASE
+# ==============================================================================
 
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
@@ -28,8 +66,8 @@ def set_design():
             background-attachment: fixed;
         """
 
+    # Intentamos cargar fuente para la web
     font_css = ""
-    # Cargamos la Black para títulos de la web
     if os.path.exists("Canaro-Black.ttf"):
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
         font_css += f"""@font-face {{ font-family: 'Canaro'; src: url('data:font/ttf;base64,{font_b64}') format('truetype'); }}"""
@@ -59,13 +97,12 @@ def set_design():
 set_design()
 
 # ==============================================================================
-# 2. MOTOR GRÁFICO (LÓGICA DE DISEÑO)
+# 3. MOTOR GRÁFICO (LÓGICA)
 # ==============================================================================
 
-def dibujar_texto_sombra(draw, texto, x, y, fuente, color="white", sombra="black", offset=(6,6), anchor="mm"):
-    # Sombra (atrás)
+def dibujar_texto_sombra(draw, texto, x, y, fuente, color="white", sombra="black", offset=(8,8), anchor="mm"):
+    # Sombra más gruesa para que se vea
     draw.text((x+offset[0], y+offset[1]), texto, font=fuente, fill=sombra, anchor=anchor)
-    # Texto (adelante)
     draw.text((x, y), texto, font=fuente, fill=color, anchor=anchor)
 
 def obtener_mes_abbr(numero_mes):
@@ -80,7 +117,7 @@ def obtener_dia_semana(fecha):
     dias = ["LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO", "DOMINGO"]
     return dias[fecha.weekday()]
 
-# --- PLANTILLA TIPO 1 (CULTURA) ---
+# --- PLANTILLA TIPO 1 ---
 def generar_tipo_1(datos):
     fondo = datos['fondo']
     desc1 = datos['desc1']
@@ -101,7 +138,7 @@ def generar_tipo_1(datos):
         sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
-        # Fallback manual por si falla la imagen
+        # Fallback manual: Oscurecer abajo si no hay sombra PNG
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.3), H):
@@ -110,84 +147,78 @@ def generar_tipo_1(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img) 
 
-    # --- CARGA DE FUENTES (DIRECTA) ---
+    # --- CARGA DE FUENTES (TAMAÑOS GIGANTES) ---
     try:
-        # Usamos los nombres TAL CUAL están en tu GitHub
-        f_invita = ImageFont.truetype("Canaro-Bold.ttf", 180)
+        # TÍTULOS GRANDES
+        f_invita = ImageFont.truetype("Canaro-Bold.ttf", 300)
         
-        # Fuentes Fecha Caja
-        f_dia_box = ImageFont.truetype("Canaro-Black.ttf", 200) 
-        f_mes_box = ImageFont.truetype("Canaro-Bold.ttf", 90)   
+        # FUENTES CAJA DE FECHA (AMBOS BLACK)
+        f_dia_box = ImageFont.truetype("Canaro-Black.ttf", 280) # Número GIGANTE
+        f_mes_box = ImageFont.truetype("Canaro-Black.ttf", 120)  # Mes GIGANTE
         
-        # Info Fecha (Hora/Día)
-        f_info_fecha = ImageFont.truetype("Canaro-Bold.ttf", 65) 
+        # INFO
+        f_info_fecha = ImageFont.truetype("Canaro-Bold.ttf", 85)
+        f_lugar = ImageFont.truetype("Canaro-Medium.ttf", 90)
         
-        # Dirección
-        f_lugar = ImageFont.truetype("Canaro-Medium.ttf", 70)    
+        # Base para descripción
+        font_desc_path = "Canaro-SemiBold.ttf"
         
-        # Nombre base para la descripción (se carga dinámicamente según tamaño)
-        font_desc_name = "Canaro-SemiBold.ttf"
-        
-    except:
-        # Si no encuentra alguna, usa default para no romper la app
+    except Exception as e:
+        print(f"Error fuentes: {e}")
         f_invita = f_dia_box = f_mes_box = f_info_fecha = f_lugar = ImageFont.load_default()
-        font_desc_name = None # Usará default
+        font_desc_path = None
 
     # --- A. LOGOS HEADER ---
     y_logos = 150
-    margin_logos = 100
+    margin_logos = 120
     
-    # 1. Logo Prefectura (Izquierda)
+    # LOGO PREFECTURA (Más Grande)
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
-        ratio = 700 / logo.width
+        ratio = 800 / logo.width # Aumentado a 800px
         h_logo = int(logo.height * ratio)
-        logo = logo.resize((700, h_logo), Image.Resampling.LANCZOS)
+        logo = logo.resize((800, h_logo), Image.Resampling.LANCZOS)
         img.paste(logo, (margin_logos, y_logos), logo)
     
-    # 2. Logo Jota (Derecha)
+    # LOGO JOTA (Más Grande)
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
-        ratio_f = 500 / firma.width
+        ratio_f = 600 / firma.width # Aumentado a 600px
         h_firma = int(firma.height * ratio_f)
-        firma = firma.resize((500, h_firma), Image.Resampling.LANCZOS)
-        img.paste(firma, (W - 500 - margin_logos, y_logos + 20), firma)
+        firma = firma.resize((600, h_firma), Image.Resampling.LANCZOS)
+        img.paste(firma, (W - 600 - margin_logos, y_logos + 20), firma)
 
     # --- B. TÍTULO ---
     titulo_texto = "INVITA"
     if logos_colab:
         titulo_texto = "INVITAN"
     
-    y_titulo = 650
+    y_titulo = 700 # Un poco más abajo
     dibujar_texto_sombra(draw, titulo_texto, W/2, y_titulo, f_invita)
     
-    # --- C. DESCRIPCIÓN (AUTO-AJUSTE) ---
-    y_desc = y_titulo + 150
+    # --- C. DESCRIPCIÓN ---
+    y_desc = y_titulo + 200
+    size_desc = 130 # Aumentado
     
-    # Tamaño máximo inicial: 3/5 de 180 = 108
-    size_desc = 108 
-    
-    # Cargar fuente descripción
-    if font_desc_name:
-        f_desc = ImageFont.truetype(font_desc_name, size_desc)
+    if font_desc_path and os.path.exists(font_desc_path):
+        f_desc = ImageFont.truetype(font_desc_path, size_desc)
     else:
         f_desc = ImageFont.load_default()
     
-    # Envolver texto
-    lines = textwrap.wrap(desc1, width=30)
+    lines = textwrap.wrap(desc1, width=28) # Menos caracteres por línea para que sea más grande
     
-    # Si hay muchas líneas, reducimos el tamaño
+    # Si hay muchas líneas, reducimos el tamaño un poco, pero no mucho
     if len(lines) > 4:
-        size_desc = 90
-        if font_desc_name:
-            f_desc = ImageFont.truetype(font_desc_name, size_desc)
-        lines = textwrap.wrap(desc1, width=35)
+        size_desc = 110
+        if font_desc_path and os.path.exists(font_desc_path):
+            f_desc = ImageFont.truetype(font_desc_path, size_desc)
+        lines = textwrap.wrap(desc1, width=32)
     
     for line in lines:
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc)
-        y_desc += int(size_desc * 1.2)
+        y_desc += int(size_desc * 1.3)
 
-    # --- D. CAJA DE FECHA (IZQUIERDA ABAJO) ---
+    # --- D. CAJA DE FECHA ---
     x_box = 200
     y_box = 2100 
     
@@ -195,78 +226,97 @@ def generar_tipo_1(datos):
     if hora2:
         str_hora += f" a {hora2.strftime('%H:%M %p')}"
     
-    # CASO 1: DOS FECHAS
+    # 2 FECHAS (RECTANGULAR)
     if fecha2:
         if os.path.exists("flyer_caja_fecha_larga.png"):
             caja = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
-            caja = caja.resize((850, 450), Image.Resampling.LANCZOS)
+            caja = caja.resize((1000, 550), Image.Resampling.LANCZOS) # GIGANTE
             img.paste(caja, (x_box, y_box), caja)
+        else:
+            # Fallback si no hay imagen: Rectángulo Blanco
+            draw.rectangle([x_box, y_box, x_box+1000, y_box+550], fill="white")
+
+        cx = x_box + 500
+        cy = y_box + 275
+        
+        dia1, dia2 = str(fecha1.day), str(fecha2.day)
+        mes1, mes2 = obtener_mes_nombre(fecha1.month), obtener_mes_nombre(fecha2.month)
+        
+        txt_nums = f"{dia1} - {dia2}"
+        txt_mes = mes1 if mes1 == mes2 else f"{mes1} - {mes2}"
+        
+        # Color del texto de fecha (Negro si no hay imagen y usamos cuadro blanco, blanco si hay imagen)
+        color_fecha = "white" if os.path.exists("flyer_caja_fecha_larga.png") else "black"
+        shadow_fecha = "black" if color_fecha == "white" else "gray"
+
+        # Dibujar (Sin sombra si es negro sobre blanco)
+        if color_fecha == "white":
+             draw.text((cx, cy - 50), txt_nums, font=f_dia_box, fill="white", anchor="mm")
+        else:
+             draw.text((cx, cy - 50), txt_nums, font=f_dia_box, fill="black", anchor="mm")
+        
+        f_mes_uso = f_mes_box
+        if len(txt_mes) > 15:
+            try: f_mes_uso = ImageFont.truetype("Canaro-Black.ttf", 80)
+            except: pass
+        
+        if color_fecha == "white":
+            draw.text((cx, cy + 110), txt_mes, font=f_mes_uso, fill="white", anchor="mm")
+        else:
+            draw.text((cx, cy + 110), txt_mes, font=f_mes_uso, fill="black", anchor="mm")
+        
+        y_info = y_box + 550 + 50
+        dibujar_texto_sombra(draw, str_hora, cx, y_info, f_info_fecha, anchor="mm")
             
-            cx = x_box + 425
-            cy = y_box + 225
-            
-            dia1, dia2 = str(fecha1.day), str(fecha2.day)
-            mes1, mes2 = obtener_mes_nombre(fecha1.month), obtener_mes_nombre(fecha2.month)
-            
-            txt_nums = f"{dia1} - {dia2}"
-            txt_mes = mes1 if mes1 == mes2 else f"{mes1} - {mes2}"
-            
-            draw.text((cx, cy - 40), txt_nums, font=f_dia_box, fill="white", anchor="mm")
-            
-            # Ajustar mes largo
-            f_mes_uso = f_mes_box
-            if len(txt_mes) > 15:
-                try: f_mes_uso = ImageFont.truetype("Canaro-Bold.ttf", 65)
-                except: pass
-            
-            draw.text((cx, cy + 90), txt_mes, font=f_mes_uso, fill="white", anchor="mm")
-            
-            y_info = y_box + 450 + 40
-            dibujar_texto_sombra(draw, str_hora, cx, y_info, f_info_fecha, anchor="mm")
-            
-    # CASO 2: UNA FECHA
+    # 1 FECHA (CUADRADA)
     else:
         if os.path.exists("flyer_caja_fecha.png"):
             caja = Image.open("flyer_caja_fecha.png").convert("RGBA")
-            caja = caja.resize((450, 450), Image.Resampling.LANCZOS)
+            caja = caja.resize((550, 550), Image.Resampling.LANCZOS) # GIGANTE
             img.paste(caja, (x_box, y_box), caja)
-            
-            cx = x_box + 225
-            cy = y_box + 225
-            
-            dia_num = str(fecha1.day)
-            mes_txt = obtener_mes_abbr(fecha1.month)
-            
-            draw.text((cx, cy - 40), dia_num, font=f_dia_box, fill="white", anchor="mm")
-            draw.text((cx, cy + 90), mes_txt, font=f_mes_box, fill="white", anchor="mm")
-            
-            dia_sem = obtener_dia_semana(fecha1)
-            y_info = y_box + 450 + 40
-            dibujar_texto_sombra(draw, dia_sem, cx, y_info, f_info_fecha, anchor="mm")
-            dibujar_texto_sombra(draw, str_hora, cx, y_info + 80, f_info_fecha, anchor="mm")
+            color_fecha = "white"
         else:
-             draw.text((x_box, y_box), f"{fecha1.day}", font=f_dia_box, fill="white")
+            # Fallback: Cuadro Blanco Solido
+            draw.rectangle([x_box, y_box, x_box+550, y_box+550], fill="white")
+            color_fecha = "black"
+            
+        cx = x_box + 275
+        cy = y_box + 275
+        
+        dia_num = str(fecha1.day)
+        mes_txt = obtener_mes_abbr(fecha1.month)
+        
+        if color_fecha == "white":
+            draw.text((cx, cy - 50), dia_num, font=f_dia_box, fill="white", anchor="mm")
+            draw.text((cx, cy + 110), mes_txt, font=f_mes_box, fill="white", anchor="mm")
+        else:
+            draw.text((cx, cy - 50), dia_num, font=f_dia_box, fill="black", anchor="mm")
+            draw.text((cx, cy + 110), mes_txt, font=f_mes_box, fill="black", anchor="mm")
+        
+        dia_sem = obtener_dia_semana(fecha1)
+        y_info = y_box + 550 + 50
+        dibujar_texto_sombra(draw, dia_sem, cx, y_info, f_info_fecha, anchor="mm")
+        dibujar_texto_sombra(draw, str_hora, cx, y_info + 100, f_info_fecha, anchor="mm")
 
-    # --- E. UBICACIÓN (DERECHA ABAJO) ---
+    # --- E. UBICACIÓN ---
     x_loc = 1400 
     y_loc = 2250 
     
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA")
-        icon = icon.resize((100, 100), Image.Resampling.LANCZOS)
+        icon = icon.resize((140, 140), Image.Resampling.LANCZOS) # Aumentado
         img.paste(icon, (x_loc, y_loc), icon)
-        
-        lines_loc = textwrap.wrap(lugar, width=25)
-        y_loc_txt = y_loc + 10
-        for l in lines_loc:
-            dibujar_texto_sombra(draw, l, x_loc + 130, y_loc_txt, f_lugar, anchor="lm")
-            y_loc_txt += 80
     else:
-        dibujar_texto_sombra(draw, f"📍 {lugar}", x_loc, y_loc, f_lugar, anchor="lm")
+        dibujar_texto_sombra(draw, "📍", x_loc, y_loc, f_lugar, anchor="mm")
+
+    lines_loc = textwrap.wrap(lugar, width=25)
+    y_loc_txt = y_loc + 20
+    for l in lines_loc:
+        dibujar_texto_sombra(draw, l, x_loc + 170, y_loc_txt, f_lugar, anchor="lm")
+        y_loc_txt += 100
 
     return img
 
-# --- CONTROLADOR ---
 def generar_flyer_automatico(datos):
     return generar_tipo_1(datos)
 

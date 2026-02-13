@@ -125,31 +125,25 @@ def generar_tipo_1(datos):
         f_invita = f_dia_box = f_mes_box = f_info_fecha = f_lugar = ImageFont.load_default()
         font_desc_path = None
 
-    # --- A. LOGOS HEADER (PRUEBA RAW - SIN REDIMENSIÓN) ---
+    # --- A. LOGOS HEADER (MODO RAW - SIN REDIMENSIÓN) ---
     y_logos = 150
     margin_logos = 120
     
-    # >>>>>> LOGO PREFECTURA (MODO DIAGNÓSTICO) <<<<<<
+    # LOGO PREFECTURA - TAL CUAL VIENE DEL ARCHIVO
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
-        
-        # ⚠️ IMPORTANTE: Aquí eliminamos cualquier redimensionado (resize).
-        # Lo pegamos tal cual viene del archivo original.
-        # Si el archivo es HD, saldrá GIGANTE. Si es malo, saldrá pequeño/pixelado.
-        
+        # ⚠️ NO HACEMOS RESIZE. Se pega al 100% de su tamaño original.
         img.paste(logo, (margin_logos, y_logos), logo)
-    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     
-    # LOGO JOTA (Mantenemos la lógica segura por ahora)
+    # LOGO JOTA - TAL CUAL VIENE DEL ARCHIVO (Opcional, si quieres ver este también raw)
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
-        target_w_f = 650
-        # Este sí lo ajustamos para que no rompa el diseño por ahora
-        if firma.width > target_w_f:
-            ratio_f = target_w_f / firma.width
-            h_firma = int(firma.height * ratio_f)
-            firma = firma.resize((target_w_f, h_firma), Image.Resampling.LANCZOS)
-            
+        # Para evitar que se superponga si es gigante, este lo dejamos con lógica segura básica,
+        # o lo pegamos raw también si prefieres. Lo dejaré con resize suave para no romper el layout derecho.
+        if firma.width > 650:
+             ratio_f = 650 / firma.width
+             h_firma = int(firma.height * ratio_f)
+             firma = firma.resize((650, h_firma), Image.Resampling.LANCZOS)
         img.paste(firma, (W - firma.width - margin_logos, y_logos + 20), firma)
 
     # --- B. TÍTULO ---
@@ -360,7 +354,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         if archivo_subido:
             img_orig = Image.open(archivo_subido)
             st.info("Ajusta el recorte. Recuerda usar imágenes de buena calidad.")
-            # CONFIGURACIÓN ORIGINAL ESTABLE (Sin auto-cálculo)
+            # RECORTADOR ESTÁNDAR (Sin cálculos automáticos que dan error)
             img_crop = st_cropper(
                 img_orig, 
                 realtime_update=True, 

@@ -4,7 +4,8 @@ import os
 import datetime
 import io
 import textwrap
-from PIL import Image, ImageDraw, ImageFont
+# IMPORTANTE: Se añade ImageFilter para el desenfoque de la sombra
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from streamlit_cropper import st_cropper
 
 # ==============================================================================
@@ -28,7 +29,6 @@ def set_design():
             background-attachment: fixed;
         """
 
-    # Fuente interfaz web (Decorativo)
     font_css = ""
     if os.path.exists("Canaro-Black.ttf"):
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
@@ -59,15 +59,34 @@ def set_design():
 set_design()
 
 # ==============================================================================
-# 2. MOTOR GRÁFICO
+# 2. MOTOR GRÁFICO (NUEVA LÓGICA DE SOMBRAS)
 # ==============================================================================
 
-def dibujar_texto_sombra(draw, texto, x, y, fuente, color="white", sombra="black", offset=(10,10), anchor="mm"):
-    # Sombra
-    draw.text((x+offset[0], y+offset[1]), texto, font=fuente, fill=sombra, anchor=anchor)
-    # Texto
-    draw.text((x, y), texto, font=fuente, fill=color, anchor=anchor)
+# --- NUEVA FUNCIÓN PARA SOMBRAS PROFESIONALES (HALO DESENFOCADO) ---
+def dibujar_texto_avanzado(base_img, draw_base, texto, x, y, fuente, color="white", sombra_color="black", radio_sombra=25, offset=(15,15), anchor="mm"):
+    """
+    Dibuja texto con una sombra negra desenfocada (halo) para máxima legibilidad sobre fondos claros.
+    Requiere pasar la imagen base (base_img) y su draw (draw_base).
+    """
+    W, H = base_img.size
+    
+    # 1. Crear una capa transparente separada para la sombra
+    sombra_layer = Image.new('RGBA', (W, H), (0,0,0,0))
+    draw_sombra = ImageDraw.Draw(sombra_layer)
+    
+    # 2. Dibujar el texto en negro en la capa de sombra (con un offset grande)
+    draw_sombra.text((x+offset[0], y+offset[1]), texto, font=fuente, fill=sombra_color, anchor=anchor)
+    
+    # 3. Aplicar desenfoque fuerte (Gaussian Blur) a la capa de sombra
+    sombra_layer_blur = sombra_layer.filter(ImageFilter.GaussianBlur(radius=radio_sombra))
+    
+    # 4. Pegar la sombra desenfocada sobre la imagen base (usando la sombra como máscara)
+    base_img.paste(sombra_layer_blur, (0,0), sombra_layer_blur)
+    
+    # 5. Dibujar el texto blanco nítido encima de todo en la imagen base
+    draw_base.text((x, y), texto, font=fuente, fill=color, anchor=anchor)
 
+# --- Funciones de ayuda ---
 def obtener_mes_abbr(numero_mes):
     meses = {1: "ENE", 2: "FEB", 3: "MAR", 4: "ABR", 5: "MAY", 6: "JUN", 7: "JUL", 8: "AGO", 9: "SEP", 10: "OCT", 11: "NOV", 12: "DIC"}
     return meses.get(numero_mes, "")
@@ -80,7 +99,7 @@ def obtener_dia_semana(fecha):
     dias = ["LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO", "DOMINGO"]
     return dias[fecha.weekday()]
 
-# Función Auxiliar para Rutas Absolutas
+# Función Auxiliar para Rutas Absolutas (Seguridad)
 def ruta_abs(nombre_archivo):
     return os.path.join(os.getcwd(), nombre_archivo)
 
@@ -99,7 +118,7 @@ def generar_tipo_1(datos):
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 1. SOMBRA SUPERPUESTA
+    # 1. SOMBRA SUPERPUESTA (CAPA GENERAL)
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA")
         sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
@@ -114,69 +133,66 @@ def generar_tipo_1(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img) 
 
-    # --- CARGA DE FUENTES (RUTAS ABSOLUTAS) ---
+    # --- CARGA DE FUENTES (TAMAÑOS GIGANTES) ---
     try:
-        # TÍTULOS
-        f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 600)
-        
-        # CAJA DE FECHA
-        f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 300) 
-        f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 110) 
-        
-        # INFO
-        f_info_fecha = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 90)
-        f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), 100)
-        
+        f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 350)
+        f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 320) 
+        f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 150)  
+        f_info_fecha = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 100)
+        f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), 110)
+        font_desc_path = ruta_abs("Canaro-SemiBold.ttf")
     except Exception as e:
-        # Si falla, mostramos el error en el flyer para saber qué pasó
-        print(f"Error Fuentes: {e}")
+        print(f"Error fuentes: {e}")
         f_invita = f_dia_box = f_mes_box = f_info_fecha = f_lugar = ImageFont.load_default()
+        font_desc_path = None
 
-    # --- A. LOGOS ---
+    # --- A. LOGOS HEADER ---
     y_logos = 150
     margin_logos = 120
     
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
-        ratio = 800 / logo.width
+        ratio = 850 / logo.width
         h_logo = int(logo.height * ratio)
-        logo = logo.resize((800, h_logo), Image.Resampling.LANCZOS)
+        logo = logo.resize((850, h_logo), Image.Resampling.LANCZOS)
         img.paste(logo, (margin_logos, y_logos), logo)
     
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
-        ratio_f = 600 / firma.width
+        ratio_f = 650 / firma.width
         h_firma = int(firma.height * ratio_f)
-        firma = firma.resize((600, h_firma), Image.Resampling.LANCZOS)
-        img.paste(firma, (W - 600 - margin_logos, y_logos + 20), firma)
+        firma = firma.resize((650, h_firma), Image.Resampling.LANCZOS)
+        img.paste(firma, (W - 650 - margin_logos, y_logos + 20), firma)
 
-    # --- B. TÍTULO ---
+    # --- B. TÍTULO (USA NUEVA FUNCIÓN DE SOMBRA AVANZADA) ---
     titulo_texto = "INVITA"
     if logos_colab:
         titulo_texto = "INVITAN"
     
     y_titulo = 750
-    dibujar_texto_sombra(draw, titulo_texto, W/2, y_titulo, f_invita)
+    # NOTA: Se pasa 'img' y 'draw' a la nueva función
+    dibujar_texto_avanzado(img, draw, titulo_texto, W/2, y_titulo, f_invita, radio_sombra=30, offset=(15,15))
     
-    # --- C. DESCRIPCIÓN ---
+    # --- C. DESCRIPCIÓN (USA NUEVA FUNCIÓN DE SOMBRA AVANZADA) ---
     y_desc = y_titulo + 220
-    size_desc = 300
+    size_desc = 150
     
-    try:
-        f_desc = ImageFont.truetype(ruta_abs("Canaro-SemiBold.ttf"), size_desc)
-    except:
-        f_desc = f_invita # Usar Bold si falla SemiBold
+    if font_desc_path and os.path.exists(font_desc_path):
+        f_desc = ImageFont.truetype(font_desc_path, size_desc)
+    else:
+        f_desc = ImageFont.load_default()
     
-    lines = textwrap.wrap(desc1, width=28)
+    lines = textwrap.wrap(desc1, width=25) 
     
     if len(lines) > 4:
-        size_desc = 100
-        try: f_desc = ImageFont.truetype(ruta_abs("Canaro-SemiBold.ttf"), size_desc)
-        except: pass
-        lines = textwrap.wrap(desc1, width=32)
+        size_desc = 120
+        if font_desc_path and os.path.exists(font_desc_path):
+            f_desc = ImageFont.truetype(font_desc_path, size_desc)
+        lines = textwrap.wrap(desc1, width=30)
     
     for line in lines:
-        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc)
+        # Usamos la nueva función con un radio de desenfoque fuerte (25)
+        dibujar_texto_avanzado(img, draw, line, W/2, y_desc, f_desc, radio_sombra=25, offset=(10,10))
         y_desc += int(size_desc * 1.3)
 
     # --- D. CAJA DE FECHA ---
@@ -193,11 +209,10 @@ def generar_tipo_1(datos):
             caja = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
             caja = caja.resize((1000, 550), Image.Resampling.LANCZOS)
             img.paste(caja, (x_box, y_box), caja)
-            color_fecha = "white"
+            color_fecha = "white" # Asumimos PNG transparente
         else:
-            # Fallback
             draw.rectangle([x_box, y_box, x_box+1000, y_box+550], fill="white")
-            color_fecha = "black"
+            color_fecha = "black" # Caja blanca sólida
 
         cx = x_box + 500
         cy = y_box + 275
@@ -208,18 +223,19 @@ def generar_tipo_1(datos):
         txt_nums = f"{dia1} - {dia2}"
         txt_mes = mes1 if mes1 == mes2 else f"{mes1} - {mes2}"
         
-        # Ajuste vertical
+        # Dentro de la caja no usamos sombra desenfocada, solo texto plano
         draw.text((cx, cy - 60), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
         
         f_mes_uso = f_mes_box
         if len(txt_mes) > 15:
-            try: f_mes_uso = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 80)
+            try: f_mes_uso = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 90)
             except: pass
         
         draw.text((cx, cy + 120), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
         
+        # Info debajo de la caja (USA SOMBRA AVANZADA)
         y_info = y_box + 550 + 60
-        dibujar_texto_sombra(draw, str_hora, cx, y_info, f_info_fecha, anchor="mm")
+        dibujar_texto_avanzado(img, draw, str_hora, cx, y_info, f_info_fecha, radio_sombra=20)
             
     # 1 FECHA
     else:
@@ -243,38 +259,27 @@ def generar_tipo_1(datos):
         
         dia_sem = obtener_dia_semana(fecha1)
         y_info = y_box + 550 + 60
-        dibujar_texto_sombra(draw, dia_sem, cx, y_info, f_info_fecha, anchor="mm")
-        dibujar_texto_sombra(draw, str_hora, cx, y_info + 130, f_info_fecha, anchor="mm") 
-        # --- E. UBICACIÓN (CORREGIDO) ---
+        # Info debajo de la caja (USA SOMBRA AVANZADA)
+        dibujar_texto_avanzado(img, draw, dia_sem, cx, y_info, f_info_fecha, radio_sombra=20)
+        dibujar_texto_avanzado(img, draw, str_hora, cx, y_info + 130, f_info_fecha, radio_sombra=20)
+
+    # --- E. UBICACIÓN ---
     x_loc = 1400 
     y_loc = 2250 
     
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA")
-        
-        # --- CÓDIGO NUEVO PARA MANTENER PROPORCIÓN ---
-        # Definimos el ancho deseado (ej: 150 pixeles)
-        nuevo_ancho = 150
-        # Calculamos el alto proporcional automáticamente
-        ratio = nuevo_ancho / icon.width
-        nuevo_alto = int(icon.height * ratio)
-        # Redimensionamos usando las medidas proporcionales
-        icon = icon.resize((nuevo_ancho, nuevo_alto), Image.Resampling.LANCZOS)
-        # ---------------------------------------------
-
-        # Ajustamos un poquito la posición Y para centrarlo mejor si cambió la altura
-        y_loc_ajustado = y_loc - int(nuevo_alto / 4)
-
-        img.paste(icon, (x_loc, y_loc_ajustado), icon)
+        icon = icon.resize((150, 150), Image.Resampling.LANCZOS)
+        img.paste(icon, (x_loc, y_loc), icon)
     else:
-        # Fallback si no hay imagen, usamos un emoji
-        dibujar_texto_sombra(draw, "📍", x_loc + 75, y_loc, f_lugar, anchor="mm")
+        # Fallback con sombra avanzada
+        dibujar_texto_avanzado(img, draw, "📍", x_loc, y_loc, f_lugar, radio_sombra=20)
 
-    # El texto de la dirección sigue igual...
     lines_loc = textwrap.wrap(lugar, width=22)
     y_loc_txt = y_loc + 30
     for l in lines_loc:
-        dibujar_texto_sombra(draw, l, x_loc + 180, y_loc_txt, f_lugar, anchor="lm")
+        # Dirección con sombra avanzada
+        dibujar_texto_avanzado(img, draw, l, x_loc + 180, y_loc_txt, f_lugar, anchor="lm", radio_sombra=20, offset=(8,8))
         y_loc_txt += 110
 
     return img

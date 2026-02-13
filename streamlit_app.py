@@ -244,7 +244,7 @@ def generar_tipo_1(datos):
         dia_sem = obtener_dia_semana(fecha1)
         y_info = y_box + 550 + 60
         dibujar_texto_sombra(draw, dia_sem, cx, y_info, f_info_fecha, anchor="mm")
-        dibujar_texto_sombra(draw, str_hora, cx, y_info + 130, f_info_fecha, anchor="  
+        dibujar_texto_sombra(draw, str_hora, cx, y_info + 130, f_info_fecha, anchor="mm") 
         # --- E. UBICACIÓN (CORREGIDO) ---
     x_loc = 1400 
     y_loc = 2250 

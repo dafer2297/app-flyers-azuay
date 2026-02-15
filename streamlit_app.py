@@ -98,8 +98,10 @@ def generar_tipo_1(datos):
     
     W, H = 2400, 3000
     
-    # CONSTANTE DE MARGEN UNIFICADO (Derecha y Abajo iguales)
-    MARGIN_EDGE = 120 
+    # === CONSTANTE MAESTRA DE MARGEN ===
+    # Define la distancia desde los bordes laterales e inferiores para los bloques de esquina.
+    # Aumentado a 180 para evitar que la hora se corte abajo.
+    UNIVERSAL_MARGIN = 180 
 
     # 1. LIENZO BASE
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
@@ -124,7 +126,8 @@ def generar_tipo_1(datos):
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 250) 
         f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 350)
-        f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 180)
+        # Mes aumentado de tamaño
+        f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 200) 
         
         path_extra = ruta_abs("Canaro-ExtraBold.ttf")
         if not os.path.exists(path_extra): path_extra = ruta_abs("Canaro-Black.ttf")
@@ -161,17 +164,16 @@ def generar_tipo_1(datos):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
         y_desc += int(size_desc_val * 1.3)
 
-    # --- 5. CAJA DE FECHA (CORRECCIÓN DE CENTRADO Y ESPACIO) ---
+    # --- 5. CAJA DE FECHA (CENTRADO BAJADO, MARGEN UNIFICADO) ---
     h_caja = 645
-    x_box = MARGIN_EDGE # Usamos el mismo margen lateral
-    # Posición Y calculada desde abajo usando el margen unificado
-    y_box = H - h_caja - MARGIN_EDGE
+    x_box = UNIVERSAL_MARGIN # Margen izquierdo unificado
+    # Posición Y base usando el margen unificado
+    y_box = H - h_caja - UNIVERSAL_MARGIN
     
     str_hora = hora1.strftime('%H:%M %p')
     if hora2: str_hora += f" a {hora2.strftime('%H:%M %p')}"
     
     size_hora = 110
-    # REDUCCIÓN DE TAMAÑO PARA HORA DOBLE (Evitar desborde)
     if hora2: size_hora = 80 
         
     try: f_hora = ImageFont.truetype(path_extra, size_hora)
@@ -197,13 +199,12 @@ def generar_tipo_1(datos):
         
         f_mes_uso = f_mes_box
         if len(txt_mes) > 15: 
-            try: f_mes_uso = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 120)
+            try: f_mes_uso = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 140) # Fallback aumentado
             except: pass
 
-        # AJUSTE FINO DE CENTRADO VERTICAL Y ESPACIO ENTRE ELLOS
-        # Se separan más (+120) y se baja el centro visual (-100)
-        draw.text((cx, cy - 100), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
-        draw.text((cx, cy + 120), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
+        # AJUSTE DE CENTRADO: Bajamos el grupo (cy-70, cy+150)
+        draw.text((cx, cy - 70), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
+        draw.text((cx, cy + 150), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
         
         y_info_dia = y_box + h_caja + 50
         dibujar_texto_sombra(draw, str_hora, cx, y_info_dia, f_hora, offset=(8,8))
@@ -226,16 +227,16 @@ def generar_tipo_1(datos):
         dia_num = str(fecha1.day)
         mes_txt = obtener_mes_abbr(fecha1.month)
         
-        # AJUSTE FINO DE CENTRADO VERTICAL Y ESPACIO ENTRE ELLOS
-        draw.text((cx, cy - 100), dia_num, font=f_dia_box, fill=color_fecha, anchor="mm")
-        draw.text((cx, cy + 120), mes_txt, font=f_mes_box, fill=color_fecha, anchor="mm")
+        # AJUSTE DE CENTRADO: Bajamos el grupo
+        draw.text((cx, cy - 70), dia_num, font=f_dia_box, fill=color_fecha, anchor="mm")
+        draw.text((cx, cy + 150), mes_txt, font=f_mes_box, fill=color_fecha, anchor="mm")
         
         dia_sem = obtener_dia_semana(fecha1)
         y_info_dia = y_box + h_caja + 50
         dibujar_texto_sombra(draw, dia_sem, cx, y_info_dia, f_dia_semana, offset=(8,8))
         dibujar_texto_sombra(draw, str_hora, cx, y_info_dia + 110, f_hora, offset=(8,8))
 
-    # --- 6. UBICACIÓN (MÁRGENES IGUALES, MAYOR WRAPPING) ---
+    # --- 6. UBICACIÓN (WRAPPING MAYOR, MARGEN UNIFICADO) ---
     
     len_lug = len(lugar)
     if len_lug < 45: s_lug = 75
@@ -244,8 +245,8 @@ def generar_tipo_1(datos):
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
 
-    # AUMENTO DE WRAPPING (Más ancho para moverse a la izquierda)
-    wrap_width = 16 if s_lug == 75 else 20
+    # AUMENTO DE WRAPPING PARA HACER EL BLOQUE MÁS ANCHO
+    wrap_width = 22 if s_lug == 75 else 28
     
     lines_loc = textwrap.wrap(lugar, width=wrap_width)
     
@@ -253,10 +254,10 @@ def generar_tipo_1(datos):
     total_text_height = len(lines_loc) * line_height
     
     # Posición base Y (USANDO MARGEN UNIFICADO)
-    y_base_txt = H - MARGIN_EDGE
+    y_base_txt = H - UNIVERSAL_MARGIN
     
     # Posición ancla X (USANDO MARGEN UNIFICADO)
-    x_txt_anchor = W - MARGIN_EDGE
+    x_txt_anchor = W - UNIVERSAL_MARGIN
 
     # Calcular ancho máximo para alinear a la izquierda
     max_line_width = 0
@@ -266,6 +267,7 @@ def generar_tipo_1(datos):
     except:
         max_line_width = 300
 
+    # El inicio del texto se mueve más a la izquierda al ser el bloque más ancho
     x_text_start = x_txt_anchor - max_line_width
 
     # Cargar Icono

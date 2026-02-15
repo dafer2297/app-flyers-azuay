@@ -39,17 +39,39 @@ def set_design():
         .stApp {{ {bg_style} }}
         {font_css}
         h1, h2, h3 {{ font-family: 'Canaro', sans-serif !important; color: white !important; text-transform: uppercase; }}
-        .stButton > button {{ background-color: transparent; color: white; border: 2px solid white; border-radius: 15px; padding: 10px 20px; font-weight: bold; }}
-        .stButton > button:hover {{ background-color: #D81B60; border-color: #D81B60; }}
+        
+        /* Ocultar botones nativos para usar imágenes como triggers */
+        .stButton > button {{ display: none; }} 
+        div[data-testid="stButton"] > button {{ 
+            display: block; 
+            background-color: transparent; 
+            color: white; 
+            border: 2px solid white; 
+            border-radius: 15px; 
+            width: 100%;
+        }}
+        div[data-testid="stButton"] > button:hover {{ background-color: #D81B60; border-color: #D81B60; }}
+
         .stTextInput > div > div > input, .stTextArea > div > div > textarea, 
         .stDateInput > div > div > input, .stTimeInput > div > div > input {{
             background-color: white !important; color: black !important; border-radius: 8px; border: none;
         }}
         .stTextInput label, .stTextArea label, .stDateInput label, .stTimeInput label {{ display: none; }}
-        .label-negro {{ font-family: 'Canaro', sans-serif; font-weight: bold; font-size: 16px; color: black !important; margin-bottom: 2px; margin-top: 10px; text-shadow: none !important; }}
+        .label-negro {{ font-family: 'Canaro', sans-serif; font-weight: bold; font-size: 16px; color: black !important; margin-bottom: 2px; margin-top: 10px; }}
         .label-blanco {{ font-family: 'Canaro', sans-serif; font-weight: normal; font-size: 12px; color: white !important; margin-left: 5px; }}
-        .contador-ok {{ color: #C6FF00 !important; font-weight: bold; font-size: 14px; }}
-        .contador-mal {{ color: #FF5252 !important; font-weight: bold; font-size: 14px; }}
+        .label-menu {{ font-family: 'Canaro', sans-serif; font-weight: bold; font-size: 18px; color: white !important; margin-top: 5px; text-shadow: 0px 2px 4px rgba(0,0,0,0.5); }}
+
+        .zoom-hover {{
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }}
+        .zoom-hover:hover {{
+            transform: scale(1.03);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+        }}
+
         #MainMenu, footer, header {{visibility: hidden;}}
         </style>
         """, unsafe_allow_html=True
@@ -85,6 +107,11 @@ def resize_por_alto(img, alto_objetivo):
     ancho_nuevo = int(img.width * ratio)
     return img.resize((ancho_nuevo, alto_objetivo), Image.Resampling.LANCZOS)
 
+def img_to_base64(img):
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
+
 # ==============================================================================
 # 3. GENERADORES DE PLANTILLAS
 # ==============================================================================
@@ -106,7 +133,9 @@ def generar_tipo_1(datos):
     draw = ImageDraw.Draw(img)
     
     if os.path.exists("flyer_sombra.png"):
-        sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
+        sombra_img = Image.open("flyer_sombra.png").convert("RGBA")
+        if sombra_img.size != (W, H):
+            sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
@@ -137,15 +166,10 @@ def generar_tipo_1(datos):
     if chars_desc <= 75: size_desc_val = 110 
     elif chars_desc <= 150: size_desc_val = 90 
     else: size_desc_val = 75
-        
-    if path_desc and os.path.exists(path_desc):
-        f_desc = ImageFont.truetype(path_desc, size_desc_val)
-    else:
-        f_desc = ImageFont.load_default()
-    
+    if path_desc and os.path.exists(path_desc): f_desc = ImageFont.truetype(path_desc, size_desc_val)
+    else: f_desc = ImageFont.load_default()
     width_wrap = 35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55)
     lines = textwrap.wrap(desc1, width=width_wrap)
-    
     for line in lines:
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
         y_desc += int(size_desc_val * 1.1)
@@ -153,7 +177,6 @@ def generar_tipo_1(datos):
     h_caja = 645
     x_box = SIDE_MARGIN 
     y_box = Y_BOTTOM_BASELINE - 170 - h_caja
-    
     str_hora = hora1.strftime('%H:%M %p')
     if hora2: str_hora += f" a {hora2.strftime('%H:%M %p')}"
     size_hora = 110
@@ -174,10 +197,8 @@ def generar_tipo_1(datos):
         
     cx = x_box + (w_caja / 2)
     cy = y_box + (h_caja / 2)
-    
     draw.text((cx, cy - 50), str(fecha1.day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 170), obtener_mes_abbr(fecha1.month), font=f_mes_box, fill=color_fecha, anchor="mm")
-    
     y_info_dia = Y_BOTTOM_BASELINE
     dibujar_texto_sombra(draw, obtener_dia_semana(fecha1), cx, y_info_dia - 100, f_dia_semana, offset=(8,8), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, y_info_dia, f_hora, offset=(8,8), anchor="mm")
@@ -187,19 +208,16 @@ def generar_tipo_1(datos):
     else: s_lug = 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
-
     wrap_width = 22 if s_lug == 75 else 28
     lines_loc = textwrap.wrap(lugar, width=wrap_width)
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     y_base_txt = Y_BOTTOM_BASELINE
     x_txt_anchor = W - SIDE_MARGIN
-
     max_line_width = 0
     try:
         if lines_loc: max_line_width = max([f_lugar.getlength(line) for line in lines_loc])
     except: max_line_width = 300
-
     x_text_start = x_txt_anchor - max_line_width
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
@@ -215,7 +233,6 @@ def generar_tipo_1(datos):
         y_icon = y_text_center - (h_icon / 2)
         x_icon = x_text_start - 100 - 30 
         dibujar_texto_sombra(draw, "📍", x_icon + 50, y_icon + h_icon/2, f_lugar, anchor="mm")
-
     current_y_txt = y_base_txt - total_text_height + line_height
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_text_start, current_y_txt, f_lugar, anchor="ls", offset=(4,4))
@@ -227,7 +244,6 @@ def generar_tipo_1(datos):
         logo = Image.open("flyer_logo.png").convert("RGBA")
         logo = resize_por_alto(logo, 378)
         for _ in range(2): img.paste(logo, (margin_logos, y_logos), logo)
-    
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
         firma = resize_por_alto(firma, 378)
@@ -235,7 +251,7 @@ def generar_tipo_1(datos):
 
     return img.convert("RGB")
 
-# --- PLANTILLA TIPO 1 - VARIANTE 2 (MODERNA) ---
+# --- TIPO 1: MODERNA (VARIANTE 2) ---
 def generar_tipo_1_v2(datos):
     fondo = datos['fondo'].copy()
     desc1 = datos['desc1']
@@ -269,17 +285,14 @@ def generar_tipo_1_v2(datos):
         f_invita = f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_desc = None
 
-    # 1. Logo Prefectura (CENTRO)
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
         logo = resize_por_alto(logo, 378)
         x_logo = (W - logo.width) // 2
         for _ in range(2): img.paste(logo, (x_logo, 150), logo)
 
-    # 2. Texto
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
-    
     y_desc = y_titulo + 180 
     chars_desc = len(desc1)
     if chars_desc <= 75: size_desc_val = 110 
@@ -287,33 +300,28 @@ def generar_tipo_1_v2(datos):
     else: size_desc_val = 75
     if path_desc and os.path.exists(path_desc): f_desc = ImageFont.truetype(path_desc, size_desc_val)
     else: f_desc = ImageFont.load_default()
-    
     width_wrap = 35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55)
     lines = textwrap.wrap(desc1, width=width_wrap)
     for line in lines:
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
         y_desc += int(size_desc_val * 1.1)
 
-    # 3. Logo Jota (ABAJO DERECHA)
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
         firma = resize_por_alto(firma, 378)
         img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
 
-    # 4. Ubicación (ABAJO IZQUIERDA)
     len_lug = len(lugar)
     if len_lug < 45: s_lug = 75
     else: s_lug = 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
-
     wrap_width = 22 if s_lug == 75 else 28
     lines_loc = textwrap.wrap(lugar, width=wrap_width)
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     y_base_txt = Y_BOTTOM_BASELINE
     x_txt_start = SIDE_MARGIN + 130 
-    
     h_icon = 260
     w_icon = 100
     if os.path.exists("flyer_icono_lugar.png"):
@@ -323,18 +331,15 @@ def generar_tipo_1_v2(datos):
         y_mid = y_base_txt - (total_text_height / 2)
         img.paste(icon, (SIDE_MARGIN, int(y_mid - h_icon/2)), icon)
         x_txt_start = SIDE_MARGIN + w_icon + 30
-
     curr_y = y_base_txt - total_text_height + line_height
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4))
         curr_y += line_height
 
-    # 5. Caja Fecha (Encima Ubicación)
     y_linea_hora = y_base_txt - total_text_height - 150 
     h_caja = 645
     y_box = y_linea_hora - 170 - h_caja
     x_box = SIDE_MARGIN
-
     str_hora = hora1.strftime('%H:%M %p')
     if hora2: str_hora += f" a {hora2.strftime('%H:%M %p')}"
     size_hora = 110
@@ -343,21 +348,18 @@ def generar_tipo_1_v2(datos):
     except: f_hora = ImageFont.load_default()
 
     if os.path.exists("flyer_caja_fecha.png"):
-        caja = Image.open("flyer_caja_fecha.png").convert("RGBA")
-        caja = resize_por_alto(caja, h_caja)
+        caja = Image.open("flyer_caja_fecha.png").convert("RGBA").resize((645, 645), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box)), caja)
-        w_caja = caja.width
+        w_caja = 645
         color_fecha = "white"
     else:
         w_caja = 645
         draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white")
         color_fecha = "black"
-    
     cx = x_box + (w_caja / 2)
     cy = int(y_box + (h_caja / 2))
     draw.text((cx, cy - 50), str(fecha1.day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 170), obtener_mes_abbr(fecha1.month), font=f_mes_box, fill=color_fecha, anchor="mm")
-    
     dibujar_texto_sombra(draw, obtener_dia_semana(fecha1), cx, y_linea_hora - 100, f_dia_semana, offset=(8,8), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, y_linea_hora, f_hora, offset=(8,8), anchor="mm")
 
@@ -377,19 +379,24 @@ if os.path.exists("logo_superior.png"):
 query_params = st.query_params
 area_seleccionada = query_params.get("area", None)
 
+# Lógica para manejar cambios de variante vía parámetros URL (sin botones)
+variant_param = query_params.get("variant", None)
+if variant_param and 'variant_selected' in st.session_state:
+    st.session_state['variant_selected'] = variant_param
+
 if not area_seleccionada:
     st.markdown("<h2 style='text-align: center;'>SELECCIONA EL DEPARTAMENTO:</h2>", unsafe_allow_html=True)
     st.write("---")
     col1, col_cultura, col_recreacion, col4 = st.columns([1, 2, 2, 1])
-    # BOTONES CON TEXTO BLANCO (ESTILO INLINE + CLASE)
+    
     with col_cultura:
         if os.path.exists("btn_cultura.png"):
             img_b64 = get_base64_of_bin_file("btn_cultura.png")
-            st.markdown(f"""<a href="?area=Cultura" target="_self"><div style="text-align: center;"><img src="data:image/png;base64,{img_b64}" class="zoom-img" width="100%"><div class="label-negro" style="color: white !important;">CULTURA</div></div></a>""", unsafe_allow_html=True)
+            st.markdown(f"""<a href="?area=Cultura" target="_self" style="text-decoration:none;"><div style="text-align: center;"><img src="data:image/png;base64,{img_b64}" class="zoom-hover" width="100%"><div class="label-menu">CULTURA</div></div></a>""", unsafe_allow_html=True)
     with col_recreacion:
         if os.path.exists("btn_recreacion.png"):
             img_b64 = get_base64_of_bin_file("btn_recreacion.png")
-            st.markdown(f"""<a href="?area=Recreación" target="_self"><div style="text-align: center;"><img src="data:image/png;base64,{img_b64}" class="zoom-img" width="100%"><div class="label-negro" style="color: white !important;">RECREACIÓN</div></div></a>""", unsafe_allow_html=True)
+            st.markdown(f"""<a href="?area=Recreación" target="_self" style="text-decoration:none;"><div style="text-align: center;"><img src="data:image/png;base64,{img_b64}" class="zoom-hover" width="100%"><div class="label-menu">RECREACIÓN</div></div></a>""", unsafe_allow_html=True)
     st.write("")
     c1, c2, c3 = st.columns([1, 1, 1])
     with c1:
@@ -412,7 +419,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         st.markdown('<div class="label-negro">DESCRIPCIÓN 1</div>', unsafe_allow_html=True)
         desc1 = st.text_area("lbl_desc", key="lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150)
         
-        # LABEL BLANCO OPCIONAL
         st.markdown('<div class="label-negro">DESCRIPCIÓN 2 <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         desc2 = st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="", height=100)
         
@@ -435,7 +441,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         st.markdown('<div class="label-negro">DIRECCIÓN</div>', unsafe_allow_html=True)
         dir_texto = st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento")
         
-        # LABEL BLANCO OPCIONAL
         st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         logos = st.file_uploader("lbl_logos", key="lbl_logos", accept_multiple_files=True, label_visibility="collapsed")
 
@@ -460,7 +465,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
 
         st.write("")
         
-        if st.button("✨ GENERAR FLYER ✨", type="primary", use_container_width=True):
+        if st.button("✨ GENERAR FLYERS ✨", type="primary", use_container_width=True):
             errores = []
             if not st.session_state.lbl_desc: errores.append("Falta Descripción 1")
             if not st.session_state.lbl_fecha1: errores.append("Falta Fecha Inicio")
@@ -469,7 +474,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             if errores:
                 st.error(f"⚠️ {', '.join(errores)}")
             else:
-                # --- LÓGICA DE DETECCIÓN AUTOMÁTICA DE TIPO ---
                 has_desc2 = bool(st.session_state.lbl_desc2.strip())
                 has_fecha2 = st.session_state.lbl_fecha2 is not None
                 num_colabs = len(st.session_state.get('lbl_logos', [])) if st.session_state.get('lbl_logos') else 0
@@ -491,8 +495,8 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
                     elif not has_desc2 and has_fecha2: tipo_id = 11
                     elif has_desc2 and has_fecha2: tipo_id = 12
 
-                st.session_state['datos_finales'] = {
-                    'tipo_id': tipo_id,
+                # --- GENERACIÓN ANTICIPADA (ESTRATEGIA CACHÉ) ---
+                datos = {
                     'fondo': st.session_state.imagen_lista_para_flyer,
                     'desc1': st.session_state.lbl_desc,
                     'desc2': st.session_state.lbl_desc2,
@@ -504,8 +508,18 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
                     'logos': st.session_state.get('lbl_logos', []),
                     'area': area_seleccionada
                 }
-                # Por defecto seleccionamos Variante 1
+                
+                # Generamos TODAS las variantes AHORA
+                generated_images = {}
+                if tipo_id == 1:
+                    generated_images['v1'] = generar_tipo_1(datos)
+                    generated_images['v2'] = generar_tipo_1_v2(datos)
+                
+                st.session_state['datos_finales'] = datos
+                st.session_state['tipo_id'] = tipo_id
+                st.session_state['generated_images'] = generated_images
                 st.session_state['variant_selected'] = 'v1'
+                
                 st.query_params["area"] = "Final"
                 st.rerun()
 
@@ -519,82 +533,75 @@ elif area_seleccionada == "Final":
             st.query_params.clear()
             st.rerun()
     else:
-        datos = st.session_state['datos_finales']
-        tipo = datos['tipo_id']
+        tipo = st.session_state['tipo_id']
+        generated = st.session_state.get('generated_images', {})
+        sel = st.session_state.get('variant_selected', 'v1')
         
         # --- ZONA DE RESULTADOS ---
-        col_centro, col_derecha = st.columns([2, 1]) # Columna central más ancha
+        col_arte, col_flyer, col_descarga = st.columns([1.3, 1.5, 0.8])
         
-        if tipo == 1:
-            # Generar ambas variantes en memoria
-            img_v1 = generar_tipo_1(datos)
-            img_v2 = generar_tipo_1_v2(datos)
-            
-            # Verificar cuál está seleccionada
-            sel = st.session_state.get('variant_selected', 'v1')
-            
-            # --- COLUMNA DERECHA: OTRAS OPCIONES ---
-            with col_derecha:
-                st.markdown("<h3 style='text-align: center;'>OTRAS OPCIONES</h3>", unsafe_allow_html=True)
+        # IZQUIERDA (MASCOTA Y FIRMA)
+        with col_arte:
+            st.write("") 
+            if os.path.exists("mascota_pincel.png"): st.image("mascota_pincel.png", use_container_width=True)
+            st.write("")
+            if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
+
+        # CENTRO (IMAGEN GRANDE + CHOLA DESCARGA)
+        with col_flyer:
+            if tipo == 1 and generated:
+                # Mostrar imagen seleccionada
+                img_show = generated[sel]
+                fname = f"flyer_azuay_{sel}.png"
+                st.image(img_show, use_container_width=True)
                 
-                # Mostrar la miniatura de la que NO está seleccionada
-                if sel == 'v1':
-                    # Si estamos viendo la V1, mostramos la V2 aquí para cambiar
-                    st.image(img_v2, use_container_width=True)
-                    # Botón pequeño solo con icono para cambiar
-                    if st.button("🔄", key="btn_swap_v2", help="Cambiar a este diseño"):
-                        st.session_state['variant_selected'] = 'v2'
-                        st.rerun()
-                else:
-                    # Si estamos viendo la V2, mostramos la V1 aquí
-                    st.image(img_v1, use_container_width=True)
-                    if st.button("🔄", key="btn_swap_v1", help="Cambiar a este diseño"):
-                        st.session_state['variant_selected'] = 'v1'
-                        st.rerun()
-                
-                st.write("---")
-                
-                # --- CHOLA DE DESCARGA ---
-                # Preparamos la imagen seleccionada para descarga
-                img_to_download = img_v1 if sel == 'v1' else img_v2
-                fname = "flyer_tipo1_clasico.png" if sel == 'v1' else "flyer_tipo1_moderno.png"
-                
-                # Convertimos imagen a Base64 para el link HTML
+                # --- CHOLA DESCARGA ---
                 buf = io.BytesIO()
-                img_to_download.save(buf, format="PNG")
+                img_show.save(buf, format="PNG")
                 img_b64_dl = base64.b64encode(buf.getvalue()).decode()
                 
-                # Convertimos Chola a Base64
                 if os.path.exists("mascota_final.png"):
                     with open("mascota_final.png", "rb") as f:
                         chola_b64 = base64.b64encode(f.read()).decode()
                     
-                    # HTML para hacer la Chola clicable
                     html_chola = f"""
-                    <div style="text-align: center;">
+                    <div style="text-align: center; margin-top: 20px;">
                         <a href="data:image/png;base64,{img_b64_dl}" download="{fname}" style="text-decoration: none;">
-                            <img src="data:image/png;base64,{chola_b64}" width="220" style="cursor: pointer; transition: transform 0.2s;">
+                            <img src="data:image/png;base64,{chola_b64}" width="220" class="zoom-hover">
                             <div style="font-family: 'Canaro'; font-weight: bold; font-size: 20px; color: white; margin-top: 5px;">DESCARGUE AQUÍ</div>
                         </a>
                     </div>
                     """
                     st.markdown(html_chola, unsafe_allow_html=True)
                 else:
-                    # Fallback si no hay chola
                     st.download_button("⬇️ DESCARGAR", data=buf.getvalue(), file_name=fname, mime="image/png")
+            else:
+                st.info(f"Flyer TIPO {tipo} en construcción.")
 
-            # --- COLUMNA CENTRAL: IMAGEN GRANDE ---
-            with col_centro:
-                img_show = img_v1 if sel == 'v1' else img_v2
-                st.image(img_show, use_container_width=True)
-
-        else:
-            st.info(f"🚧 Has ingresado datos para el TIPO {tipo}. Por favor prueba con datos de Tipo 1 (1 Descripción, 1 Fecha, 0 Logos).")
+        # DERECHA (MINIATURAS CLICKABLES)
+        with col_descarga:
+            st.markdown("<h3 style='text-align: center; font-size: 20px;'>OTRAS OPCIONES</h3>", unsafe_allow_html=True)
+            
+            if tipo == 1 and generated:
+                # Mostrar la miniatura de la que NO está seleccionada
+                target = 'v2' if sel == 'v1' else 'v1'
+                thumb_img = generated[target]
+                thumb_b64 = img_to_base64(thumb_img)
+                
+                # Click en imagen recarga con ?variant=target
+                html_swap = f"""
+                <div style="text-align: center;">
+                    <a href="?area=Final&variant={target}" target="_self">
+                        <img src="data:image/png;base64,{thumb_b64}" class="zoom-hover" width="100%" style="border: 2px solid white; border-radius: 10px;">
+                    </a>
+                </div>
+                """
+                st.markdown(html_swap, unsafe_allow_html=True)
 
     st.write("---")
     if st.button("🔄 CREAR NUEVO"):
         st.query_params.clear()
-        keys_borrar = ['imagen_lista_para_flyer', 'datos_finales', 'lbl_desc', 'lbl_desc2', 'lbl_dir', 'variant_selected']
+        keys_borrar = ['imagen_lista_para_flyer', 'datos_finales', 'lbl_desc', 'lbl_desc2', 'lbl_dir', 'variant_selected', 'generated_images', 'tipo_id']
         for k in keys_borrar:
             if k in st.session_state: del st.session_state[k]
         st.rerun()

@@ -17,6 +17,11 @@ def get_base64_of_bin_file(bin_file):
         data = f.read()
     return base64.b64encode(data).decode()
 
+def img_to_base64(img):
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
+
 def set_design():
     bg_style = "background-color: #1E88E5;" 
     if os.path.exists("fondo_app.png"):
@@ -40,8 +45,8 @@ def set_design():
         {font_css}
         h1, h2, h3 {{ font-family: 'Canaro', sans-serif !important; color: white !important; text-transform: uppercase; }}
         
-        /* ESTILOS DE BOTONES E INPUTS */
-        .stButton > button {{ 
+        /* ESTILOS DE BOTONES ESTÁNDAR (Como el de Generar) */
+        div[data-testid="stButton"] > button {{ 
             background-color: transparent; 
             color: white; 
             border: 2px solid white; 
@@ -49,8 +54,9 @@ def set_design():
             width: 100%;
             font-weight: bold;
         }}
-        .stButton > button:hover {{ background-color: #D81B60; border-color: #D81B60; }}
+        div[data-testid="stButton"] > button:hover {{ background-color: #D81B60; border-color: #D81B60; }}
 
+        /* INPUTS */
         .stTextInput > div > div > input, .stTextArea > div > div > textarea, 
         .stDateInput > div > div > input, .stTimeInput > div > div > input {{
             background-color: white !important; color: black !important; border-radius: 8px; border: none;
@@ -61,22 +67,23 @@ def set_design():
         .label-negro {{ font-family: 'Canaro', sans-serif; font-weight: bold; font-size: 16px; color: black !important; margin-bottom: 2px; margin-top: 10px; }}
         .label-blanco {{ font-family: 'Canaro', sans-serif; font-weight: normal; font-size: 12px; color: white !important; margin-left: 5px; }}
         
-        /* CORRECCIÓN: TEXTO DEL MENÚ BLANCO PURO */
+        /* MENÚ BLANCO - FORZADO */
         .label-menu {{ 
             font-family: 'Canaro', sans-serif; 
             font-weight: bold; 
             font-size: 20px; 
-            color: white !important; 
+            color: white !important; /* BLANCO */
             margin-top: 10px; 
             text-transform: uppercase;
             text-shadow: 0px 2px 4px rgba(0,0,0,0.5);
             text-decoration: none !important;
         }}
 
-        /* QUITANDO BORDES MOLESTOS A LAS IMÁGENES CON LINK */
+        /* QUITANDO BORDES AZULES A LAS IMÁGENES CON LINK (CHOLA) */
         a img {{ border: none !important; outline: none !important; box-shadow: none !important; }}
+        a {{ text-decoration: none !important; }}
         
-        /* EFECTO HOVER SIMPLE */
+        /* EFECTO HOVER SIMPLE PARA MENU */
         .zoom-hover {{ transition: transform 0.2s; }}
         .zoom-hover:hover {{ transform: scale(1.05); }}
 
@@ -114,11 +121,6 @@ def resize_por_alto(img, alto_objetivo):
     ratio = alto_objetivo / img.height
     ancho_nuevo = int(img.width * ratio)
     return img.resize((ancho_nuevo, alto_objetivo), Image.Resampling.LANCZOS)
-
-def img_to_base64(img):
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return base64.b64encode(buf.getvalue()).decode()
 
 # ==============================================================================
 # 3. GENERADORES DE PLANTILLAS
@@ -193,7 +195,7 @@ def generar_tipo_1(datos):
     if os.path.exists("flyer_caja_fecha.png"):
         caja = Image.open("flyer_caja_fecha.png").convert("RGBA").resize((645, 645), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, y_box), caja)
-        w_caja = 645
+        w_caja = caja.width
         color_fecha = "white"
     else:
         w_caja = 645
@@ -384,6 +386,11 @@ if os.path.exists("logo_superior.png"):
 query_params = st.query_params
 area_seleccionada = query_params.get("area", None)
 
+# Lógica para manejar cambios de variante vía parámetros URL (sin botones)
+variant_param = query_params.get("variant", None)
+if variant_param and 'variant_selected' in st.session_state:
+    st.session_state['variant_selected'] = variant_param
+
 if not area_seleccionada:
     st.markdown("<h2 style='text-align: center;'>SELECCIONA EL DEPARTAMENTO:</h2>", unsafe_allow_html=True)
     st.write("---")
@@ -392,27 +399,11 @@ if not area_seleccionada:
     with col_cultura:
         if os.path.exists("btn_cultura.png"):
             img_b64 = get_base64_of_bin_file("btn_cultura.png")
-            # Usamos <a> tags aquí porque es el inicio y necesitamos limpiar el estado.
-            # CORRECCIÓN: Agregado text-decoration:none y color white !important
-            st.markdown(f"""
-            <a href="?area=Cultura" target="_self" style="text-decoration:none;">
-                <div style="text-align: center;">
-                    <img src="data:image/png;base64,{img_b64}" class="zoom-hover" width="100%">
-                    <div class="label-menu">CULTURA</div>
-                </div>
-            </a>""", unsafe_allow_html=True)
-            
+            st.markdown(f"""<a href="?area=Cultura" target="_self" style="text-decoration:none;"><div style="text-align: center;"><img src="data:image/png;base64,{img_b64}" class="zoom-hover" width="100%"><div class="label-menu">CULTURA</div></div></a>""", unsafe_allow_html=True)
     with col_recreacion:
         if os.path.exists("btn_recreacion.png"):
             img_b64 = get_base64_of_bin_file("btn_recreacion.png")
-            st.markdown(f"""
-            <a href="?area=Recreación" target="_self" style="text-decoration:none;">
-                <div style="text-align: center;">
-                    <img src="data:image/png;base64,{img_b64}" class="zoom-hover" width="100%">
-                    <div class="label-menu">RECREACIÓN</div>
-                </div>
-            </a>""", unsafe_allow_html=True)
-    
+            st.markdown(f"""<a href="?area=Recreación" target="_self" style="text-decoration:none;"><div style="text-align: center;"><img src="data:image/png;base64,{img_b64}" class="zoom-hover" width="100%"><div class="label-menu">RECREACIÓN</div></div></a>""", unsafe_allow_html=True)
     st.write("")
     c1, c2, c3 = st.columns([1, 1, 1])
     with c1:
@@ -552,25 +543,24 @@ elif area_seleccionada == "Final":
         generated = st.session_state.get('generated_images', {})
         sel = st.session_state.get('variant_selected', 'v1')
         
-        # --- ZONA DE RESULTADOS ---
         col_arte, col_flyer, col_descarga = st.columns([1.3, 1.5, 0.8])
         
-        # IZQUIERDA (Mascota y Firma)
+        # IZQUIERDA
         with col_arte:
             st.write("") 
             if os.path.exists("mascota_pincel.png"): st.image("mascota_pincel.png", use_container_width=True)
             st.write("")
             if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
 
-        # CENTRO (Imagen + Chola Descarga)
+        # CENTRO
         with col_flyer:
             if tipo == 1 and generated:
-                # Imagen Grande
+                # Mostrar imagen
                 img_show = generated[sel]
                 fname = f"flyer_azuay_{sel}.png"
                 st.image(img_show, use_container_width=True)
                 
-                # CHOLA DESCARGABLE (Sin borde, HTML puro)
+                # CHOLA DESCARGA (SIN BORDE)
                 buf = io.BytesIO()
                 img_show.save(buf, format="PNG")
                 img_b64_dl = base64.b64encode(buf.getvalue()).decode()
@@ -581,9 +571,9 @@ elif area_seleccionada == "Final":
                     
                     html_chola = f"""
                     <div style="text-align: center; margin-top: 20px;">
-                        <a href="data:image/png;base64,{img_b64_dl}" download="{fname}" style="text-decoration: none; border: none; outline: none;">
-                            <img src="data:image/png;base64,{chola_b64}" width="220" class="zoom-hover" style="border: none; outline: none;">
-                            <div style="font-family: 'Canaro'; font-weight: bold; font-size: 20px; color: white; margin-top: 5px;">DESCARGUE AQUÍ</div>
+                        <a href="data:image/png;base64,{img_b64_dl}" download="{fname}" style="text-decoration: none; border: none !important; outline: none !important;">
+                            <img src="data:image/png;base64,{chola_b64}" width="220" class="zoom-hover" style="border: none !important; outline: none !important;">
+                            <div style="font-family: 'Canaro'; font-weight: bold; font-size: 20px; color: white; margin-top: 5px; text-decoration: none;">DESCARGUE AQUÍ</div>
                         </a>
                     </div>
                     """
@@ -593,22 +583,43 @@ elif area_seleccionada == "Final":
             else:
                 st.info(f"Flyer TIPO {tipo} en construcción.")
 
-        # DERECHA (Selector con BOTONES INVISIBLES DE STREAMLIT)
+        # DERECHA (EL TRUCO DEL BOTÓN IMAGEN)
         with col_descarga:
             st.markdown("<h3 style='text-align: center; font-size: 20px;'>OTRAS OPCIONES</h3>", unsafe_allow_html=True)
             
             if tipo == 1 and generated:
-                # Determinamos cual NO está seleccionada para mostrarla como opción
+                # La opción NO seleccionada
                 target = 'v2' if sel == 'v1' else 'v1'
                 thumb_img = generated[target]
+                thumb_b64 = img_to_base64(thumb_img)
                 
-                # 1. Mostramos la imagen
-                st.image(thumb_img, use_container_width=True)
+                # Inyectamos CSS específico para ESTE botón de la columna derecha
+                # Usamos el selector del tercer hijo div para apuntar a esta columna
+                css_button_img = f"""
+                <style>
+                div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] button {{
+                    background-image: url("data:image/png;base64,{thumb_b64}");
+                    background-size: cover;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    height: 300px;
+                    border: 2px solid transparent;
+                    color: transparent !important;
+                    transition: transform 0.2s ease;
+                }}
+                div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] button:hover {{
+                    transform: scale(1.05);
+                    border: 2px solid white;
+                }}
+                div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] button:active {{
+                    transform: scale(0.98);
+                }}
+                </style>
+                """
+                st.markdown(css_button_img, unsafe_allow_html=True)
                 
-                # 2. Ponemos un botón invisible que ocupa el ancho para hacer el cambio
-                # (NOTA: Es imposible hacer clic en la imagen directamente sin hacks que rompen datos.
-                #  Usamos un botón claro justo debajo).
-                if st.button("🔄 USAR ESTE DISEÑO", key=f"btn_swap_{target}", use_container_width=True):
+                # Renderizamos el botón "invisible" que ahora tiene la imagen de fondo
+                if st.button("CAMBIAR DISEÑO", key=f"btn_swap_{target}"):
                     st.session_state['variant_selected'] = target
                     st.rerun()
 

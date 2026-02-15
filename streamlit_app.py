@@ -93,18 +93,17 @@ def generar_tipo_1(datos):
     
     W, H = 2400, 3000
     
-    # LIENZO BASE
+    # 1. LIENZO BASE
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 1. SOMBRA PNG
+    # 2. SOMBRA PNG (FONDO OSCURO)
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA")
         if sombra_img.size != (W, H):
             sombra_img = sombra_img.resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
-        # Fallback
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.3), H):
@@ -126,31 +125,9 @@ def generar_tipo_1(datos):
         f_invita = f_dia_box = f_mes_box = f_info_fecha = f_lugar = ImageFont.load_default()
         font_desc_path = None
 
-    # --- A. LOGOS HEADER (ESTRATEGIA DE APILADO) ---
-    y_logos = 150
-    margin_logos = 120
+    # --- 3. DIBUJAR TODO EL CONTENIDO (TEXTOS, CAJAS, ICONOS) ---
     
-    # >>>>>> LOGO PREFECTURA (APILADO 3 VECES) <<<<<<
-    if os.path.exists("flyer_logo.png"):
-        logo = Image.open("flyer_logo.png").convert("RGBA")
-        
-        # Pegamos el mismo logo 3 veces en el mismo lugar.
-        # Esto satura el color si el PNG tiene transparencias débiles.
-        for _ in range(3):
-            img.paste(logo, (margin_logos, y_logos), logo)
-    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    
-    # LOGO JOTA (Se mantiene igual, una sola vez)
-    if os.path.exists("flyer_firma.png"):
-        firma = Image.open("flyer_firma.png").convert("RGBA")
-        target_w_f = 650
-        if firma.width > target_w_f:
-             ratio_f = target_w_f / firma.width
-             h_firma = int(firma.height * ratio_f)
-             firma = firma.resize((target_w_f, h_firma), Image.Resampling.LANCZOS)
-        img.paste(firma, (W - firma.width - margin_logos, y_logos + 20), firma)
-
-    # --- B. TÍTULO ---
+    # TÍTULO
     titulo_texto = "INVITA"
     if logos_colab:
         titulo_texto = "INVITAN"
@@ -158,7 +135,7 @@ def generar_tipo_1(datos):
     y_titulo = 750
     dibujar_texto_sombra_simple(draw, titulo_texto, W/2, y_titulo, f_invita, offset=(12,12))
     
-    # --- C. DESCRIPCIÓN ---
+    # DESCRIPCIÓN
     y_desc = y_titulo + 220
     size_desc = 150
     
@@ -179,7 +156,7 @@ def generar_tipo_1(datos):
         dibujar_texto_sombra_simple(draw, line, W/2, y_desc, f_desc, offset=(10,10))
         y_desc += int(size_desc * 1.3)
 
-    # --- D. CAJA DE FECHA ---
+    # CAJA DE FECHA
     x_box = 200
     y_box = 2100 
     
@@ -245,7 +222,7 @@ def generar_tipo_1(datos):
         dibujar_texto_sombra_simple(draw, dia_sem, cx, y_info, f_info_fecha, offset=(8,8))
         dibujar_texto_sombra_simple(draw, str_hora, cx, y_info + 130, f_info_fecha, offset=(8,8))
 
-    # --- E. UBICACIÓN ---
+    # UBICACIÓN
     x_loc = 1400 
     y_loc = 2250 
     
@@ -266,7 +243,30 @@ def generar_tipo_1(datos):
         dibujar_texto_sombra_simple(draw, l, x_loc + 180, y_loc_txt, f_lugar, anchor="lm", offset=(5,5))
         y_loc_txt += 110
 
-    # --- APLANAR IMAGEN ---
+    # --- 4. PEGAR LOGOS AL FINAL (TOP LAYER) ---
+    # Al pegarlos aquí, garantizamos que estén ENCIMA de la sombra y de todo lo demás.
+    
+    y_logos = 150
+    margin_logos = 120
+    
+    # LOGO PREFECTURA (Sin resize, apilado 3 veces para color sólido)
+    if os.path.exists("flyer_logo.png"):
+        logo = Image.open("flyer_logo.png").convert("RGBA")
+        # APILADO DE COLOR (3 CAPAS)
+        for _ in range(3):
+            img.paste(logo, (margin_logos, y_logos), logo)
+    
+    # LOGO JOTA (Sin resize agresivo)
+    if os.path.exists("flyer_firma.png"):
+        firma = Image.open("flyer_firma.png").convert("RGBA")
+        target_w_f = 650
+        if firma.width > target_w_f:
+             ratio_f = target_w_f / firma.width
+             h_firma = int(firma.height * ratio_f)
+             firma = firma.resize((target_w_f, h_firma), Image.Resampling.LANCZOS)
+        img.paste(firma, (W - firma.width - margin_logos, y_logos + 20), firma)
+
+    # --- 5. APLANAR A RGB ---
     img_final = img.convert("RGB")
     
     return img_final
@@ -358,6 +358,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         if archivo_subido:
             img_orig = Image.open(archivo_subido)
             st.info("Ajusta el recorte. Recuerda usar imágenes de buena calidad.")
+            # RECORTADOR ESTÁNDAR
             img_crop = st_cropper(
                 img_orig, 
                 realtime_update=True, 

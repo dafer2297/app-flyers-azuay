@@ -98,10 +98,11 @@ def generar_tipo_1(datos):
     
     W, H = 2400, 3000
     
-    # === CONSTANTE MAESTRA DE MARGEN ===
-    # Define la distancia desde los bordes laterales e inferiores para los bloques de esquina.
-    # Aumentado a 180 para evitar que la hora se corte abajo.
-    UNIVERSAL_MARGIN = 180 
+    # === CONSTANTES DE ALINEACIÓN ===
+    # Margen lateral para los bloques de esquina
+    SIDE_MARGIN = 180 
+    # Coordenada Y donde se alinean los textos inferiores de ambos bloques (H - 150px)
+    Y_BOTTOM_BASELINE = H - 150
 
     # 1. LIENZO BASE
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
@@ -126,7 +127,6 @@ def generar_tipo_1(datos):
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 250) 
         f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 350)
-        # Mes aumentado de tamaño
         f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 200) 
         
         path_extra = ruta_abs("Canaro-ExtraBold.ttf")
@@ -164,11 +164,13 @@ def generar_tipo_1(datos):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
         y_desc += int(size_desc_val * 1.3)
 
-    # --- 5. CAJA DE FECHA (CENTRADO BAJADO, MARGEN UNIFICADO) ---
+    # --- 5. CAJA DE FECHA (ALINEADA A LA BASELINE INFERIOR) ---
     h_caja = 645
-    x_box = UNIVERSAL_MARGIN # Margen izquierdo unificado
-    # Posición Y base usando el margen unificado
-    y_box = H - h_caja - UNIVERSAL_MARGIN
+    x_box = SIDE_MARGIN # Margen lateral izquierdo
+    
+    # Calculamos la posición Y de la caja hacia atrás desde la línea base inferior
+    # La hora estará en Y_BOTTOM_BASELINE. 50px arriba termina la caja.
+    y_box = Y_BOTTOM_BASELINE - 50 - h_caja
     
     str_hora = hora1.strftime('%H:%M %p')
     if hora2: str_hora += f" a {hora2.strftime('%H:%M %p')}"
@@ -199,15 +201,15 @@ def generar_tipo_1(datos):
         
         f_mes_uso = f_mes_box
         if len(txt_mes) > 15: 
-            try: f_mes_uso = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 140) # Fallback aumentado
+            try: f_mes_uso = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 140)
             except: pass
 
-        # AJUSTE DE CENTRADO: Bajamos el grupo (cy-70, cy+150)
         draw.text((cx, cy - 70), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
         draw.text((cx, cy + 150), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
         
-        y_info_dia = y_box + h_caja + 50
-        dibujar_texto_sombra(draw, str_hora, cx, y_info_dia, f_hora, offset=(8,8))
+        # La hora se alinea a la línea base inferior compartida
+        y_info_dia = Y_BOTTOM_BASELINE
+        dibujar_texto_sombra(draw, str_hora, cx, y_info_dia, f_hora, offset=(8,8), anchor="mm")
             
     else: # Corta (1 fecha)
         if os.path.exists("flyer_caja_fecha.png"):
@@ -227,16 +229,18 @@ def generar_tipo_1(datos):
         dia_num = str(fecha1.day)
         mes_txt = obtener_mes_abbr(fecha1.month)
         
-        # AJUSTE DE CENTRADO: Bajamos el grupo
         draw.text((cx, cy - 70), dia_num, font=f_dia_box, fill=color_fecha, anchor="mm")
         draw.text((cx, cy + 150), mes_txt, font=f_mes_box, fill=color_fecha, anchor="mm")
         
         dia_sem = obtener_dia_semana(fecha1)
-        y_info_dia = y_box + h_caja + 50
-        dibujar_texto_sombra(draw, dia_sem, cx, y_info_dia, f_dia_semana, offset=(8,8))
-        dibujar_texto_sombra(draw, str_hora, cx, y_info_dia + 110, f_hora, offset=(8,8))
+        # El texto inferior se alinea a la línea base compartida
+        y_info_dia = Y_BOTTOM_BASELINE
+        # Día un poco más arriba
+        dibujar_texto_sombra(draw, dia_sem, cx, y_info_dia - 110, f_dia_semana, offset=(8,8), anchor="mm")
+        # Hora en la línea base
+        dibujar_texto_sombra(draw, str_hora, cx, y_info_dia, f_hora, offset=(8,8), anchor="mm")
 
-    # --- 6. UBICACIÓN (WRAPPING MAYOR, MARGEN UNIFICADO) ---
+    # --- 6. UBICACIÓN (ALINEADA A LA BASELINE INFERIOR) ---
     
     len_lug = len(lugar)
     if len_lug < 45: s_lug = 75
@@ -245,7 +249,6 @@ def generar_tipo_1(datos):
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
 
-    # AUMENTO DE WRAPPING PARA HACER EL BLOQUE MÁS ANCHO
     wrap_width = 22 if s_lug == 75 else 28
     
     lines_loc = textwrap.wrap(lugar, width=wrap_width)
@@ -253,11 +256,11 @@ def generar_tipo_1(datos):
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     
-    # Posición base Y (USANDO MARGEN UNIFICADO)
-    y_base_txt = H - UNIVERSAL_MARGIN
+    # Posición base Y (LA MISMA LÍNEA BASE QUE LA FECHA)
+    y_base_txt = Y_BOTTOM_BASELINE
     
-    # Posición ancla X (USANDO MARGEN UNIFICADO)
-    x_txt_anchor = W - UNIVERSAL_MARGIN
+    # Posición ancla X (Margen lateral derecho)
+    x_txt_anchor = W - SIDE_MARGIN
 
     # Calcular ancho máximo para alinear a la izquierda
     max_line_width = 0
@@ -267,7 +270,6 @@ def generar_tipo_1(datos):
     except:
         max_line_width = 300
 
-    # El inicio del texto se mueve más a la izquierda al ser el bloque más ancho
     x_text_start = x_txt_anchor - max_line_width
 
     # Cargar Icono
@@ -280,7 +282,8 @@ def generar_tipo_1(datos):
         icon = None
         w_icon = 100
 
-    # Centrado vertical del icono
+    # Centrado vertical del icono respecto al bloque de texto
+    # El centro del texto es la base menos la mitad de su altura total
     y_text_center = y_base_txt - (total_text_height / 2)
     y_icon = y_text_center - (h_icon / 2)
     
@@ -294,10 +297,13 @@ def generar_tipo_1(datos):
         dibujar_texto_sombra(draw, "📍", x_icon + w_icon/2, y_icon + h_icon/2, f_lugar, anchor="mm")
 
     # Dibujar Texto ALINEADO A LA IZQUIERDA
-    current_y_txt = y_text_center - (total_text_height / 2) + (line_height / 2) - 10
+    # Empezamos a dibujar desde la primera línea (arriba)
+    current_y_txt = y_base_txt - total_text_height + line_height
     
     for l in lines_loc:
-        dibujar_texto_sombra(draw, l, x_text_start, current_y_txt, f_lugar, anchor="lm", offset=(4,4))
+        # anchor="ls" (Left Baseline) en x_text_start
+        # Usamos 'ls' para que la base de la letra coincida exactamente con la coordenada Y
+        dibujar_texto_sombra(draw, l, x_text_start, current_y_txt, f_lugar, anchor="ls", offset=(4,4))
         current_y_txt += line_height
 
     # --- 7. LOGOS SUPERIORES ---

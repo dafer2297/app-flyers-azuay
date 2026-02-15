@@ -99,9 +99,7 @@ def generar_tipo_1(datos):
     W, H = 2400, 3000
     
     # === CONSTANTES DE ALINEACIÓN ===
-    # Margen lateral para los bloques de esquina
     SIDE_MARGIN = 180 
-    # Coordenada Y donde se alinean los textos inferiores de ambos bloques (H - 150px)
     Y_BOTTOM_BASELINE = H - 150
 
     # 1. LIENZO BASE
@@ -140,7 +138,7 @@ def generar_tipo_1(datos):
         f_invita = f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_desc = None
 
-    # --- 4. CABECERA ---
+    # --- 4. CABECERA (DESCRIPCIÓN MÁS ANCHA Y JUNTAS) ---
     y_titulo = 850 
     titulo_texto = "INVITA" if not logos_colab else "INVITAN"
     dibujar_texto_sombra(draw, titulo_texto, W/2, y_titulo, f_invita, offset=(10,10))
@@ -157,20 +155,21 @@ def generar_tipo_1(datos):
     else:
         f_desc = ImageFont.load_default()
     
-    width_wrap = 28 if size_desc_val >= 110 else (35 if size_desc_val >= 90 else 45)
+    # AUMENTO DE WRAPPING (Texto más ancho)
+    width_wrap = 35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55)
     lines = textwrap.wrap(desc1, width=width_wrap)
     
     for line in lines:
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
-        y_desc += int(size_desc_val * 1.3)
+        # REDUCCIÓN DE INTERLINEADO (Líneas más juntas: 1.1 en vez de 1.3)
+        y_desc += int(size_desc_val * 1.1)
 
-    # --- 5. CAJA DE FECHA (ALINEADA A LA BASELINE INFERIOR) ---
+    # --- 5. CAJA DE FECHA (CAJA MÁS ARRIBA, DÍA/HORA MÁS JUNTOS) ---
     h_caja = 645
-    x_box = SIDE_MARGIN # Margen lateral izquierdo
+    x_box = SIDE_MARGIN 
     
-    # Calculamos la posición Y de la caja hacia atrás desde la línea base inferior
-    # La hora estará en Y_BOTTOM_BASELINE. 50px arriba termina la caja.
-    y_box = Y_BOTTOM_BASELINE - 50 - h_caja
+    # SUBIR LA CAJA: Aumentamos el espacio entre la línea base y la caja (de 50 a 180)
+    y_box = Y_BOTTOM_BASELINE - 180 - h_caja
     
     str_hora = hora1.strftime('%H:%M %p')
     if hora2: str_hora += f" a {hora2.strftime('%H:%M %p')}"
@@ -207,7 +206,6 @@ def generar_tipo_1(datos):
         draw.text((cx, cy - 70), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
         draw.text((cx, cy + 150), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
         
-        # La hora se alinea a la línea base inferior compartida
         y_info_dia = Y_BOTTOM_BASELINE
         dibujar_texto_sombra(draw, str_hora, cx, y_info_dia, f_hora, offset=(8,8), anchor="mm")
             
@@ -233,11 +231,9 @@ def generar_tipo_1(datos):
         draw.text((cx, cy + 150), mes_txt, font=f_mes_box, fill=color_fecha, anchor="mm")
         
         dia_sem = obtener_dia_semana(fecha1)
-        # El texto inferior se alinea a la línea base compartida
         y_info_dia = Y_BOTTOM_BASELINE
-        # Día un poco más arriba
-        dibujar_texto_sombra(draw, dia_sem, cx, y_info_dia - 110, f_dia_semana, offset=(8,8), anchor="mm")
-        # Hora en la línea base
+        # REDUCCIÓN DE ESPACIO ENTRE DÍA Y HORA (de 110px a 70px)
+        dibujar_texto_sombra(draw, dia_sem, cx, y_info_dia - 70, f_dia_semana, offset=(8,8), anchor="mm")
         dibujar_texto_sombra(draw, str_hora, cx, y_info_dia, f_hora, offset=(8,8), anchor="mm")
 
     # --- 6. UBICACIÓN (ALINEADA A LA BASELINE INFERIOR) ---
@@ -256,13 +252,9 @@ def generar_tipo_1(datos):
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     
-    # Posición base Y (LA MISMA LÍNEA BASE QUE LA FECHA)
     y_base_txt = Y_BOTTOM_BASELINE
-    
-    # Posición ancla X (Margen lateral derecho)
     x_txt_anchor = W - SIDE_MARGIN
 
-    # Calcular ancho máximo para alinear a la izquierda
     max_line_width = 0
     try:
         if lines_loc:
@@ -272,7 +264,6 @@ def generar_tipo_1(datos):
 
     x_text_start = x_txt_anchor - max_line_width
 
-    # Cargar Icono
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA")
@@ -282,27 +273,19 @@ def generar_tipo_1(datos):
         icon = None
         w_icon = 100
 
-    # Centrado vertical del icono respecto al bloque de texto
-    # El centro del texto es la base menos la mitad de su altura total
     y_text_center = y_base_txt - (total_text_height / 2)
     y_icon = y_text_center - (h_icon / 2)
     
-    # Icono a la izquierda del texto
     x_icon = x_text_start - w_icon - 30 
     
-    # Dibujar Icono
     if icon:
         img.paste(icon, (int(x_icon), int(y_icon)), icon)
     else:
         dibujar_texto_sombra(draw, "📍", x_icon + w_icon/2, y_icon + h_icon/2, f_lugar, anchor="mm")
 
-    # Dibujar Texto ALINEADO A LA IZQUIERDA
-    # Empezamos a dibujar desde la primera línea (arriba)
     current_y_txt = y_base_txt - total_text_height + line_height
     
     for l in lines_loc:
-        # anchor="ls" (Left Baseline) en x_text_start
-        # Usamos 'ls' para que la base de la letra coincida exactamente con la coordenada Y
         dibujar_texto_sombra(draw, l, x_text_start, current_y_txt, f_lugar, anchor="ls", offset=(4,4))
         current_y_txt += line_height
 

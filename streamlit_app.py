@@ -123,7 +123,9 @@ def generar_tipo_1(datos):
 
     # --- 3. CARGA DE FUENTES ---
     try:
-        f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 250) 
+        # TÍTULO: Reducido a 220 para que sea más pequeño
+        f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
+        
         f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 350)
         f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 200) 
         
@@ -162,11 +164,11 @@ def generar_tipo_1(datos):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
         y_desc += int(size_desc_val * 1.1)
 
-    # --- 5. CAJA DE FECHA (SEPARACIÓN DÍA/HORA CORREGIDA) ---
+    # --- 5. CAJA DE FECHA (CON DÍA SEPARADO) ---
     h_caja = 645
     x_box = SIDE_MARGIN 
     
-    # SUBIR CAJA: De 140 a 170 para que al subir el día no choque
+    # SUBIR CAJA (Margen 170)
     y_box = Y_BOTTOM_BASELINE - 170 - h_caja
     
     str_hora = hora1.strftime('%H:%M %p')
@@ -231,7 +233,7 @@ def generar_tipo_1(datos):
         dia_sem = obtener_dia_semana(fecha1)
         y_info_dia = Y_BOTTOM_BASELINE
         
-        # AQUI ESTA LA CORRECCIÓN: SUBIMOS EL DÍA (de -70 a -100) PARA SEPARARLO DE LA HORA
+        # DÍA SUBIDO (Separación de hora)
         dibujar_texto_sombra(draw, dia_sem, cx, y_info_dia - 100, f_dia_semana, offset=(8,8), anchor="mm")
         dibujar_texto_sombra(draw, str_hora, cx, y_info_dia, f_hora, offset=(8,8), anchor="mm")
 

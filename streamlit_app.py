@@ -98,7 +98,7 @@ def generar_tipo_1(datos):
     
     W, H = 2400, 3000
     
-    # CONSTANTES DE MÁRGENES (Aumentados para cumplir con el diseño)
+    # CONSTANTES DE MÁRGENES GENERALES
     PADDING_BOTTOM = 250 
     PADDING_SIDES = 200
 
@@ -123,19 +123,14 @@ def generar_tipo_1(datos):
 
     # --- 3. CARGA DE FUENTES ---
     try:
-        # TÍTULO: Tamaño reducido
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 250) 
+        f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 350) # Número grande
+        f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 180) # Mes más pequeño
         
-        # CAJA FECHA:
-        f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 350)
-        f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 180) # Mes más pequeño que el número
-        
-        # DÍA SEMANA / HORA:
         path_extra = ruta_abs("Canaro-ExtraBold.ttf")
         if not os.path.exists(path_extra): path_extra = ruta_abs("Canaro-Black.ttf")
         f_dia_semana = ImageFont.truetype(path_extra, 110)
         
-        # DESC:
         path_desc = ruta_abs("Canaro-SemiBold.ttf")
         
     except Exception as e:
@@ -144,22 +139,16 @@ def generar_tipo_1(datos):
         path_desc = None
 
     # --- 4. CABECERA ---
-    
-    # TÍTULO "INVITA"
     y_titulo = 850 
     titulo_texto = "INVITA" if not logos_colab else "INVITAN"
     dibujar_texto_sombra(draw, titulo_texto, W/2, y_titulo, f_invita, offset=(10,10))
     
-    # DESCRIPCIÓN (Tamaños reducidos)
     y_desc = y_titulo + 180 
     chars_desc = len(desc1)
     
-    if chars_desc <= 75:
-        size_desc_val = 110 
-    elif chars_desc <= 150:
-        size_desc_val = 90 
-    else:
-        size_desc_val = 75
+    if chars_desc <= 75: size_desc_val = 110 
+    elif chars_desc <= 150: size_desc_val = 90 
+    else: size_desc_val = 75
         
     if path_desc and os.path.exists(path_desc):
         f_desc = ImageFont.truetype(path_desc, size_desc_val)
@@ -173,13 +162,11 @@ def generar_tipo_1(datos):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
         y_desc += int(size_desc_val * 1.3)
 
-    # --- 5. CAJA DE FECHA (CORREGIDA) ---
+    # --- 5. CAJA DE FECHA (ORDEN CORREGIDO NÚMERO ARRIBA) ---
     h_caja = 645
     x_box = PADDING_SIDES 
-    # Subimos la caja para dar espacio a la info de abajo
     y_box = H - h_caja - PADDING_BOTTOM - 150
     
-    # Info Hora
     str_hora = hora1.strftime('%H:%M %p')
     if hora2: str_hora += f" a {hora2.strftime('%H:%M %p')}"
     
@@ -189,7 +176,6 @@ def generar_tipo_1(datos):
     try: f_hora = ImageFont.truetype(path_extra, size_hora)
     except: f_hora = ImageFont.load_default()
 
-    # DIBUJAR CAJA Y CONTENIDO
     if fecha2: # Larga
         if os.path.exists("flyer_caja_fecha_larga.png"):
             caja = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
@@ -208,16 +194,15 @@ def generar_tipo_1(datos):
         txt_nums = f"{fecha1.day} - {fecha2.day}"
         txt_mes = obtener_mes_nombre(fecha1.month) if fecha1.month == fecha2.month else f"{obtener_mes_nombre(fecha1.month)} - {obtener_mes_nombre(fecha2.month)}"
         
-        # MES ARRIBA, NÚMERO ABAJO
         f_mes_uso = f_mes_box
         if len(txt_mes) > 15: 
             try: f_mes_uso = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 120)
             except: pass
 
-        draw.text((cx, cy - 100), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
-        draw.text((cx, cy + 100), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
+        # NÚMERO ARRIBA (cy - offset), MES ABAJO (cy + offset). Espacio aumentado.
+        draw.text((cx, cy - 120), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
+        draw.text((cx, cy + 120), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
         
-        # INFO INFERIOR
         y_info_dia = y_box + h_caja + 50
         dibujar_texto_sombra(draw, str_hora, cx, y_info_dia, f_hora, offset=(8,8))
             
@@ -239,40 +224,42 @@ def generar_tipo_1(datos):
         dia_num = str(fecha1.day)
         mes_txt = obtener_mes_abbr(fecha1.month)
         
-        # MES ARRIBA, NÚMERO ABAJO
-        draw.text((cx, cy - 100), mes_txt, font=f_mes_box, fill=color_fecha, anchor="mm")
-        draw.text((cx, cy + 100), dia_num, font=f_dia_box, fill=color_fecha, anchor="mm")
+        # NÚMERO ARRIBA, MES ABAJO. Espacio aumentado.
+        draw.text((cx, cy - 120), dia_num, font=f_dia_box, fill=color_fecha, anchor="mm")
+        draw.text((cx, cy + 120), mes_txt, font=f_mes_box, fill=color_fecha, anchor="mm")
         
         dia_sem = obtener_dia_semana(fecha1)
-        
-        # INFO INFERIOR
         y_info_dia = y_box + h_caja + 50
         dibujar_texto_sombra(draw, dia_sem, cx, y_info_dia, f_dia_semana, offset=(8,8))
         dibujar_texto_sombra(draw, str_hora, cx, y_info_dia + 110, f_hora, offset=(8,8))
 
-    # --- 6. UBICACIÓN (CORREGIDA: ICONO AL LADO, MÁRGENES) ---
+    # --- 6. UBICACIÓN (CORREGIDA: ESQUINA, PEQUEÑA, ESTRECHA) ---
     
+    # Tamaños de fuente MUCHO más pequeños
     len_lug = len(lugar)
-    if len_lug < 45: s_lug = 100
-    else: s_lug = 80
+    if len_lug < 45: s_lug = 75 # Antes 100
+    else: s_lug = 60 # Antes 80
         
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
 
-    wrap_width = 18 if s_lug == 100 else 22
+    # Wrapping MUCHO más estrecho (corto)
+    wrap_width = 12 if s_lug == 75 else 15 # Antes 18/22
     lines_loc = textwrap.wrap(lugar, width=wrap_width)
     
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     
-    # Posición base Y (respetando padding inferior)
-    # El texto se dibuja desde abajo hacia arriba, la base es H - PADDING_BOTTOM
-    y_base_txt = H - PADDING_BOTTOM
-    
-    # Coordenada X del texto (alineado a la derecha, respetando padding lateral)
-    x_txt_anchor = W - PADDING_SIDES
+    # MÁRGENES DE ESQUINA ESPECÍFICOS (Más pegado a la esquina)
+    LOC_PADDING_BOTTOM = 100
+    LOC_PADDING_RIGHT = 100
 
-    # Cargar Icono
+    # Posición base Y (desde abajo)
+    y_base_txt = H - LOC_PADDING_BOTTOM
+    # Posición ancla X (desde la derecha)
+    x_txt_anchor = W - LOC_PADDING_RIGHT
+
+    # Icono
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA")
@@ -282,21 +269,18 @@ def generar_tipo_1(datos):
         icon = None
         w_icon = 100
 
-    # Calcular centro vertical del bloque de texto
+    # Centrado vertical del icono
     y_text_center = y_base_txt - (total_text_height / 2)
-    
-    # Posición Y del icono (centrado con el texto)
     y_icon = y_text_center - (h_icon / 2)
     
-    # Posición X del icono (a la izquierda del texto con un margen)
-    # Estimamos el ancho del texto para colocar el icono a su izquierda
+    # Posición X del icono
     try:
-        # Usamos la línea más larga para estimar el ancho del bloque
         max_line_width = max([f_lugar.getlength(line) for line in lines_loc])
     except:
-        max_line_width = 400 # Valor por defecto si falla getlength
+        max_line_width = 300
 
-    x_icon = x_txt_anchor - max_line_width - w_icon - 40 # 40px de separación
+    # Icono a la izquierda del texto
+    x_icon = x_txt_anchor - max_line_width - w_icon - 30 
     
     # Dibujar Icono
     if icon:
@@ -304,10 +288,10 @@ def generar_tipo_1(datos):
     else:
         dibujar_texto_sombra(draw, "📍", x_icon + w_icon/2, y_icon + h_icon/2, f_lugar, anchor="mm")
 
-    # Dibujar Texto (línea por línea hacia arriba desde la base)
+    # Dibujar Texto
     current_y_txt = y_base_txt - ((len(lines_loc)-1) * line_height)
     for l in lines_loc:
-        dibujar_texto_sombra(draw, l, x_txt_anchor, current_y_txt, f_lugar, anchor="rm", offset=(5,5))
+        dibujar_texto_sombra(draw, l, x_txt_anchor, current_y_txt, f_lugar, anchor="rm", offset=(4,4))
         current_y_txt += line_height
 
     # --- 7. LOGOS SUPERIORES (CAPA FINAL) ---

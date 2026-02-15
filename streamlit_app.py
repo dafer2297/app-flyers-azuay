@@ -138,7 +138,7 @@ def generar_tipo_1(datos):
         f_invita = f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_desc = None
 
-    # --- 4. CABECERA (DESCRIPCIÓN MÁS ANCHA Y JUNTAS) ---
+    # --- 4. CABECERA ---
     y_titulo = 850 
     titulo_texto = "INVITA" if not logos_colab else "INVITAN"
     dibujar_texto_sombra(draw, titulo_texto, W/2, y_titulo, f_invita, offset=(10,10))
@@ -155,21 +155,20 @@ def generar_tipo_1(datos):
     else:
         f_desc = ImageFont.load_default()
     
-    # AUMENTO DE WRAPPING (Texto más ancho)
     width_wrap = 35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55)
     lines = textwrap.wrap(desc1, width=width_wrap)
     
     for line in lines:
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
-        # REDUCCIÓN DE INTERLINEADO (Líneas más juntas: 1.1 en vez de 1.3)
         y_desc += int(size_desc_val * 1.1)
 
-    # --- 5. CAJA DE FECHA (CAJA MÁS ARRIBA, DÍA/HORA MÁS JUNTOS) ---
+    # --- 5. CAJA DE FECHA (CAJA MÁS ABAJO, CONTENIDO MÁS ABAJO) ---
     h_caja = 645
     x_box = SIDE_MARGIN 
     
-    # SUBIR LA CAJA: Aumentamos el espacio entre la línea base y la caja (de 50 a 180)
-    y_box = Y_BOTTOM_BASELINE - 180 - h_caja
+    # CAJA MÁS ABAJO (Menos distancia con el texto inferior)
+    # Antes era 180, ahora 140 (bajamos 40px)
+    y_box = Y_BOTTOM_BASELINE - 140 - h_caja
     
     str_hora = hora1.strftime('%H:%M %p')
     if hora2: str_hora += f" a {hora2.strftime('%H:%M %p')}"
@@ -203,8 +202,9 @@ def generar_tipo_1(datos):
             try: f_mes_uso = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 140)
             except: pass
 
-        draw.text((cx, cy - 70), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
-        draw.text((cx, cy + 150), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
+        # CENTRADO FINO: Bajamos 20px más (cy-50 y cy+170)
+        draw.text((cx, cy - 50), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
+        draw.text((cx, cy + 170), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
         
         y_info_dia = Y_BOTTOM_BASELINE
         dibujar_texto_sombra(draw, str_hora, cx, y_info_dia, f_hora, offset=(8,8), anchor="mm")
@@ -227,16 +227,16 @@ def generar_tipo_1(datos):
         dia_num = str(fecha1.day)
         mes_txt = obtener_mes_abbr(fecha1.month)
         
-        draw.text((cx, cy - 70), dia_num, font=f_dia_box, fill=color_fecha, anchor="mm")
-        draw.text((cx, cy + 150), mes_txt, font=f_mes_box, fill=color_fecha, anchor="mm")
+        # CENTRADO FINO: Bajamos 20px más
+        draw.text((cx, cy - 50), dia_num, font=f_dia_box, fill=color_fecha, anchor="mm")
+        draw.text((cx, cy + 170), mes_txt, font=f_mes_box, fill=color_fecha, anchor="mm")
         
         dia_sem = obtener_dia_semana(fecha1)
         y_info_dia = Y_BOTTOM_BASELINE
-        # REDUCCIÓN DE ESPACIO ENTRE DÍA Y HORA (de 110px a 70px)
         dibujar_texto_sombra(draw, dia_sem, cx, y_info_dia - 70, f_dia_semana, offset=(8,8), anchor="mm")
         dibujar_texto_sombra(draw, str_hora, cx, y_info_dia, f_hora, offset=(8,8), anchor="mm")
 
-    # --- 6. UBICACIÓN (ALINEADA A LA BASELINE INFERIOR) ---
+    # --- 6. UBICACIÓN ---
     
     len_lug = len(lugar)
     if len_lug < 45: s_lug = 75
@@ -293,7 +293,6 @@ def generar_tipo_1(datos):
     y_logos = 150
     margin_logos = 200 
     
-    # LOGO PREFECTURA
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
         target_h_logo = 378
@@ -303,7 +302,6 @@ def generar_tipo_1(datos):
         for _ in range(2): 
             img.paste(logo, (margin_logos, y_logos), logo)
     
-    # LOGO JOTA
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
         firma = resize_por_alto(firma, 378)

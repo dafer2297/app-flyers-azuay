@@ -295,6 +295,7 @@ def generar_tipo_1_v2(datos):
     if chars_desc <= 75: size_desc_val = 110 
     elif chars_desc <= 150: size_desc_val = 90 
     else: size_desc_val = 75
+    
     if path_desc and os.path.exists(path_desc): f_desc = ImageFont.truetype(path_desc, size_desc_val)
     else: f_desc = ImageFont.load_default()
     
@@ -330,7 +331,7 @@ def generar_tipo_1_v2(datos):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA")
         icon = resize_por_alto(icon, h_icon)
         w_icon = icon.width
-        y_mid = y_base_txt - (total_text_height/2)
+        y_mid = y_base_txt - (total_text_height / 2)
         img.paste(icon, (SIDE_MARGIN, int(y_mid - h_icon/2)), icon)
         x_txt_start = SIDE_MARGIN + w_icon + 30
 
@@ -340,7 +341,7 @@ def generar_tipo_1_v2(datos):
         curr_y += line_height
 
     # 5. Caja Fecha (Encima Ubicación)
-    y_linea_hora = y_base_txt - total_text_height - 150 # 150px aire
+    y_linea_hora = y_base_txt - total_text_height - 150 
     h_caja = 645
     y_box = y_linea_hora - 170 - h_caja
     x_box = SIDE_MARGIN
@@ -362,9 +363,10 @@ def generar_tipo_1_v2(datos):
         w_caja = 645
         draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white")
         color_fecha = "black"
-    
+        
     cx = x_box + (w_caja / 2)
     cy = int(y_box + (h_caja / 2))
+    
     draw.text((cx, cy - 50), str(fecha1.day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 170), obtener_mes_abbr(fecha1.month), font=f_mes_box, fill=color_fecha, anchor="mm")
     
@@ -391,7 +393,6 @@ if not area_seleccionada:
     st.markdown("<h2 style='text-align: center;'>SELECCIONA EL DEPARTAMENTO:</h2>", unsafe_allow_html=True)
     st.write("---")
     col1, col_cultura, col_recreacion, col4 = st.columns([1, 2, 2, 1])
-    # CORREGIDO: ESTILO BLANCO EN BOTONES
     with col_cultura:
         if os.path.exists("btn_cultura.png"):
             img_b64 = get_base64_of_bin_file("btn_cultura.png")
@@ -422,7 +423,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         st.markdown('<div class="label-negro">DESCRIPCIÓN 1</div>', unsafe_allow_html=True)
         desc1 = st.text_area("lbl_desc", key="lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150)
         
-        # AGREGADOS: OPCIONES CON ESTILO BLANCO
+        # LABEL BLANCO AÑADIDO
         st.markdown('<div class="label-negro">DESCRIPCIÓN 2 <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         desc2 = st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="", height=100)
         
@@ -445,7 +446,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         st.markdown('<div class="label-negro">DIRECCIÓN</div>', unsafe_allow_html=True)
         dir_texto = st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento")
         
-        # AGREGADO: LOGOS
         st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         logos = st.file_uploader("lbl_logos", key="lbl_logos", accept_multiple_files=True, label_visibility="collapsed")
 
@@ -455,8 +455,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         if archivo_subido:
             img_orig = Image.open(archivo_subido)
             st.info("Ajusta el recorte. Recuerda usar imágenes de buena calidad.")
-            
-            # CORRECCIÓN DE SESIÓN: INICIALIZAR SI NO EXISTE
             if 'imagen_lista_para_flyer' not in st.session_state:
                 st.session_state['imagen_lista_para_flyer'] = None
 
@@ -467,7 +465,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
                 aspect_ratio=(4, 5),
                 should_resize_image=False 
             )
-            # GUARDADO CORRECTO EN SESIÓN
             st.session_state['imagen_lista_para_flyer'] = img_crop.resize((2400, 3000), Image.Resampling.LANCZOS)
             st.write("✅ Imagen lista.")
 
@@ -477,13 +474,12 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             errores = []
             if not st.session_state.lbl_desc: errores.append("Falta Descripción 1")
             if not st.session_state.lbl_fecha1: errores.append("Falta Fecha Inicio")
-            # TU VALIDACIÓN ORIGINAL
             if st.session_state.get('imagen_lista_para_flyer') is None: errores.append("Falta recortar la Imagen de Fondo")
                 
             if errores:
                 st.error(f"⚠️ {', '.join(errores)}")
             else:
-                # --- DETECCIÓN AUTOMÁTICA (1-12) ---
+                # --- DETECCIÓN AUTOMÁTICA DE TIPO ---
                 has_desc2 = bool(st.session_state.lbl_desc2.strip())
                 has_fecha2 = st.session_state.lbl_fecha2 is not None
                 num_colabs = len(st.session_state.get('lbl_logos', [])) if st.session_state.get('lbl_logos') else 0
@@ -507,7 +503,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
 
                 st.session_state['datos_finales'] = {
                     'tipo_id': tipo_id,
-                    'fondo': st.session_state.imagen_lista_para_flyer,
+                    'fondo': st.session_state['imagen_lista_para_flyer'],
                     'desc1': st.session_state.lbl_desc,
                     'desc2': st.session_state.lbl_desc2,
                     'fecha1': st.session_state.lbl_fecha1,
@@ -536,58 +532,70 @@ elif area_seleccionada == "Final":
         datos = st.session_state['datos_finales']
         tipo = datos['tipo_id']
         
-        # --- ZONA DE RESULTADOS DUAL ---
-        col_centro, col_derecha = st.columns([1.5, 1])
+        # --- ESTRUCTURA ORIGINAL RESTAURADA ---
+        col_arte, col_flyer, col_descarga = st.columns([1.3, 1.5, 0.8])
         
-        if tipo == 1:
-            # 1. Generar imágenes
-            img_v1 = generar_tipo_1(datos)
-            img_v2 = generar_tipo_1_v2(datos)
-            
-            # 2. Lógica de selección
-            selected = st.session_state.get('variant_selected', 'v1')
-            
-            # 3. Columna Derecha (Miniaturas/Botones)
-            with col_derecha:
-                st.markdown("<h3 style='text-align: center;'>OTRAS OPCIONES</h3>", unsafe_allow_html=True)
-                
-                # Miniatura V1
-                st.image(img_v1, caption="Diseño Clásico", use_container_width=True)
-                if st.button("Ver Clásico"):
-                    st.session_state['variant_selected'] = 'v1'
-                    st.rerun()
-                
-                st.write("---")
-                
-                # Miniatura V2
-                st.image(img_v2, caption="Diseño Moderno", use_container_width=True)
-                if st.button("Ver Moderno"):
-                    st.session_state['variant_selected'] = 'v2'
-                    st.rerun()
-                
-                # CHOLA (MASCOTA)
-                if os.path.exists("mascota_final.png"): st.image("mascota_final.png", width=220) 
+        # Columna Izquierda: Mascota
+        with col_arte:
+            st.write("") 
+            if os.path.exists("mascota_pincel.png"): st.image("mascota_pincel.png", use_container_width=True)
+            st.write("")
+            if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
 
-            # 4. Columna Central (Imagen Grande + Descarga)
-            with col_centro:
-                # st.markdown(f"<h2 style='text-align: center;'>DISEÑO SELECCIONADO ({'CLÁSICO' if selected == 'v1' else 'MODERNO'})</h2>", unsafe_allow_html=True)
+        # Columna Centro: IMAGEN PRINCIPAL + DESCARGA
+        with col_flyer:
+            # Lógica de variantes para Tipo 1
+            if tipo == 1:
+                # Generar ambas en memoria
+                img_v1 = generar_tipo_1(datos)
+                img_v2 = generar_tipo_1_v2(datos)
                 
-                if selected == 'v1':
+                # Cuál mostrar según selección (default 'v1')
+                sel = st.session_state.get('variant_selected', 'v1')
+                
+                if sel == 'v1':
                     img_show = img_v1
-                    fname = "flyer_tipo1_clasico.png"
+                    nombre_archivo = "flyer_azuay_clasico.png"
                 else:
                     img_show = img_v2
-                    fname = "flyer_tipo1_moderno.png"
+                    nombre_archivo = "flyer_azuay_moderno.png"
                 
                 st.image(img_show, use_container_width=True)
                 
                 buf = io.BytesIO()
                 img_show.save(buf, format="PNG")
-                st.download_button(label="⬇️ DESCARGAR IMAGEN", data=buf.getvalue(), file_name=fname, mime="image/png", use_container_width=True, type="primary")
+                st.download_button(label="⬇️ DESCARGAR", data=buf.getvalue(), file_name=nombre_archivo, mime="image/png", use_container_width=True)
+            
+            else:
+                st.info(f"Flyer TIPO {tipo} en construcción. Por favor prueba con Tipo 1.")
 
-        else:
-            st.info(f"🚧 Has ingresado datos para el TIPO {tipo}. Estamos trabajando en esas plantillas. Por favor prueba con datos de Tipo 1 (1 Descripción, 1 Fecha, 0 Logos).")
+        # Columna Derecha: OTRAS OPCIONES
+        with col_descarga:
+            st.markdown("<h3 style='text-align: center; font-size: 20px;'>OTRAS OPCIONES</h3>", unsafe_allow_html=True)
+            
+            if tipo == 1:
+                # Si está seleccionada V1, mostramos miniatura de V2
+                if st.session_state.get('variant_selected', 'v1') == 'v1':
+                    # Miniatura de la variante MODERNA
+                    # (Nota: volver a llamar a la función no es pesado para 1 imagen pequeña)
+                    thumb_v2 = generar_tipo_1_v2(datos)
+                    # Mostrar como botón o imagen clickable
+                    if st.button("🔄 Ver Diseño Alternativo", key="btn_swap"):
+                        st.session_state['variant_selected'] = 'v2'
+                        st.rerun()
+                    st.image(thumb_v2, use_container_width=True)
+                
+                # Si está seleccionada V2, mostramos miniatura de V1
+                else:
+                    thumb_v1 = generar_tipo_1(datos)
+                    if st.button("🔄 Ver Diseño Clásico", key="btn_swap"):
+                        st.session_state['variant_selected'] = 'v1'
+                        st.rerun()
+                    st.image(thumb_v1, use_container_width=True)
 
+            st.write("---")
+            if os.path.exists("mascota_final.png"): st.image("mascota_final.png", width=220) 
+            
     st.write("---")
     if st.button("🔄 CREAR NUEVO"):
         st.query_params.clear()

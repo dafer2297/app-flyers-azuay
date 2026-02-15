@@ -98,9 +98,9 @@ def generar_tipo_1(datos):
     
     W, H = 2400, 3000
     
-    # CONSTANTES DE MÁRGENES (NUEVO)
-    PADDING_BOTTOM = 150 # Espacio desde abajo para elementos de esquina
-    PADDING_SIDES = 150  # Espacio desde los lados para elementos de esquina
+    # CONSTANTES DE MÁRGENES (Aumentados para cumplir con el diseño)
+    PADDING_BOTTOM = 250 
+    PADDING_SIDES = 200
 
     # 1. LIENZO BASE
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
@@ -123,19 +123,19 @@ def generar_tipo_1(datos):
 
     # --- 3. CARGA DE FUENTES ---
     try:
-        # TÍTULO: Canaro Bold (Tamaño reducido)
-        f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 300) 
+        # TÍTULO: Tamaño reducido
+        f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 250) 
         
-        # CAJA FECHA: Canaro Black (Tamaños aumentados)
-        f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 350) # Núm más grande
-        f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 280) # Mes mucho más grande
+        # CAJA FECHA:
+        f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 350)
+        f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 180) # Mes más pequeño que el número
         
-        # DÍA SEMANA / HORA: Canaro ExtraBold
+        # DÍA SEMANA / HORA:
         path_extra = ruta_abs("Canaro-ExtraBold.ttf")
         if not os.path.exists(path_extra): path_extra = ruta_abs("Canaro-Black.ttf")
-        f_dia_semana = ImageFont.truetype(path_extra, 120) # Día más grande
+        f_dia_semana = ImageFont.truetype(path_extra, 110)
         
-        # DESC: Canaro SemiBold
+        # DESC:
         path_desc = ruta_abs("Canaro-SemiBold.ttf")
         
     except Exception as e:
@@ -143,51 +143,48 @@ def generar_tipo_1(datos):
         f_invita = f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_desc = None
 
-    # --- 4. CABECERA (ESPACIADOS CORREGIDOS) ---
+    # --- 4. CABECERA ---
     
     # TÍTULO "INVITA"
-    # Bajamos más el título para dar espacio a los logos
     y_titulo = 850 
     titulo_texto = "INVITA" if not logos_colab else "INVITAN"
-    dibujar_texto_sombra(draw, titulo_texto, W/2, y_titulo, f_invita, offset=(12,12))
+    dibujar_texto_sombra(draw, titulo_texto, W/2, y_titulo, f_invita, offset=(10,10))
     
-    # DESCRIPCIÓN (DINÁMICA Y ESPACIADO)
-    # Espacio más pequeño entre Invita y Descripción que el de arriba
+    # DESCRIPCIÓN (Tamaños reducidos)
     y_desc = y_titulo + 180 
     chars_desc = len(desc1)
     
-    # Tamaños reducidos ligeramente
     if chars_desc <= 75:
-        size_desc_val = 130 
-    elif chars_desc <= 150:
         size_desc_val = 110 
+    elif chars_desc <= 150:
+        size_desc_val = 90 
     else:
-        size_desc_val = 90
+        size_desc_val = 75
         
     if path_desc and os.path.exists(path_desc):
         f_desc = ImageFont.truetype(path_desc, size_desc_val)
     else:
         f_desc = ImageFont.load_default()
     
-    width_wrap = 25 if size_desc_val >= 130 else (30 if size_desc_val >= 110 else 40)
+    width_wrap = 28 if size_desc_val >= 110 else (35 if size_desc_val >= 90 else 45)
     lines = textwrap.wrap(desc1, width=width_wrap)
     
     for line in lines:
-        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(10,10))
+        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
         y_desc += int(size_desc_val * 1.3)
 
-    # --- 5. CAJA DE FECHA (ALINEACIÓN Y MÁRGENES) ---
+    # --- 5. CAJA DE FECHA (CORREGIDA) ---
     h_caja = 645
-    # Posición usando márgenes de esquina
     x_box = PADDING_SIDES 
-    y_box = H - h_caja - PADDING_BOTTOM
+    # Subimos la caja para dar espacio a la info de abajo
+    y_box = H - h_caja - PADDING_BOTTOM - 150
     
     # Info Hora
     str_hora = hora1.strftime('%H:%M %p')
     if hora2: str_hora += f" a {hora2.strftime('%H:%M %p')}"
     
-    size_hora = 120 # Base igual al día
-    if hora2: size_hora = 95 # Menor si hay dos horas
+    size_hora = 110
+    if hora2: size_hora = 90
         
     try: f_hora = ImageFont.truetype(path_extra, size_hora)
     except: f_hora = ImageFont.load_default()
@@ -211,20 +208,17 @@ def generar_tipo_1(datos):
         txt_nums = f"{fecha1.day} - {fecha2.day}"
         txt_mes = obtener_mes_nombre(fecha1.month) if fecha1.month == fecha2.month else f"{obtener_mes_nombre(fecha1.month)} - {obtener_mes_nombre(fecha2.month)}"
         
-        # AJUSTE FINO CENTRADO VERTICAL Y ESPACIO MÍNIMO
-        # Bajamos el centro visual (cy + offset) y juntamos los textos
-        draw.text((cx, cy - 20), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
-        
+        # MES ARRIBA, NÚMERO ABAJO
         f_mes_uso = f_mes_box
-        if len(txt_mes) > 15: # Fallback si el mes es muy largo
+        if len(txt_mes) > 15: 
             try: f_mes_uso = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 120)
             except: pass
+
+        draw.text((cx, cy - 100), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
+        draw.text((cx, cy + 100), txt_nums, font=f_dia_box, fill=color_fecha, anchor="mm")
         
-        # Mes muy pegado al número
-        draw.text((cx, cy + 140), txt_mes, font=f_mes_uso, fill=color_fecha, anchor="mm")
-        
-        # INFO INFERIOR (Pegada)
-        y_info_dia = y_box + h_caja + 60
+        # INFO INFERIOR
+        y_info_dia = y_box + h_caja + 50
         dibujar_texto_sombra(draw, str_hora, cx, y_info_dia, f_hora, offset=(8,8))
             
     else: # Corta (1 fecha)
@@ -245,39 +239,38 @@ def generar_tipo_1(datos):
         dia_num = str(fecha1.day)
         mes_txt = obtener_mes_abbr(fecha1.month)
         
-        # AJUSTE FINO CENTRADO Y ESPACIO MÍNIMO
-        draw.text((cx, cy - 20), dia_num, font=f_dia_box, fill=color_fecha, anchor="mm")
-        draw.text((cx, cy + 140), mes_txt, font=f_mes_box, fill=color_fecha, anchor="mm")
+        # MES ARRIBA, NÚMERO ABAJO
+        draw.text((cx, cy - 100), mes_txt, font=f_mes_box, fill=color_fecha, anchor="mm")
+        draw.text((cx, cy + 100), dia_num, font=f_dia_box, fill=color_fecha, anchor="mm")
         
         dia_sem = obtener_dia_semana(fecha1)
         
-        # INFO INFERIOR (Pegada entre sí)
-        y_info_dia = y_box + h_caja + 60
+        # INFO INFERIOR
+        y_info_dia = y_box + h_caja + 50
         dibujar_texto_sombra(draw, dia_sem, cx, y_info_dia, f_dia_semana, offset=(8,8))
-        # Hora justo debajo del día con poco espacio
         dibujar_texto_sombra(draw, str_hora, cx, y_info_dia + 110, f_hora, offset=(8,8))
 
-    # --- 6. UBICACIÓN (ESQUINA DERECHA CON MÁRGENES Y DINÁMICA) ---
+    # --- 6. UBICACIÓN (CORREGIDA: ICONO AL LADO, MÁRGENES) ---
     
-    # Definir tamaño de fuente dinámico para dirección
     len_lug = len(lugar)
-    if len_lug < 45: s_lug = 110 # Grande
-    else: s_lug = 90 # Pequeño
+    if len_lug < 45: s_lug = 100
+    else: s_lug = 80
         
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
 
-    # Preparar texto con wrapping más estrecho para que no se salga
-    wrap_width = 16 if s_lug == 110 else 20
+    wrap_width = 18 if s_lug == 100 else 22
     lines_loc = textwrap.wrap(lugar, width=wrap_width)
     
-    # Calcular altura total del bloque de texto para centrar el icono
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     
-    # Posición base (anclada abajo a la derecha con margen)
-    y_base_loc = H - PADDING_BOTTOM - 50 # Un poco más arriba de la línea base pura
-    x_anchor_loc = W - PADDING_SIDES
+    # Posición base Y (respetando padding inferior)
+    # El texto se dibuja desde abajo hacia arriba, la base es H - PADDING_BOTTOM
+    y_base_txt = H - PADDING_BOTTOM
+    
+    # Coordenada X del texto (alineado a la derecha, respetando padding lateral)
+    x_txt_anchor = W - PADDING_SIDES
 
     # Cargar Icono
     h_icon = 260
@@ -289,35 +282,41 @@ def generar_tipo_1(datos):
         icon = None
         w_icon = 100
 
-    # Calcular posición Y del icono para centrarlo con el bloque de texto
-    # El centro del bloque de texto es y_base_loc - (total_text_height / 2)
-    y_icon_centered = (y_base_loc - (total_text_height / 2)) - (h_icon / 2)
+    # Calcular centro vertical del bloque de texto
+    y_text_center = y_base_txt - (total_text_height / 2)
     
-    # Coordenada X del icono (a la izquierda del texto)
-    x_icon = x_anchor_loc - w_icon - 30 # 30px de espacio entre icono y texto
+    # Posición Y del icono (centrado con el texto)
+    y_icon = y_text_center - (h_icon / 2)
+    
+    # Posición X del icono (a la izquierda del texto con un margen)
+    # Estimamos el ancho del texto para colocar el icono a su izquierda
+    try:
+        # Usamos la línea más larga para estimar el ancho del bloque
+        max_line_width = max([f_lugar.getlength(line) for line in lines_loc])
+    except:
+        max_line_width = 400 # Valor por defecto si falla getlength
+
+    x_icon = x_txt_anchor - max_line_width - w_icon - 40 # 40px de separación
     
     # Dibujar Icono
     if icon:
-        img.paste(icon, (int(x_icon), int(y_icon_centered)), icon)
+        img.paste(icon, (int(x_icon), int(y_icon)), icon)
     else:
-        dibujar_texto_sombra(draw, "📍", x_icon + w_icon/2, y_icon_centered + h_icon/2, f_lugar, anchor="mm")
+        dibujar_texto_sombra(draw, "📍", x_icon + w_icon/2, y_icon + h_icon/2, f_lugar, anchor="mm")
 
     # Dibujar Texto (línea por línea hacia arriba desde la base)
-    current_y_txt = y_base_loc - ((len(lines_loc)-1) * line_height)
+    current_y_txt = y_base_txt - ((len(lines_loc)-1) * line_height)
     for l in lines_loc:
-        # Anclado a la derecha (rm) en x_anchor_loc
-        dibujar_texto_sombra(draw, l, x_anchor_loc, current_y_txt, f_lugar, anchor="rm", offset=(5,5))
+        dibujar_texto_sombra(draw, l, x_txt_anchor, current_y_txt, f_lugar, anchor="rm", offset=(5,5))
         current_y_txt += line_height
 
     # --- 7. LOGOS SUPERIORES (CAPA FINAL) ---
     y_logos = 150
-    # Margen aumentado para unirlos más al centro
     margin_logos = 200 
     
-    # LOGO PREFECTURA (Apilado 2 VECES)
+    # LOGO PREFECTURA
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA")
-        # Redimensión suave si es necesario, pero manteniendo calidad
         target_h_logo = 378
         if abs(logo.height - target_h_logo) > 10:
              logo = resize_por_alto(logo, target_h_logo)

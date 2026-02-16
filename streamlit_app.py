@@ -150,7 +150,6 @@ def resize_por_alto(img, alto_objetivo):
 # ==============================================================================
 
 def generar_tipo_1(datos):
-    # --- TIPO 1 VARIANTE 1 (CLÁSICA) ---
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -195,7 +194,6 @@ def generar_tipo_1(datos):
     for line in textwrap.wrap(desc1, width=wrap_width):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
-    # FECHA IZQUIERDA ABAJO (FIJA)
     h_caja = 645; x_box = SIDE_MARGIN; y_box = Y_BOTTOM_BASELINE - 170 - h_caja
     str_hora = datos['hora1'].strftime('%H:%M %p')
     if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
@@ -216,7 +214,6 @@ def generar_tipo_1(datos):
     dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, Y_BOTTOM_BASELINE - 100, f_dia_semana, offset=(8,8), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
 
-    # UBICACIÓN DERECHA ABAJO (FIJA)
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
@@ -237,14 +234,13 @@ def generar_tipo_1(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
-    # LOGOS ARRIBA
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
-        img.paste(logo, (margin_logos, 150), logo) # IZQUIERDA
+        img.paste(logo, (margin_logos, 150), logo)
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
-        img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma) # DERECHA
+        img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
     return img.convert("RGB")
 
@@ -293,7 +289,8 @@ def generar_tipo_1_v2(datos):
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     lines_loc = textwrap.wrap(lugar, width=(20 if s_lug == 72 else 24))
-    line_height = int(s_lug * 1.1); total_text_height = len(lines_loc) * line_height
+    line_height = int(s_lug * 1.1)
+    total_text_height = len(lines_loc) * line_height
     x_txt_start = SIDE_MARGIN + 130 
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
@@ -505,7 +502,7 @@ def generar_tipo_1_v4(datos):
         x_txt_start = SIDE_MARGIN + icon.width + 30
     curr_y = Y_BOTTOM_BASELINE - total_text_height + line_height
     for l in lines_loc:
-        dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
+        dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
     # FECHA BAJADA (-210)
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 210 
@@ -734,16 +731,20 @@ def generar_tipo_2_v2(datos):
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     lines_loc = textwrap.wrap(lugar, width=(20 if s_lug == 72 else 24))
-    line_height = int(s_lug * 1.1); total_text_height = len(lines_loc) * line_height
+    
+    # Separamos definición de altura
+    line_height_loc = int(s_lug * 1.1)
+    total_text_height = len(lines_loc) * line_height_loc
+    
     x_txt_start = SIDE_MARGIN + 130 
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
         img.paste(icon, (SIDE_MARGIN, int(Y_BOTTOM_BASELINE - (total_text_height/2) - (h_icon/2))), icon)
         x_txt_start = SIDE_MARGIN + icon.width + 30
-    curr_y = Y_BOTTOM_BASELINE - total_text_height + line_height
+    curr_y = Y_BOTTOM_BASELINE - total_text_height + line_height_loc
     for l in lines_loc:
-        dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
+        dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height_loc
 
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 300 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
@@ -825,8 +826,6 @@ def generar_tipo_2_v3(datos):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
         y_desc += int(s_desc * 1.1)
     
-    # At this point, y_desc is the y-coordinate for the *next* line after Desc 1.
-
     # 5. FECHA IZQUIERDA ABAJO (FIJA - T1_V3 Base)
     h_caja = 645; x_box = SIDE_MARGIN; y_box = Y_BOTTOM_BASELINE - 170 - h_caja
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -849,28 +848,18 @@ def generar_tipo_2_v3(datos):
     dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
 
     # --- INSERT DESCRIPCIÓN 2 HERE ---
-    # It must be below Desc 1 (y_desc) and above the Date Box (y_box).
     desc2 = datos['desc2']
     if desc2:
         s_desc2 = 80
         try: f_desc2 = ImageFont.truetype(path_medium, s_desc2)
         except: f_desc2 = ImageFont.load_default()
 
-        # Wrap width. The date box is 645 wide. Let's try to keep it within that.
-        # A width of ~25 characters should fit.
         lines_d2 = textwrap.wrap(desc2, width=25)
         h_line_d2 = int(s_desc2 * 1.1)
 
-        # Calculate starting Y. Let's put it a bit below Desc 1.
         y_cursor_d2 = y_desc + 60 # Add some margin
 
         for line in lines_d2:
-            # Check if we are overlapping the date box
-            if y_cursor_d2 > y_box - 20: # Leave a small gap above the box
-                 # Stop drawing if we run out of space.
-                 pass # Or break/warn
-
-            # Left-aligned at SIDE_MARGIN
             dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_cursor_d2, f_desc2, offset=(5,5), anchor="ls")
             y_cursor_d2 += h_line_d2
 

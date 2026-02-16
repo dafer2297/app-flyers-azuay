@@ -146,10 +146,12 @@ def resize_por_alto(img, alto_objetivo):
     return img.resize((ancho_nuevo, alto_objetivo), Image.Resampling.LANCZOS)
 
 # ==============================================================================
-# 3. GENERADORES DE PLANTILLAS TIPO 1 (BASE)
+# 3. GENERADORES DE PLANTILLAS TIPO 1
 # ==============================================================================
 
 def generar_tipo_1(datos):
+    # --- TIPO 1 VARIANTE 1 (CLÁSICA) ---
+    # RESTAURADA A SU ESTADO ORIGINAL (Ancho dinámico)
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -189,11 +191,13 @@ def generar_tipo_1(datos):
     f_desc = ImageFont.truetype(path_desc, size_desc_val) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     y_desc = 1030
     
+    # WRAPPING DINÁMICO RESTAURADO
     wrap_width = 35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55)
     
     for line in textwrap.wrap(desc1, width=wrap_width):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
+    # FECHA IZQUIERDA ABAJO (FIJA)
     h_caja = 645; x_box = SIDE_MARGIN; y_box = Y_BOTTOM_BASELINE - 170 - h_caja
     str_hora = datos['hora1'].strftime('%H:%M %p')
     if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
@@ -214,6 +218,7 @@ def generar_tipo_1(datos):
     dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, Y_BOTTOM_BASELINE - 100, f_dia_semana, offset=(8,8), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
 
+    # UBICACIÓN DERECHA ABAJO (FIJA)
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
@@ -234,13 +239,14 @@ def generar_tipo_1(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
+    # LOGOS ARRIBA
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
-        img.paste(logo, (margin_logos, 150), logo)
+        img.paste(logo, (margin_logos, 150), logo) # IZQUIERDA
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
-        img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
+        img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma) # DERECHA
 
     return img.convert("RGB")
 
@@ -702,7 +708,7 @@ def generar_tipo_2_v2(datos):
         y_firma = int(Y_BOTTOM_BASELINE - firma.height + 50)
         img.paste(firma, (W - firma.width - SIDE_MARGIN, y_firma), firma)
 
-    # --- DESCRIPCIÓN 2 (ENCIMA DE FIRMA - CENTRADA - CANARO MEDIUM) ---
+    # --- DESCRIPCIÓN 2 (ENCIMA DE FIRMA - CENTRADA - MOVIDA 60PX IZQ) ---
     desc2 = datos['desc2']
     if desc2 and firma:
         s_desc2 = 80
@@ -935,6 +941,7 @@ def generar_tipo_2_v4(datos):
     desc1 = datos['desc1']
     chars_desc = len(desc1)
     
+    # --- 4 NIVELES DE TEXTO (V4) ---
     if chars_desc < 50:
         s_desc = 130; wrap_w = 15
     elif chars_desc < 90:
@@ -945,7 +952,9 @@ def generar_tipo_2_v4(datos):
         s_desc = 75; wrap_w = 25
         
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
-    y_desc = 1070 
+    
+    # Y_DESC SUBIDO A 960 (Antes 1070)
+    y_desc = 960 
     
     for line in textwrap.wrap(desc1, width=wrap_w):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
@@ -999,8 +1008,8 @@ def generar_tipo_2_v4(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height_loc
 
-    # FECHA BAJADA IZQUIERDA
-    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 210 
+    # FECHA BAJADA IZQUIERDA (OFFSET REDUCIDO A 130)
+    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 130 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
     str_hora = datos['hora1'].strftime('%H:%M %p')
     if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"

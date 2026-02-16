@@ -249,11 +249,11 @@ def generar_tipo_1(datos):
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         for _ in range(2): img.paste(logo, (margin_logos, 150), logo)
-        
-    # --- FIRMA JOTA (Altura 345) ---
+    
+    # --- FIRMA JOTA (Altura 325) ---
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
-        firma = resize_por_alto(firma, 345) # CAMBIADO A 345
+        firma = resize_por_alto(firma, 325) # CAMBIADO A 325
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
     return img.convert("RGB")
@@ -295,10 +295,10 @@ def generar_tipo_1_v2(datos):
     for line in textwrap.wrap(desc1, width=(35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55))):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
-    # --- FIRMA JOTA (Altura 345) ---
+    # --- FIRMA JOTA (Altura 325) ---
     if os.path.exists("flyer_firma.png"):
-        firma = Image.open("flyer_firma.png").convert("RGBA"); 
-        firma = resize_por_alto(firma, 345) # CAMBIADO A 345
+        firma = Image.open("flyer_firma.png").convert("RGBA")
+        firma = resize_por_alto(firma, 325) # CAMBIADO A 325
         img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
 
     # --- UBICACIÓN ---
@@ -494,15 +494,17 @@ elif area_seleccionada == "Final":
         generated = st.session_state.get('generated_images', {})
         sel = st.session_state.get('variant_selected', 'v1')
         
-        # --- DISEÑO FINAL ---
+        # --- DISEÑO FINAL DE 3 COLUMNAS ---
         c_left, c_center, c_right = st.columns([1.5, 3, 1.5])
         
+        # IZQUIERDA (MASCOTAS)
         with c_left:
             st.write("")
             if os.path.exists("mascota_pincel.png"): st.image("mascota_pincel.png", width=350)
             st.write("")
             if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
 
+        # CENTRO (IMAGEN + NAVEGACIÓN)
         with c_center:
             if tipo == 1 and generated:
                 img_show = generated[sel]
@@ -545,6 +547,7 @@ elif area_seleccionada == "Final":
             else:
                 st.info(f"Flyer TIPO {tipo} en construcción.")
 
+        # DERECHA VACÍA (SIN "OTRAS OPCIONES")
         with c_right:
             st.empty()
 

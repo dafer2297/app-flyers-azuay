@@ -40,31 +40,46 @@ def set_design():
         {font_css}
         h1, h2, h3 {{ font-family: 'Canaro', sans-serif !important; color: white !important; text-transform: uppercase; }}
         
-        /* BOTONES DE NAVEGACIÓN (FLECHAS) */
-        div.stButton > button {{
+        /* BOTONES DE NAVEGACIÓN (FLECHAS) - SOLO SI TIENEN LA CLASE 'arrow-btn' (Hack por key) */
+        /* Usamos selector por atributo key para diferenciar */
+        div[data-testid="stButton"] button[kind="secondary"] {{
             background-color: white;
             color: #1E88E5;
             border: none;
             border-radius: 50%;
             width: 60px;
             height: 60px;
-            font-size: 30px;
+            font-size: 24px;
             box-shadow: 0px 4px 6px rgba(0,0,0,0.2);
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: auto;
         }}
-        div.stButton > button:hover {{
+        div[data-testid="stButton"] button[kind="secondary"]:hover {{
             background-color: #f0f0f0;
             transform: scale(1.1);
+            color: #1565C0;
         }}
         
-        /* BOTÓN GENERAR (ESTILO ESPECIAL) */
-        div[data-testid="stButton"] button:contains("GENERAR") {{
+        /* BOTÓN GENERAR (PRIMARIO) - ANCHO Y RECTANGULAR */
+        div[data-testid="stButton"] button[kind="primary"] {{
             background-color: transparent;
             color: white;
             border: 2px solid white;
             border-radius: 15px;
             width: 100%;
-            border-radius: 15px !important;
+            height: auto;
+            padding: 10px 20px;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: none;
+        }}
+        div[data-testid="stButton"] button[kind="primary"]:hover {{
+            background-color: #D81B60;
+            border-color: #D81B60;
+            transform: none;
         }}
 
         /* INPUTS */
@@ -131,9 +146,9 @@ def resize_por_alto(img, alto_objetivo):
     ancho_nuevo = int(img.width * ratio)
     return img.resize((ancho_nuevo, alto_objetivo), Image.Resampling.LANCZOS)
 
-# --- GENERADORES DE IMÁGENES ---
+# --- GENERADORES ---
 
-def generar_tipo_1(datos): # CLÁSICA
+def generar_tipo_1(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -214,7 +229,7 @@ def generar_tipo_1(datos): # CLÁSICA
 
     return img.convert("RGB")
 
-def generar_tipo_1_v2(datos): # MODERNA
+def generar_tipo_1_v2(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -260,7 +275,7 @@ def generar_tipo_1_v2(datos): # MODERNA
     except: f_lugar = ImageFont.load_default()
     lines_loc = textwrap.wrap(lugar, width=(22 if s_lug == 75 else 28))
     line_height = int(s_lug * 1.1); total_text_height = len(lines_loc) * line_height
-    x_txt_start = SIDE_MARGIN + 130 
+    x_txt_start = SIDE_MARGIN + 130
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
@@ -278,13 +293,22 @@ def generar_tipo_1_v2(datos): # MODERNA
     try: f_hora = ImageFont.truetype(path_extra, size_hora)
     except: f_hora = ImageFont.load_default()
 
+    # --- CORRECCIÓN CRÍTICA DE VARIABLES (UnboundLocalError) ---
+    # Definimos cx, cy, w_caja, color_fecha SIEMPRE, incluso si no entra al if
+    w_caja = 645
+    
     if os.path.exists("flyer_caja_fecha.png"):
         caja = Image.open("flyer_caja_fecha.png").convert("RGBA").resize((645, 645), Image.Resampling.LANCZOS)
-        img.paste(caja, (x_box, int(y_box)), caja); color_fecha = "white"
+        # Aseguramos coordenadas enteras
+        img.paste(caja, (x_box, int(y_box)), caja)
+        color_fecha = "white"
     else:
-        w_caja = 645
-        draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white"); color_fecha = "black"
-    cx = x_box + (w_caja / 2); cy = int(y_box + (h_caja / 2))
+        draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white")
+        color_fecha = "black"
+    
+    cx = x_box + (w_caja / 2)
+    cy = int(y_box + (h_caja / 2))
+    
     draw.text((cx, cy - 50), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 170), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
     dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_linea_hora - 100, f_dia_semana, offset=(8,8), anchor="mm")
@@ -325,7 +349,7 @@ if not area_seleccionada:
          if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=300)
 
 elif area_seleccionada in ["Cultura", "Recreación"]:
-    if st.button("⬅️ VOLVER AL INICIO"):
+    if st.button("⬅️ VOLVER AL INICIO", type="secondary", key="back_btn"): # key para evitar conflicto
         st.query_params.clear()
         st.rerun()
 
@@ -373,7 +397,8 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             st.write("✅ Imagen lista.")
 
         st.write("")
-        if st.button("✨ GENERAR FLYER ✨", type="primary", use_container_width=True):
+        # BOTÓN GENERAR TIPO "PRIMARY" PARA QUE CSS LO HAGA ANCHO Y RECTANGULAR
+        if st.button("✨ GENERAR FLYERS ✨", type="primary", use_container_width=True):
             errores = []
             if not st.session_state.lbl_desc: errores.append("Falta Descripción 1")
             if not st.session_state.lbl_fecha1: errores.append("Falta Fecha Inicio")
@@ -434,7 +459,7 @@ elif area_seleccionada == "Final":
     
     if 'datos_finales' not in st.session_state:
         st.warning("⚠️ No hay datos. Vuelve al inicio.")
-        if st.button("Volver al Inicio"):
+        if st.button("Volver al Inicio", type="primary"):
             st.query_params.clear()
             st.rerun()
     else:
@@ -442,31 +467,29 @@ elif area_seleccionada == "Final":
         generated = st.session_state.get('generated_images', {})
         sel = st.session_state.get('variant_selected', 'v1')
         
-        # --- ZONA DE RESULTADOS (SOLO 1 COLUMNA CENTRAL GRANDE) ---
-        # Centramos todo usando columnas vacías a los lados
+        # Centramos todo
         c_left, c_center, c_right = st.columns([1, 4, 1])
         
         with c_center:
             if tipo == 1 and generated:
-                # 1. MOSTRAR IMAGEN GRANDE
+                # 1. IMAGEN GRANDE
                 img_show = generated[sel]
                 fname = f"flyer_azuay_{sel}.png"
                 st.image(img_show, use_container_width=True)
                 
                 st.write("")
                 
-                # 2. NAVEGACIÓN (FLECHAS) + DESCARGA
-                # Creamos 3 columnas: Flecha Izq | Chola Descarga | Flecha Der
+                # 2. FLECHAS Y DESCARGA
                 c_prev, c_down, c_next = st.columns([1, 2, 1])
                 
                 with c_prev:
-                    if st.button("⬅️", key="prev_btn"):
-                        # Toggle simple entre v1 y v2
+                    # Flecha Izquierda (Secondary = Redondo por CSS)
+                    if st.button("⬅️", key="prev_btn", type="secondary"):
                         st.session_state['variant_selected'] = 'v2' if sel == 'v1' else 'v1'
                         st.rerun()
                 
                 with c_down:
-                    # CHOLA DESCARGA (SIN BORDE)
+                    # Chola Descarga
                     buf = io.BytesIO()
                     img_show.save(buf, format="PNG")
                     img_b64_dl = base64.b64encode(buf.getvalue()).decode()
@@ -488,14 +511,15 @@ elif area_seleccionada == "Final":
                         st.download_button("⬇️ DESCARGAR", data=buf.getvalue(), file_name=fname, mime="image/png", use_container_width=True)
 
                 with c_next:
-                    if st.button("➡️", key="next_btn"):
+                    # Flecha Derecha
+                    if st.button("➡️", key="next_btn", type="secondary"):
                         st.session_state['variant_selected'] = 'v2' if sel == 'v1' else 'v1'
                         st.rerun()
             else:
                 st.info(f"Flyer TIPO {tipo} en construcción.")
 
     st.write("---")
-    if st.button("🔄 CREAR NUEVO"):
+    if st.button("🔄 CREAR NUEVO", type="primary"):
         st.query_params.clear()
         keys_borrar = ['imagen_lista_para_flyer', 'datos_finales', 'lbl_desc', 'lbl_desc2', 'lbl_dir', 'variant_selected', 'generated_images', 'tipo_id']
         for k in keys_borrar:

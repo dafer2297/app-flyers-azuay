@@ -45,7 +45,6 @@ def set_design():
         {font_css}
         h1, h2, h3 {{ font-family: 'Canaro', sans-serif !important; color: white !important; text-transform: uppercase; }}
         
-        /* BOTONES DE NAVEGACIÓN (FLECHAS REDONDAS) */
         div[data-testid="stButton"] button[kind="secondary"] {{
             background-color: white;
             color: #1E88E5;
@@ -67,7 +66,6 @@ def set_design():
             color: #1565C0;
         }}
         
-        /* BOTONES RECTANGULARES (GENERAR y VOLVER) */
         div[data-testid="stButton"] button[kind="primary"] {{
             background-color: transparent;
             color: white;
@@ -86,18 +84,15 @@ def set_design():
             transform: none;
         }}
 
-        /* INPUTS */
         .stTextInput > div > div > input, .stTextArea > div > div > textarea, 
         .stDateInput > div > div > input, .stTimeInput > div > div > input {{
             background-color: white !important; color: black !important; border-radius: 8px; border: none;
         }}
         .stTextInput label, .stTextArea label, .stDateInput label, .stTimeInput label {{ display: none; }}
         
-        /* TEXTOS */
         .label-negro {{ font-family: 'Canaro', sans-serif; font-weight: bold; font-size: 16px; color: black !important; margin-bottom: 2px; margin-top: 10px; }}
         .label-blanco {{ font-family: 'Canaro', sans-serif; font-weight: normal; font-size: 12px; color: white !important; margin-left: 5px; }}
         
-        /* MENÚ */
         .label-menu {{ 
             font-family: 'Canaro', sans-serif; 
             font-weight: bold; 
@@ -112,7 +107,6 @@ def set_design():
         a {{ text-decoration: none !important; }}
         a img {{ border: none !important; outline: none !important; box-shadow: none !important; }}
         
-        /* HOVER */
         .zoom-hover {{ transition: transform 0.2s; cursor: pointer; }}
         .zoom-hover:hover {{ transform: scale(1.05); }}
 
@@ -124,7 +118,7 @@ def set_design():
 set_design()
 
 # ==============================================================================
-# 2. MOTOR GRÁFICO (UTILIDADES)
+# 2. MOTOR GRÁFICO
 # ==============================================================================
 
 def dibujar_texto_sombra(draw, texto, x, y, fuente, color="white", sombra="black", offset=(12,12), anchor="mm"):
@@ -218,27 +212,22 @@ def generar_tipo_1(datos):
     dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, Y_BOTTOM_BASELINE - 100, f_dia_semana, offset=(8,8), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
 
-    # --- UBICACIÓN ---
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
-    
     wrap_chars = 20 if s_lug == 72 else 24
     lines_loc = textwrap.wrap(lugar, width=wrap_chars)
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     y_base_txt = Y_BOTTOM_BASELINE
-    
     x_txt_anchor = W - SIDE_MARGIN
     max_line_w = max([f_lugar.getlength(l) for l in lines_loc]) if lines_loc else 200
     x_text_start = x_txt_anchor - max_line_w
-    
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
         img.paste(icon, (int(x_text_start - icon.width - 30), int(Y_BOTTOM_BASELINE - (total_text_height/2) - (h_icon/2))), icon)
-    
     curr_y = Y_BOTTOM_BASELINE - total_text_height + line_height
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
@@ -332,7 +321,7 @@ def generar_tipo_1_v2(datos):
 
     return img.convert("RGB")
 
-# --- TIPO 1: VARIANTE 3 (ALINEADO IZQUIERDA) ---
+# --- TIPO 1: VARIANTE 3 (ALINEADO IZQUIERDA + TAMAÑO DINÁMICO) ---
 def generar_tipo_1_v3(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -369,15 +358,25 @@ def generar_tipo_1_v3(datos):
     
     desc1 = datos['desc1']
     chars_desc = len(desc1)
-    size_desc_val = 110 if chars_desc <= 75 else (90 if chars_desc <= 150 else 75)
-    f_desc = ImageFont.truetype(path_desc, size_desc_val) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
-    y_desc = 1030
     
-    # --- WRAPPING V3: 15-20 Caracteres ---
-    wrap_width_v3 = 15 if size_desc_val >= 110 else (18 if size_desc_val >= 90 else 20)
+    # --- LÓGICA DINÁMICA DE TAMAÑO (3 NIVELES) ---
+    if chars_desc < 60:
+        s_desc = 100 # GRANDE
+        wrap_w = 12  # Columna estrecha para letra grande
+    elif chars_desc < 115:
+        s_desc = 80  # MEDIANO
+        wrap_w = 16  # Columna media
+    else:
+        s_desc = 65  # PEQUEÑO
+        wrap_w = 20  # Columna "normal"
+        
+    f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     
-    for line in textwrap.wrap(desc1, width=wrap_width_v3):
-        dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(size_desc_val * 1.1)
+    # ESPACIO AUMENTADO: Bajamos el inicio del texto
+    y_desc = 1150 
+    
+    for line in textwrap.wrap(desc1, width=wrap_w):
+        dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
 
     h_caja = 645; x_box = SIDE_MARGIN; y_box = Y_BOTTOM_BASELINE - 170 - h_caja
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -477,18 +476,15 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
 
     with col_der:
         st.markdown('<div class="label-negro">DESCRIPCIÓN 1</div>', unsafe_allow_html=True)
-        # CONTADOR VISIBLE (MAX_CHARS=175 EN AMBOS PARA QUE SALGA EL CONTADOR NATIVO)
         desc1 = st.text_area("lbl_desc", key="lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150, max_chars=175)
         
         st.markdown('<div class="label-negro">DESCRIPCIÓN 2 <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         desc2 = st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="", height=100, max_chars=175)
         
-        # VALIDACIÓN DE SUMA (ALERTA ADICIONAL)
+        # CONTADOR DE SUMA TOTAL (ETIQUETA CORREGIDA)
         total_chars = len(desc1) + len(desc2)
-        if total_chars > 175:
-            st.markdown(f"<p style='color:red; font-weight:bold;'>⚠️ Total combinado: {total_chars}/175 (Excedido)</p>", unsafe_allow_html=True)
-        else:
-            st.markdown(f"<p style='color:black; font-weight:bold;'>Total combinado: {total_chars}/175</p>", unsafe_allow_html=True)
+        color_c = "red" if total_chars > 175 else "grey"
+        st.markdown(f"<p style='text-align:right; color:{color_c}; font-size:12px; margin-top:-10px;'>Total caracteres: {total_chars} / 175</p>", unsafe_allow_html=True)
 
         c_f1, c_f2 = st.columns(2)
         with c_f1:
@@ -506,8 +502,9 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             hora2 = st.time_input("lbl_hora2", key="lbl_hora2", label_visibility="collapsed", value=None)
         
         st.markdown('<div class="label-negro">DIRECCIÓN</div>', unsafe_allow_html=True)
-        # LÍMITE 80
         dir_texto = st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80)
+        # CONTADOR MANUAL DIRECCIÓN (COLOR GRIS)
+        st.markdown(f"<p style='text-align:right; color:grey; font-size:12px; margin-top:-5px;'>Caracteres: {len(dir_texto)} / 80</p>", unsafe_allow_html=True)
         
         st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         logos = st.file_uploader("lbl_logos", key="lbl_logos", accept_multiple_files=True, label_visibility="collapsed")
@@ -530,7 +527,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             if not st.session_state.lbl_fecha1: errores.append("Falta Fecha Inicio")
             if st.session_state.get('imagen_lista_para_flyer') is None: errores.append("Falta recortar la Imagen de Fondo")
             
-            # BLOQUEO SI SUPERA 175 EN TOTAL
             if (len(st.session_state.lbl_desc) + len(st.session_state.lbl_desc2)) > 175:
                 errores.append(f"¡Has excedido el límite total de texto! (Llevas {len(st.session_state.lbl_desc) + len(st.session_state.lbl_desc2)}/175)")
 
@@ -541,7 +537,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
                 has_fecha2 = st.session_state.lbl_fecha2 is not None
                 num_colabs = len(st.session_state.get('lbl_logos', [])) if st.session_state.get('lbl_logos') else 0
                 
-                tipo_id = 1 # Por defecto
+                tipo_id = 1 
 
                 datos = {
                     'fondo': st.session_state.imagen_lista_para_flyer,

@@ -289,8 +289,7 @@ def generar_tipo_1_v2(datos):
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     lines_loc = textwrap.wrap(lugar, width=(20 if s_lug == 72 else 24))
-    line_height = int(s_lug * 1.1)
-    total_text_height = len(lines_loc) * line_height
+    line_height = int(s_lug * 1.1); total_text_height = len(lines_loc) * line_height
     x_txt_start = SIDE_MARGIN + 130 
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
@@ -697,6 +696,7 @@ def generar_tipo_2_v2(datos):
 
     # FIRMA JOTA LLORET (ABAJO DERECHA)
     y_firma = 0
+    firma = None # Ensure it exists
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         y_firma = int(Y_BOTTOM_BASELINE - firma.height + 50)
@@ -704,7 +704,7 @@ def generar_tipo_2_v2(datos):
 
     # --- DESCRIPCIÓN 2 (ENCIMA DE FIRMA - CENTRADA - CANARO MEDIUM) ---
     desc2 = datos['desc2']
-    if desc2 and os.path.exists("flyer_firma.png"):
+    if desc2 and firma:
         s_desc2 = 80
         path_medium = ruta_abs("Canaro-Medium.ttf")
         try: f_desc2 = ImageFont.truetype(path_medium, s_desc2)
@@ -826,6 +826,8 @@ def generar_tipo_2_v3(datos):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
         y_desc += int(s_desc * 1.1)
     
+    # At this point, y_desc is the y-coordinate for the *next* line after Desc 1.
+
     # 5. FECHA IZQUIERDA ABAJO (FIJA - T1_V3 Base)
     h_caja = 645; x_box = SIDE_MARGIN; y_box = Y_BOTTOM_BASELINE - 170 - h_caja
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -848,6 +850,7 @@ def generar_tipo_2_v3(datos):
     dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
 
     # --- INSERT DESCRIPCIÓN 2 HERE ---
+    # It must be below Desc 1 (y_desc) and above the Date Box (y_box).
     desc2 = datos['desc2']
     if desc2:
         s_desc2 = 80
@@ -860,6 +863,7 @@ def generar_tipo_2_v3(datos):
         y_cursor_d2 = y_desc + 60 # Add some margin
 
         for line in lines_d2:
+            # Left-aligned at SIDE_MARGIN
             dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_cursor_d2, f_desc2, offset=(5,5), anchor="ls")
             y_cursor_d2 += h_line_d2
 
@@ -1004,7 +1008,7 @@ def generar_tipo_2_v4(datos):
         x_txt_start = SIDE_MARGIN + icon.width + 30
     curr_y = Y_BOTTOM_BASELINE - total_text_height + line_height
     for l in lines_loc:
-        dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
+        dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
     # 8. Fecha (Bajada a la Izquierda - T1_V4 Base)
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 210 

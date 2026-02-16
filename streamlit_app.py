@@ -167,7 +167,6 @@ def generar_tipo_1(datos):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
-        # Fallback sombra
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.3), H):
@@ -221,19 +220,20 @@ def generar_tipo_1(datos):
 
     # --- AJUSTES DE UBICACIÓN TIPO 1 (DERECHA) ---
     lugar = datos['lugar']
-    # 1. Letra aumentada ligeramente (+2 a +5 puntos)
+    # Letra aumentada ligeramente
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     
-    # 2. Wrap MUY REDUCIDO (20-24 caracteres)
-    wrap_chars = 20 if s_lug == 72 else 24
+    # WRAPPING REDUCIDO (22-26 caracteres)
+    wrap_chars = 22 if s_lug == 72 else 26
     lines_loc = textwrap.wrap(lugar, width=wrap_chars)
     
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
+    y_base_txt = Y_BOTTOM_BASELINE
     
-    # Anclado a la derecha (margen original)
+    # Anclado a la derecha
     x_txt_anchor = W - SIDE_MARGIN
     max_line_w = max([f_lugar.getlength(l) for l in lines_loc]) if lines_loc else 200
     x_text_start = x_txt_anchor - max_line_w
@@ -268,15 +268,6 @@ def generar_tipo_1_v2(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
-    else:
-        # Fallback sombra
-        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
-        d_over = ImageDraw.Draw(overlay)
-        for y in range(int(H*0.3), H):
-            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
-            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
-        img = Image.alpha_composite(img, overlay)
-        draw = ImageDraw.Draw(img)
 
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
@@ -314,12 +305,13 @@ def generar_tipo_1_v2(datos):
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     
-    # 2. Wrap MUY REDUCIDO (20-24 caracteres)
-    wrap_chars = 20 if s_lug == 72 else 24
+    # 2. WRAPPING REDUCIDO (22-26 caracteres)
+    wrap_chars = 22 if s_lug == 72 else 26
     lines_loc = textwrap.wrap(lugar, width=wrap_chars)
     
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
+    y_base_txt = Y_BOTTOM_BASELINE
     
     # 3. Anclado a la IZQUIERDA
     x_txt_start = SIDE_MARGIN + 130
@@ -334,7 +326,6 @@ def generar_tipo_1_v2(datos):
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
     # --- AJUSTE FECHA (SUBIR MÁS) ---
-    # Subir 300px desde el tope de la ubicación
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 300
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -393,7 +384,6 @@ if not area_seleccionada:
          if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=300)
 
 elif area_seleccionada in ["Cultura", "Recreación"]:
-    # BOTÓN VOLVER CORREGIDO (TIPO PRIMARY = RECTANGULAR)
     if st.button("⬅️ VOLVER AL INICIO", type="primary", key="back_btn"):
         st.query_params.clear()
         st.rerun()
@@ -511,15 +501,17 @@ elif area_seleccionada == "Final":
         generated = st.session_state.get('generated_images', {})
         sel = st.session_state.get('variant_selected', 'v1')
         
+        # --- DISEÑO FINAL DE 3 COLUMNAS ---
         c_left, c_center, c_right = st.columns([1.5, 3, 1.5])
         
+        # IZQUIERDA (MASCOTAS)
         with c_left:
             st.write("")
-            # MASCOTA PINCEL AUMENTADA (width=350)
             if os.path.exists("mascota_pincel.png"): st.image("mascota_pincel.png", width=350)
             st.write("")
             if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
 
+        # CENTRO (IMAGEN + NAVEGACIÓN)
         with c_center:
             if tipo == 1 and generated:
                 img_show = generated[sel]
@@ -543,11 +535,10 @@ elif area_seleccionada == "Final":
                         with open("mascota_final.png", "rb") as f:
                             chola_b64 = base64.b64encode(f.read()).decode()
                         
-                        # MASCOTA DESCARGA REDUCIDA (width="220")
                         html_chola = f"""
                         <div style="text-align: center;">
                             <a href="data:image/png;base64,{img_b64_dl}" download="{fname}" style="text-decoration: none; border: none !important; outline: none !important;">
-                                <img src="data:image/png;base64,{chola_b64}" width="220" class="zoom-hover" style="border: none !important; outline: none !important; display: block; margin: auto;">
+                                <img src="data:image/png;base64,{chola_b64}" width="280" class="zoom-hover" style="border: none !important; outline: none !important; display: block; margin: auto;">
                                 <div style="font-family: 'Canaro'; font-weight: bold; font-size: 18px; color: white; margin-top: 5px; text-decoration: none;">DESCARGUE AQUÍ</div>
                             </a>
                         </div>
@@ -563,37 +554,9 @@ elif area_seleccionada == "Final":
             else:
                 st.info(f"Flyer TIPO {tipo} en construcción.")
 
+        # DERECHA VACÍA (SIN "OTRAS OPCIONES")
         with c_right:
-            st.markdown("<h3 style='text-align: center; font-size: 20px;'>OTRAS OPCIONES</h3>", unsafe_allow_html=True)
-            
-            if tipo == 1 and generated:
-                target = 'v2' if sel == 'v1' else 'v1'
-                thumb_img = generated[target]
-                thumb_b64 = img_to_base64(thumb_img)
-                
-                css_btn = f"""
-                <style>
-                div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] button {{
-                    background-image: url("data:image/png;base64,{thumb_b64}") !important;
-                    background-size: cover !important;
-                    background-position: center !important;
-                    background-repeat: no-repeat !important;
-                    height: 250px !important;
-                    border: 2px solid transparent !important;
-                    color: transparent !important;
-                    transition: transform 0.2s ease !important;
-                }}
-                div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] button:hover {{
-                    transform: scale(1.05) !important;
-                    border: 3px solid white !important;
-                }}
-                </style>
-                """
-                st.markdown(css_btn, unsafe_allow_html=True)
-                
-                if st.button(" ", key=f"btn_swap_{target}"):
-                    st.session_state['variant_selected'] = target
-                    st.rerun()
+            st.empty()
 
     st.write("---")
     if st.button("🔄 CREAR NUEVO", type="primary"):

@@ -221,18 +221,17 @@ def generar_tipo_1(datos):
 
     # --- AJUSTES DE UBICACIÓN TIPO 1 (DERECHA) ---
     lugar = datos['lugar']
-    # 1. Letra aumentada (original - 5 puntos)
-    s_lug = 70 if len(lugar) < 45 else 55
+    # 1. Letra aumentada ligeramente (+2 a +5 puntos)
+    s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     
-    # 2. Wrap reducido para hacer el bloque MÁS ESTRECHO
-    wrap_chars = 24 if s_lug == 70 else 30
+    # 2. Wrap MUY REDUCIDO (20-24 caracteres)
+    wrap_chars = 20 if s_lug == 72 else 24
     lines_loc = textwrap.wrap(lugar, width=wrap_chars)
     
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
-    y_base_txt = Y_BOTTOM_BASELINE
     
     # Anclado a la derecha (margen original)
     x_txt_anchor = W - SIDE_MARGIN
@@ -310,18 +309,17 @@ def generar_tipo_1_v2(datos):
 
     # --- AJUSTES DE UBICACIÓN TIPO 2 (IZQUIERDA) ---
     lugar = datos['lugar']
-    # 1. Letra aumentada (original - 5 puntos)
-    s_lug = 70 if len(lugar) < 45 else 55
+    # 1. Letra aumentada ligeramente (+2 a +5 puntos)
+    s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     
-    # 2. Wrap reducido para hacer el bloque MÁS ESTRECHO
-    wrap_chars = 24 if s_lug == 70 else 30
+    # 2. Wrap MUY REDUCIDO (20-24 caracteres)
+    wrap_chars = 20 if s_lug == 72 else 24
     lines_loc = textwrap.wrap(lugar, width=wrap_chars)
     
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
-    y_base_txt = Y_BOTTOM_BASELINE
     
     # 3. Anclado a la IZQUIERDA
     x_txt_start = SIDE_MARGIN + 130
@@ -517,7 +515,8 @@ elif area_seleccionada == "Final":
         
         with c_left:
             st.write("")
-            if os.path.exists("mascota_pincel.png"): st.image("mascota_pincel.png", use_container_width=True)
+            # MASCOTA PINCEL AUMENTADA (width=350)
+            if os.path.exists("mascota_pincel.png"): st.image("mascota_pincel.png", width=350)
             st.write("")
             if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
 
@@ -544,10 +543,11 @@ elif area_seleccionada == "Final":
                         with open("mascota_final.png", "rb") as f:
                             chola_b64 = base64.b64encode(f.read()).decode()
                         
+                        # MASCOTA DESCARGA REDUCIDA (width="220")
                         html_chola = f"""
                         <div style="text-align: center;">
                             <a href="data:image/png;base64,{img_b64_dl}" download="{fname}" style="text-decoration: none; border: none !important; outline: none !important;">
-                                <img src="data:image/png;base64,{chola_b64}" width="280" class="zoom-hover" style="border: none !important; outline: none !important; display: block; margin: auto;">
+                                <img src="data:image/png;base64,{chola_b64}" width="220" class="zoom-hover" style="border: none !important; outline: none !important; display: block; margin: auto;">
                                 <div style="font-family: 'Canaro'; font-weight: bold; font-size: 18px; color: white; margin-top: 5px; text-decoration: none;">DESCARGUE AQUÍ</div>
                             </a>
                         </div>

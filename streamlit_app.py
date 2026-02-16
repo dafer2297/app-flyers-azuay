@@ -715,14 +715,16 @@ def generar_tipo_2_v2(datos):
         try: f_desc2 = ImageFont.truetype(path_medium, s_desc2)
         except: f_desc2 = ImageFont.load_default()
 
-        lines_d2 = textwrap.wrap(desc2, width=30) # Ajustar wrapping según necesidad
+        # REDUCIDO EL WRAPPING PARA QUE NO SE SALGA
+        lines_d2 = textwrap.wrap(desc2, width=22) # Ajustado de 30 a 22
         h_line_d2 = int(s_desc2 * 1.1)
         total_h_d2 = len(lines_d2) * h_line_d2
 
         # Centro horizontal de la firma
         cx_firma = W - SIDE_MARGIN - (firma.width // 2)
-        # Posición Y inicial (encima de la firma con margen)
-        y_cursor_d2 = y_firma - 40 - total_h_d2 + (h_line_d2 / 2)
+        # Posición Y inicial (encima de la firma con MÁS margen)
+        # AUMENTADO EL MARGEN VERTICAL (de 40 a 100)
+        y_cursor_d2 = y_firma - 100 - total_h_d2 + (h_line_d2 / 2)
 
         for line in lines_d2:
             dibujar_texto_sombra(draw, line, cx_firma, y_cursor_d2, f_desc2, offset=(5,5), anchor="mm")

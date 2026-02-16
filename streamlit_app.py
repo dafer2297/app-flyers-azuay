@@ -45,16 +45,46 @@ def set_design():
         {font_css}
         h1, h2, h3 {{ font-family: 'Canaro', sans-serif !important; color: white !important; text-transform: uppercase; }}
         
-        /* BOTONES */
-        div[data-testid="stButton"] > button {{ 
-            background-color: transparent; 
-            color: white; 
-            border: 2px solid white; 
-            border-radius: 15px; 
-            width: 100%;
-            font-weight: bold;
+        /* BOTONES DE NAVEGACIÓN (FLECHAS REDONDAS) */
+        div[data-testid="stButton"] button[kind="secondary"] {{
+            background-color: white;
+            color: #1E88E5;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: auto;
         }}
-        div[data-testid="stButton"] > button:hover {{ background-color: #D81B60; border-color: #D81B60; }}
+        div[data-testid="stButton"] button[kind="secondary"]:hover {{
+            background-color: #f0f0f0;
+            transform: scale(1.1);
+            color: #1565C0;
+        }}
+        
+        /* BOTONES RECTANGULARES (GENERAR y VOLVER) */
+        div[data-testid="stButton"] button[kind="primary"] {{
+            background-color: transparent;
+            color: white;
+            border: 2px solid white;
+            border-radius: 15px;
+            width: 100%;
+            height: auto;
+            padding: 10px 20px;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: none;
+        }}
+        div[data-testid="stButton"] button[kind="primary"]:hover {{
+            background-color: #D81B60;
+            border-color: #D81B60;
+            transform: none;
+        }}
 
         /* INPUTS */
         .stTextInput > div > div > input, .stTextArea > div > div > textarea, 
@@ -191,20 +221,20 @@ def generar_tipo_1(datos):
 
     # --- AJUSTES DE UBICACIÓN TIPO 1 (DERECHA) ---
     lugar = datos['lugar']
-    # Letra pequeña
-    s_lug = 55 if len(lugar) < 45 else 45
+    # 1. Letra aumentada (original - 5 puntos)
+    s_lug = 70 if len(lugar) < 45 else 55
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     
-    # Wrap ajustado para letra pequeña
-    wrap_chars = 32 if s_lug == 55 else 42
+    # 2. Wrap reducido para hacer el bloque MÁS ESTRECHO
+    wrap_chars = 24 if s_lug == 70 else 30
     lines_loc = textwrap.wrap(lugar, width=wrap_chars)
     
-    line_height = int(s_lug * 1.2)
+    line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     y_base_txt = Y_BOTTOM_BASELINE
     
-    # Anclado a la derecha
+    # Anclado a la derecha (margen original)
     x_txt_anchor = W - SIDE_MARGIN
     max_line_w = max([f_lugar.getlength(l) for l in lines_loc]) if lines_loc else 200
     x_text_start = x_txt_anchor - max_line_w
@@ -239,6 +269,15 @@ def generar_tipo_1_v2(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
+    else:
+        # Fallback sombra
+        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+        d_over = ImageDraw.Draw(overlay)
+        for y in range(int(H*0.3), H):
+            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
+            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img)
 
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
@@ -271,16 +310,16 @@ def generar_tipo_1_v2(datos):
 
     # --- AJUSTES DE UBICACIÓN TIPO 2 (IZQUIERDA) ---
     lugar = datos['lugar']
-    # 1. Usar la misma lógica de letra pequeña de la Plantilla 1
-    s_lug = 55 if len(lugar) < 45 else 45
+    # 1. Letra aumentada (original - 5 puntos)
+    s_lug = 70 if len(lugar) < 45 else 55
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     
-    # 2. Mismo wrapping que la Plantilla 1
-    wrap_chars = 32 if s_lug == 55 else 42
+    # 2. Wrap reducido para hacer el bloque MÁS ESTRECHO
+    wrap_chars = 24 if s_lug == 70 else 30
     lines_loc = textwrap.wrap(lugar, width=wrap_chars)
     
-    line_height = int(s_lug * 1.2)
+    line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     y_base_txt = Y_BOTTOM_BASELINE
     
@@ -356,7 +395,8 @@ if not area_seleccionada:
          if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=300)
 
 elif area_seleccionada in ["Cultura", "Recreación"]:
-    if st.button("⬅️ VOLVER AL INICIO", type="secondary", key="back_btn"):
+    # BOTÓN VOLVER CORREGIDO (TIPO PRIMARY = RECTANGULAR)
+    if st.button("⬅️ VOLVER AL INICIO", type="primary", key="back_btn"):
         st.query_params.clear()
         st.rerun()
 
@@ -473,17 +513,14 @@ elif area_seleccionada == "Final":
         generated = st.session_state.get('generated_images', {})
         sel = st.session_state.get('variant_selected', 'v1')
         
-        # --- CAMBIO DE LAYOUT PARA DAR MÁS ESPACIO A LOS LATERALES ---
         c_left, c_center, c_right = st.columns([1.5, 3, 1.5])
         
-        # --- ZONA IZQUIERDA (MASCOTAS RESTAURADAS) ---
         with c_left:
             st.write("")
             if os.path.exists("mascota_pincel.png"): st.image("mascota_pincel.png", use_container_width=True)
             st.write("")
             if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
 
-        # --- ZONA CENTRAL (IMAGEN + NAVEGACIÓN) ---
         with c_center:
             if tipo == 1 and generated:
                 img_show = generated[sel]
@@ -507,7 +544,6 @@ elif area_seleccionada == "Final":
                         with open("mascota_final.png", "rb") as f:
                             chola_b64 = base64.b64encode(f.read()).decode()
                         
-                        # TAMAÑO AUMENTADO DE CHOLA DE DESCARGA (width="280")
                         html_chola = f"""
                         <div style="text-align: center;">
                             <a href="data:image/png;base64,{img_b64_dl}" download="{fname}" style="text-decoration: none; border: none !important; outline: none !important;">
@@ -527,7 +563,6 @@ elif area_seleccionada == "Final":
             else:
                 st.info(f"Flyer TIPO {tipo} en construcción.")
 
-        # DERECHA (EL BOTÓN IMAGEN)
         with c_right:
             st.markdown("<h3 style='text-align: center; font-size: 20px;'>OTRAS OPCIONES</h3>", unsafe_allow_html=True)
             
@@ -536,10 +571,8 @@ elif area_seleccionada == "Final":
                 thumb_img = generated[target]
                 thumb_b64 = img_to_base64(thumb_img)
                 
-                # CSS PARA EL BOTÓN INVISIBLE CON IMAGEN DE FONDO
                 css_btn = f"""
                 <style>
-                /* IMPORTANTE: Usamos un selector muy específico para apuntar a la columna derecha */
                 div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] button {{
                     background-image: url("data:image/png;base64,{thumb_b64}") !important;
                     background-size: cover !important;
@@ -558,7 +591,6 @@ elif area_seleccionada == "Final":
                 """
                 st.markdown(css_btn, unsafe_allow_html=True)
                 
-                # Botón "vacío" que usa la imagen de fondo por CSS
                 if st.button(" ", key=f"btn_swap_{target}"):
                     st.session_state['variant_selected'] = target
                     st.rerun()

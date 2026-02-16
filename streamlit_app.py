@@ -425,7 +425,7 @@ def generar_tipo_1_v3(datos):
 
     return img.convert("RGB")
 
-# --- TIPO 1: VARIANTE 4 (NUEVA: 4 NIVELES + IZQUIERDA + FECHA SUBIDA) ---
+# --- TIPO 1: VARIANTE 4 (CORREGIDA: TEXTO SUBIDO, FECHA BAJADA UN POCO) ---
 def generar_tipo_1_v4(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -461,8 +461,8 @@ def generar_tipo_1_v4(datos):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
-    # TITULO IZQUIERDA
-    y_titulo = 850 
+    # TITULO IZQUIERDA (SUBIDO A 800)
+    y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
     desc1 = datos['desc1']
@@ -480,8 +480,8 @@ def generar_tipo_1_v4(datos):
         
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     
-    # Y_DESC 1070 (Espacio seguro)
-    y_desc = 1070 
+    # Y_DESC (SUBIDO A 980)
+    y_desc = 980 
     
     for line in textwrap.wrap(desc1, width=wrap_w):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
@@ -506,8 +506,8 @@ def generar_tipo_1_v4(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
-    # FECHA SUBIDA (-210)
-    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 210 
+    # FECHA BAJADA UN POQUITO (-180)
+    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 180 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
     str_hora = datos['hora1'].strftime('%H:%M %p')
     if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"

@@ -216,6 +216,7 @@ def generar_tipo_1(datos):
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
+    
     wrap_chars = 20 if s_lug == 72 else 24
     lines_loc = textwrap.wrap(lugar, width=wrap_chars)
     line_height = int(s_lug * 1.1)
@@ -321,7 +322,7 @@ def generar_tipo_1_v2(datos):
 
     return img.convert("RGB")
 
-# --- TIPO 1: VARIANTE 3 (ALINEADO IZQUIERDA + TEXTO AUMENTADO 10pts) ---
+# --- TIPO 1: VARIANTE 3 (ALINEADO IZQUIERDA + TAMAÑO 130/110/90) ---
 def generar_tipo_1_v3(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -359,19 +360,15 @@ def generar_tipo_1_v3(datos):
     desc1 = datos['desc1']
     chars_desc = len(desc1)
     
-    # --- TAMAÑO AUMENTADO (+10 PTS) ---
-    # Corto: 130 -> 140
-    # Medio: 110 -> 120
-    # Largo: 90 -> 100
-    
+    # --- REDUCIDO 10 PUNTOS (140->130, 120->110, 100->90) ---
     if chars_desc < 60:
-        s_desc = 140 
+        s_desc = 130 # Era 140
         wrap_w = 15
     elif chars_desc < 115:
-        s_desc = 120 
+        s_desc = 110 # Era 120
         wrap_w = 18
     else:
-        s_desc = 100 
+        s_desc = 90  # Era 100
         wrap_w = 22
         
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
@@ -484,7 +481,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         desc2 = st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="", height=100, max_chars=175)
         
         total_chars = len(desc1) + len(desc2)
-        color_c = "red" if total_chars > 175 else "grey"
+        color_c = "red" if total_chars > 175 else "black"
         st.markdown(f"<p style='text-align:right; color:{color_c}; font-size:12px; margin-top:-10px;'>Total caracteres: {total_chars} / 175</p>", unsafe_allow_html=True)
 
         c_f1, c_f2 = st.columns(2)
@@ -504,7 +501,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         
         st.markdown('<div class="label-negro">DIRECCIÓN</div>', unsafe_allow_html=True)
         dir_texto = st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80)
-        st.markdown(f"<p style='text-align:right; color:grey; font-size:12px; margin-top:-5px;'>Caracteres: {len(dir_texto)} / 80</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align:right; color:black; font-size:12px; margin-top:-5px;'>Caracteres: {len(dir_texto)} / 80</p>", unsafe_allow_html=True)
         
         st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         logos = st.file_uploader("lbl_logos", key="lbl_logos", accept_multiple_files=True, label_visibility="collapsed")

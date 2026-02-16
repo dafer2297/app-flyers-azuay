@@ -425,7 +425,7 @@ def generar_tipo_1_v3(datos):
 
     return img.convert("RGB")
 
-# --- TIPO 1: VARIANTE 4 (NUEVA: 4 NIVELES + IZQUIERDA + FECHA BAJADA) ---
+# --- TIPO 1: VARIANTE 4 (NUEVA: 4 NIVELES + IZQUIERDA + PEGASO + FECHA SUBIDA) ---
 def generar_tipo_1_v4(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -506,8 +506,9 @@ def generar_tipo_1_v4(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
-    # FECHA BAJADA MUCHO MÁS PARA EVITAR SUPERPOSICIÓN (-100)
-    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 100 
+    # FECHA BAJADA PERO NO TANTO (-100 -> -160)
+    # SUBIRLO = Aumentar la resta (Alejarlo del fondo)
+    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 160 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
     str_hora = datos['hora1'].strftime('%H:%M %p')
     if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"

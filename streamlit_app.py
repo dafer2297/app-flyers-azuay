@@ -216,6 +216,7 @@ def generar_tipo_1(datos):
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
+    
     wrap_chars = 20 if s_lug == 72 else 24
     lines_loc = textwrap.wrap(lugar, width=wrap_chars)
     line_height = int(s_lug * 1.1)
@@ -321,7 +322,7 @@ def generar_tipo_1_v2(datos):
 
     return img.convert("RGB")
 
-# --- TIPO 1: VARIANTE 3 (ALINEADO IZQUIERDA + TAMAÑO AUMENTADO) ---
+# --- TIPO 1: VARIANTE 3 (ALINEADO IZQUIERDA + WRAPPING DINÁMICO) ---
 def generar_tipo_1_v3(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -359,23 +360,30 @@ def generar_tipo_1_v3(datos):
     desc1 = datos['desc1']
     chars_desc = len(desc1)
     
-    # --- TAMAÑO Y WRAPPING DINÁMICO (V3 AUMENTADO) ---
+    # 1. Medimos el ancho de "INVITA"
+    w_titulo = f_invita.getlength("INVITA")
+    
+    # 2. Definimos el ancho objetivo (15% más grande)
+    target_width = w_titulo * 1.15
+    
+    # 3. Definimos tamaño de letra (MAX 140)
     if chars_desc < 60:
-        s_desc = 130 # AUMENTADO (ANTES 115)
-        wrap_w = 15
+        s_desc = 140
     elif chars_desc < 115:
-        s_desc = 110 # AUMENTADO (ANTES 95)
-        wrap_w = 20
+        s_desc = 110
     else:
-        s_desc = 90  # AUMENTADO (ANTES 75)
-        wrap_w = 25
+        s_desc = 90
         
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     
-    # ESPACIO AUMENTADO: Bajamos aún más el inicio
+    # 4. Calculamos Wrapping Automático (aprox ancho promedio de letra)
+    avg_char_w = f_desc.getlength("a") # Usamos 'a' como promedio seguro
+    wrap_chars = int(target_width / avg_char_w)
+    
+    # Espacio aumentado
     y_desc = 1150 
     
-    for line in textwrap.wrap(desc1, width=wrap_w):
+    for line in textwrap.wrap(desc1, width=wrap_chars):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
 
     h_caja = 645; x_box = SIDE_MARGIN; y_box = Y_BOTTOM_BASELINE - 170 - h_caja
@@ -422,7 +430,6 @@ def generar_tipo_1_v3(datos):
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         for _ in range(2): img.paste(logo, (margin_logos, 150), logo)
-    
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)

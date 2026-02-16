@@ -201,23 +201,15 @@ def generar_tipo_1(datos):
     dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, Y_BOTTOM_BASELINE - 100, f_dia_semana, offset=(8,8), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
 
-    # --- CAMBIOS SOLICITADOS EN UBICACIÓN ---
     lugar = datos['lugar']
-    # 1. Letra más pequeña (de 75/60 a 65/50)
     s_lug = 65 if len(lugar) < 45 else 50
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
-    
-    # 2. Ajuste de wrapping para la letra más pequeña
     lines_loc = textwrap.wrap(lugar, width=(25 if s_lug == 65 else 32))
-    
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     y_base_txt = Y_BOTTOM_BASELINE
-    
-    # 3. Mover más a la derecha: Reducimos el margen derecho efectivo (SIDE_MARGIN - 60)
     x_txt_anchor = W - (SIDE_MARGIN - 60) 
-    
     max_line_w = max([f_lugar.getlength(l) for l in lines_loc]) if lines_loc else 300
     x_text_start = x_txt_anchor - max_line_w
     
@@ -242,6 +234,12 @@ def generar_tipo_1(datos):
 
 def generar_tipo_1_v2(datos):
     fondo = datos['fondo'].copy()
+    desc1 = datos['desc1']
+    fecha1 = datos['fecha1']
+    hora1 = datos['hora1']
+    hora2 = datos['hora2']
+    lugar = datos['lugar']
+    
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
@@ -268,7 +266,7 @@ def generar_tipo_1_v2(datos):
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
     dibujar_texto_sombra(draw, "INVITA", W/2, 850, f_invita, offset=(10,10))
-    desc1 = datos['desc1']
+    
     chars_desc = len(desc1)
     size_desc_val = 110 if chars_desc <= 75 else (90 if chars_desc <= 150 else 75)
     f_desc = ImageFont.truetype(path_desc, size_desc_val) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
@@ -281,13 +279,12 @@ def generar_tipo_1_v2(datos):
         img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
 
     len_lug = len(lugar)
-    if len_lug < 45: s_lug = 75
-    else: s_lug = 60
+    s_lug = 75 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     lines_loc = textwrap.wrap(lugar, width=(22 if s_lug == 75 else 28))
     line_height = int(s_lug * 1.1); total_text_height = len(lines_loc) * line_height
-    x_txt_start = SIDE_MARGIN + 130
+    x_txt_start = SIDE_MARGIN + 130 
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
@@ -297,8 +294,6 @@ def generar_tipo_1_v2(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
-    # --- CAMBIOS SOLICITADOS EN FECHA (V2) ---
-    # Subir el bloque de fecha: Aumentamos la separación de 150 a 350
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 350 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
     str_hora = datos['hora1'].strftime('%H:%M %p')

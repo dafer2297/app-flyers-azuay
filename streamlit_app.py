@@ -150,6 +150,8 @@ def resize_por_alto(img, alto_objetivo):
 # ==============================================================================
 
 def generar_tipo_1(datos):
+    # --- TIPO 1 VARIANTE 1 (CLÁSICA) ---
+    # RESTAURADA A SU ESTADO ORIGINAL (Ancho dinámico)
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -188,7 +190,11 @@ def generar_tipo_1(datos):
     size_desc_val = 110 if chars_desc <= 75 else (90 if chars_desc <= 150 else 75)
     f_desc = ImageFont.truetype(path_desc, size_desc_val) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     y_desc = 1030
-    for line in textwrap.wrap(desc1, width=(35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55))):
+    
+    # WRAPPING DINÁMICO RESTAURADO
+    wrap_width = 35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55)
+    
+    for line in textwrap.wrap(desc1, width=wrap_width):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
     # FECHA IZQUIERDA ABAJO (FIJA)
@@ -630,6 +636,7 @@ def generar_tipo_2_v1(datos):
         dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
     # 7. DESCRIPCIÓN 2 (ENCIMA DEL BLOQUE FECHA - ALINEADA A LA IZQUIERDA - CANARO MEDIUM)
+    # APPLIED WRAPPING 18 FOR DESC 2
     desc2 = datos['desc2']
     if desc2:
         y_desc2_bottom = y_box - 40 
@@ -641,7 +648,7 @@ def generar_tipo_2_v1(datos):
         except: f_desc2 = ImageFont.load_default()
         
         # Ajustamos el ancho para que no choque con nada
-        lines_d2 = textwrap.wrap(desc2, width=28)
+        lines_d2 = textwrap.wrap(desc2, width=18)
         h_line_d2 = int(s_desc2 * 1.1)
         total_h_d2 = len(lines_d2) * h_line_d2
         

@@ -40,8 +40,7 @@ def set_design():
         {font_css}
         h1, h2, h3 {{ font-family: 'Canaro', sans-serif !important; color: white !important; text-transform: uppercase; }}
         
-        /* BOTONES DE NAVEGACIÓN (FLECHAS) - SOLO SI TIENEN LA CLASE 'arrow-btn' (Hack por key) */
-        /* Usamos selector por atributo key para diferenciar */
+        /* BOTONES DE NAVEGACIÓN (FLECHAS) */
         div[data-testid="stButton"] button[kind="secondary"] {{
             background-color: white;
             color: #1E88E5;
@@ -63,7 +62,7 @@ def set_design():
             color: #1565C0;
         }}
         
-        /* BOTÓN GENERAR (PRIMARIO) - ANCHO Y RECTANGULAR */
+        /* BOTÓN GENERAR (PRIMARIO) */
         div[data-testid="stButton"] button[kind="primary"] {{
             background-color: transparent;
             color: white;
@@ -202,13 +201,25 @@ def generar_tipo_1(datos):
     dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, Y_BOTTOM_BASELINE - 100, f_dia_semana, offset=(8,8), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
 
+    # --- CAMBIOS SOLICITADOS EN UBICACIÓN ---
     lugar = datos['lugar']
-    s_lug = 75 if len(lugar) < 45 else 60
+    # 1. Letra más pequeña (de 75/60 a 65/50)
+    s_lug = 65 if len(lugar) < 45 else 50
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
-    lines_loc = textwrap.wrap(lugar, width=(22 if s_lug == 75 else 28))
-    line_height = int(s_lug * 1.1); total_text_height = len(lines_loc) * line_height
-    x_text_start = W - SIDE_MARGIN - (max([f_lugar.getlength(l) for l in lines_loc]) if lines_loc else 300)
+    
+    # 2. Ajuste de wrapping para la letra más pequeña
+    lines_loc = textwrap.wrap(lugar, width=(25 if s_lug == 65 else 32))
+    
+    line_height = int(s_lug * 1.1)
+    total_text_height = len(lines_loc) * line_height
+    y_base_txt = Y_BOTTOM_BASELINE
+    
+    # 3. Mover más a la derecha: Reducimos el margen derecho efectivo (SIDE_MARGIN - 60)
+    x_txt_anchor = W - (SIDE_MARGIN - 60) 
+    
+    max_line_w = max([f_lugar.getlength(l) for l in lines_loc]) if lines_loc else 300
+    x_text_start = x_txt_anchor - max_line_w
     
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
@@ -269,8 +280,9 @@ def generar_tipo_1_v2(datos):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 378)
         img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
 
-    lugar = datos['lugar']
-    s_lug = 75 if len(lugar) < 45 else 60
+    len_lug = len(lugar)
+    if len_lug < 45: s_lug = 75
+    else: s_lug = 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     lines_loc = textwrap.wrap(lugar, width=(22 if s_lug == 75 else 28))
@@ -285,7 +297,9 @@ def generar_tipo_1_v2(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
-    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 150 
+    # --- CAMBIOS SOLICITADOS EN FECHA (V2) ---
+    # Subir el bloque de fecha: Aumentamos la separación de 150 a 350
+    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 350 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
     str_hora = datos['hora1'].strftime('%H:%M %p')
     if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
@@ -293,18 +307,12 @@ def generar_tipo_1_v2(datos):
     try: f_hora = ImageFont.truetype(path_extra, size_hora)
     except: f_hora = ImageFont.load_default()
 
-    # --- CORRECCIÓN CRÍTICA DE VARIABLES (UnboundLocalError) ---
-    # Definimos cx, cy, w_caja, color_fecha SIEMPRE, incluso si no entra al if
     w_caja = 645
-    
     if os.path.exists("flyer_caja_fecha.png"):
         caja = Image.open("flyer_caja_fecha.png").convert("RGBA").resize((645, 645), Image.Resampling.LANCZOS)
-        # Aseguramos coordenadas enteras
-        img.paste(caja, (x_box, int(y_box)), caja)
-        color_fecha = "white"
+        img.paste(caja, (x_box, int(y_box)), caja); color_fecha = "white"
     else:
-        draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white")
-        color_fecha = "black"
+        draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white"); color_fecha = "black"
     
     cx = x_box + (w_caja / 2)
     cy = int(y_box + (h_caja / 2))
@@ -349,7 +357,7 @@ if not area_seleccionada:
          if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=300)
 
 elif area_seleccionada in ["Cultura", "Recreación"]:
-    if st.button("⬅️ VOLVER AL INICIO", type="secondary", key="back_btn"): # key para evitar conflicto
+    if st.button("⬅️ VOLVER AL INICIO", type="secondary", key="back_btn"):
         st.query_params.clear()
         st.rerun()
 
@@ -397,7 +405,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             st.write("✅ Imagen lista.")
 
         st.write("")
-        # BOTÓN GENERAR TIPO "PRIMARY" PARA QUE CSS LO HAGA ANCHO Y RECTANGULAR
         if st.button("✨ GENERAR FLYERS ✨", type="primary", use_container_width=True):
             errores = []
             if not st.session_state.lbl_desc: errores.append("Falta Descripción 1")
@@ -467,29 +474,31 @@ elif area_seleccionada == "Final":
         generated = st.session_state.get('generated_images', {})
         sel = st.session_state.get('variant_selected', 'v1')
         
-        # Centramos todo
         c_left, c_center, c_right = st.columns([1, 4, 1])
         
+        # --- ZONA IZQUIERDA (MASCOTAS RESTAURADAS) ---
+        with c_left:
+            st.write("")
+            if os.path.exists("mascota_pincel.png"): st.image("mascota_pincel.png", use_container_width=True)
+            st.write("")
+            if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
+
+        # --- ZONA CENTRAL (IMAGEN + NAVEGACIÓN) ---
         with c_center:
             if tipo == 1 and generated:
-                # 1. IMAGEN GRANDE
                 img_show = generated[sel]
                 fname = f"flyer_azuay_{sel}.png"
                 st.image(img_show, use_container_width=True)
                 
                 st.write("")
-                
-                # 2. FLECHAS Y DESCARGA
                 c_prev, c_down, c_next = st.columns([1, 2, 1])
                 
                 with c_prev:
-                    # Flecha Izquierda (Secondary = Redondo por CSS)
                     if st.button("⬅️", key="prev_btn", type="secondary"):
                         st.session_state['variant_selected'] = 'v2' if sel == 'v1' else 'v1'
                         st.rerun()
                 
                 with c_down:
-                    # Chola Descarga
                     buf = io.BytesIO()
                     img_show.save(buf, format="PNG")
                     img_b64_dl = base64.b64encode(buf.getvalue()).decode()
@@ -511,7 +520,6 @@ elif area_seleccionada == "Final":
                         st.download_button("⬇️ DESCARGAR", data=buf.getvalue(), file_name=fname, mime="image/png", use_container_width=True)
 
                 with c_next:
-                    # Flecha Derecha
                     if st.button("➡️", key="next_btn", type="secondary"):
                         st.session_state['variant_selected'] = 'v2' if sel == 'v1' else 'v1'
                         st.rerun()

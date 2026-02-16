@@ -235,10 +235,10 @@ def generar_tipo_1(datos):
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
-        for _ in range(2): img.paste(logo, (margin_logos, 150), logo)
+        img.paste(logo, (margin_logos, 150), logo) # IZQUIERDA
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
-        img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
+        img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma) # DERECHA ARRIBA
 
     return img.convert("RGB")
 
@@ -456,12 +456,14 @@ def generar_tipo_1_v4(datos):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
+    # TITULO IZQUIERDA
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
     desc1 = datos['desc1']
     chars_desc = len(desc1)
     
+    # --- 4 NIVELES DE TEXTO (V4) ---
     if chars_desc < 50:
         s_desc = 130; wrap_w = 15
     elif chars_desc < 90:
@@ -472,7 +474,9 @@ def generar_tipo_1_v4(datos):
         s_desc = 75; wrap_w = 25
         
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
-    y_desc = 980 
+    
+    # Y_DESC 1070
+    y_desc = 1070 
     
     for line in textwrap.wrap(desc1, width=wrap_w):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
@@ -497,6 +501,7 @@ def generar_tipo_1_v4(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
+    # FECHA BAJADA PERO NO TANTO (-210)
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 210 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -557,10 +562,14 @@ def generar_tipo_2_v1(datos):
         f_invita = f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_desc = None
 
-    # 3. Logo Superior (Solo Institucional Centrado)
+    # 3. Logo Superior (Igual a T1_V1)
+    margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
-        img.paste(logo, ((W - logo.width)//2, 150), logo)
+        img.paste(logo, (margin_logos, 150), logo) # IZQUIERDA
+    if os.path.exists("flyer_firma.png"):
+        firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
+        img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma) # DERECHA
 
     # 4. Título "INVITA" (Centrado - T1 Base)
     y_titulo = 850 
@@ -596,9 +605,7 @@ def generar_tipo_2_v1(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height_loc
 
-    if os.path.exists("flyer_firma.png"):
-        firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
-        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
+    # OJO: FIRMA YA ESTÁ ARRIBA EN T1_V1, ASÍ QUE NO LA PONEMOS ABAJO.
 
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 300 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
@@ -620,7 +627,7 @@ def generar_tipo_2_v1(datos):
     dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_linea_hora - 100, f_dia_semana, offset=(8,8), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, y_linea_hora, f_hora, offset=(8,8), anchor="mm")
 
-    # 7. DESCRIPCIÓN 2 (ENCIMA DEL BLOQUE FECHA - ALINEADA A LA IZQUIERDA)
+    # 7. DESCRIPCIÓN 2 (ENCIMA DEL BLOQUE FECHA - ALINEADA A LA IZQUIERDA - CANARO MEDIUM)
     desc2 = datos['desc2']
     if desc2:
         y_desc2_bottom = y_box - 40 

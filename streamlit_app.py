@@ -236,7 +236,6 @@ def generar_tipo_1(datos):
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         for _ in range(2): img.paste(logo, (margin_logos, 150), logo)
-    
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
@@ -322,7 +321,7 @@ def generar_tipo_1_v2(datos):
 
     return img.convert("RGB")
 
-# --- TIPO 1: VARIANTE 3 (ALINEADO IZQUIERDA + TAMAÑO DINÁMICO) ---
+# --- TIPO 1: VARIANTE 3 (ALINEADO IZQUIERDA + TAMAÑO AUMENTADO) ---
 def generar_tipo_1_v3(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -360,20 +359,20 @@ def generar_tipo_1_v3(datos):
     desc1 = datos['desc1']
     chars_desc = len(desc1)
     
-    # --- TAMAÑO Y WRAPPING DINÁMICO (V3 CORREGIDA) ---
+    # --- TAMAÑO Y WRAPPING DINÁMICO (V3 AUMENTADO) ---
     if chars_desc < 60:
-        s_desc = 115 # GRANDE (ANTES 100)
-        wrap_w = 16  # MAS ANCHO (ANTES 12)
+        s_desc = 130 # AUMENTADO (ANTES 115)
+        wrap_w = 15
     elif chars_desc < 115:
-        s_desc = 95  # MEDIANO (ANTES 80)
-        wrap_w = 22  # MAS ANCHO (ANTES 16)
+        s_desc = 110 # AUMENTADO (ANTES 95)
+        wrap_w = 20
     else:
-        s_desc = 75  # PEQUEÑO (ANTES 65)
-        wrap_w = 26  # MAS ANCHO (ANTES 20)
+        s_desc = 90  # AUMENTADO (ANTES 75)
+        wrap_w = 25
         
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     
-    # ESPACIO AUMENTADO: Bajamos aún más el inicio (y=1150)
+    # ESPACIO AUMENTADO: Bajamos aún más el inicio
     y_desc = 1150 
     
     for line in textwrap.wrap(desc1, width=wrap_w):
@@ -482,7 +481,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         st.markdown('<div class="label-negro">DESCRIPCIÓN 2 <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         desc2 = st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="", height=100, max_chars=175)
         
-        # CONTADOR DE SUMA TOTAL (ETIQUETA CORREGIDA)
         total_chars = len(desc1) + len(desc2)
         color_c = "red" if total_chars > 175 else "grey"
         st.markdown(f"<p style='text-align:right; color:{color_c}; font-size:12px; margin-top:-10px;'>Total caracteres: {total_chars} / 175</p>", unsafe_allow_html=True)
@@ -504,7 +502,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         
         st.markdown('<div class="label-negro">DIRECCIÓN</div>', unsafe_allow_html=True)
         dir_texto = st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80)
-        # CONTADOR MANUAL DIRECCIÓN (COLOR GRIS)
         st.markdown(f"<p style='text-align:right; color:grey; font-size:12px; margin-top:-5px;'>Caracteres: {len(dir_texto)} / 80</p>", unsafe_allow_html=True)
         
         st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)

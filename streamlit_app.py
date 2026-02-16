@@ -359,16 +359,13 @@ def generar_tipo_1_v3(datos):
     desc1 = datos['desc1']
     chars_desc = len(desc1)
     
-    # --- REDUCIDO 10 PUNTOS (140->130, 120->110, 100->90) ---
+    # Tamaños: 130, 110, 90
     if chars_desc < 60:
-        s_desc = 130 # Era 140
-        wrap_w = 15
+        s_desc = 130; wrap_w = 15
     elif chars_desc < 115:
-        s_desc = 110 # Era 120
-        wrap_w = 18
+        s_desc = 110; wrap_w = 18
     else:
-        s_desc = 90  # Era 100
-        wrap_w = 22
+        s_desc = 90; wrap_w = 22
         
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     y_desc = 1150 
@@ -427,7 +424,7 @@ def generar_tipo_1_v3(datos):
 
     return img.convert("RGB")
 
-# --- TIPO 1: VARIANTE 4 (NUEVA: 4 NIVELES + IZQUIERDA + PEGASO) ---
+# --- TIPO 1: VARIANTE 4 (NUEVA: 4 NIVELES + IZQUIERDA + PEGASO + FECHA ABAJO "POQUITO") ---
 def generar_tipo_1_v4(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -470,24 +467,20 @@ def generar_tipo_1_v4(datos):
     desc1 = datos['desc1']
     chars_desc = len(desc1)
     
-    # --- 4 NIVELES DE TEXTO (V4) + ESPACIO REDUCIDO ---
+    # --- 4 NIVELES DE TEXTO (V4) ---
     if chars_desc < 50:
-        s_desc = 130 # Muy Corto
-        wrap_w = 15
+        s_desc = 130; wrap_w = 15
     elif chars_desc < 90:
-        s_desc = 110 # Corto
-        wrap_w = 18
+        s_desc = 110; wrap_w = 18
     elif chars_desc < 140:
-        s_desc = 90  # Medio
-        wrap_w = 22
+        s_desc = 90; wrap_w = 22
     else:
-        s_desc = 75  # Largo
-        wrap_w = 25
+        s_desc = 75; wrap_w = 25
         
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     
-    # Y_DESC REDUCIDO a 1020 para pegar más al título
-    y_desc = 1020 
+    # Y_DESC 1070 (Slightly separated from title)
+    y_desc = 1070 
     
     for line in textwrap.wrap(desc1, width=wrap_w):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
@@ -512,7 +505,8 @@ def generar_tipo_1_v4(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
-    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 300 
+    # FECHA BAJADA UN POCO (-220)
+    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 220 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
     str_hora = datos['hora1'].strftime('%H:%M %p')
     if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"

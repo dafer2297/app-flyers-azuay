@@ -45,7 +45,7 @@ def set_design():
         {font_css}
         h1, h2, h3 {{ font-family: 'Canaro', sans-serif !important; color: white !important; text-transform: uppercase; }}
         
-        /* BOTONES DE NAVEGACIÓN (FLECHAS) */
+        /* BOTONES DE NAVEGACIÓN (FLECHAS REDONDAS) */
         div[data-testid="stButton"] button[kind="secondary"] {{
             background-color: white;
             color: #1E88E5;
@@ -124,7 +124,7 @@ def set_design():
 set_design()
 
 # ==============================================================================
-# 2. MOTOR GRÁFICO
+# 2. MOTOR GRÁFICO (UTILIDADES)
 # ==============================================================================
 
 def dibujar_texto_sombra(draw, texto, x, y, fuente, color="white", sombra="black", offset=(12,12), anchor="mm"):
@@ -229,13 +229,16 @@ def generar_tipo_1(datos):
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     y_base_txt = Y_BOTTOM_BASELINE
+    
     x_txt_anchor = W - SIDE_MARGIN
     max_line_w = max([f_lugar.getlength(l) for l in lines_loc]) if lines_loc else 200
     x_text_start = x_txt_anchor - max_line_w
+    
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
         img.paste(icon, (int(x_text_start - icon.width - 30), int(Y_BOTTOM_BASELINE - (total_text_height/2) - (h_icon/2))), icon)
+    
     curr_y = Y_BOTTOM_BASELINE - total_text_height + line_height
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
@@ -303,7 +306,6 @@ def generar_tipo_1_v2(datos):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
         img.paste(icon, (SIDE_MARGIN, int(Y_BOTTOM_BASELINE - (total_text_height/2) - (h_icon/2))), icon)
         x_txt_start = SIDE_MARGIN + icon.width + 30
-    
     curr_y = Y_BOTTOM_BASELINE - total_text_height + line_height
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
@@ -421,6 +423,7 @@ def generar_tipo_1_v3(datos):
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         for _ in range(2): img.paste(logo, (margin_logos, 150), logo)
+    
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
@@ -474,16 +477,18 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
 
     with col_der:
         st.markdown('<div class="label-negro">DESCRIPCIÓN 1</div>', unsafe_allow_html=True)
-        # DESCRIPCIONES (SIN MAX_CHARS NATIVO PARA PERMITIR SUMA FLEXIBLE, PERO CON CONTADOR)
-        desc1 = st.text_area("lbl_desc", key="lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150)
+        # CONTADOR VISIBLE (MAX_CHARS=175 EN AMBOS PARA QUE SALGA EL CONTADOR NATIVO)
+        desc1 = st.text_area("lbl_desc", key="lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150, max_chars=175)
         
         st.markdown('<div class="label-negro">DESCRIPCIÓN 2 <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
-        desc2 = st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="", height=100)
+        desc2 = st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="", height=100, max_chars=175)
         
-        # CONTADOR DINÁMICO DE SUMA
-        total_chars_desc = len(desc1) + len(desc2)
-        color_desc = "red" if total_chars_desc > 175 else "grey"
-        st.markdown(f"<p style='text-align:right; color:{color_desc}; font-size:12px; margin-top:-10px;'>Caracteres: {total_chars_desc} / 175</p>", unsafe_allow_html=True)
+        # VALIDACIÓN DE SUMA (ALERTA ADICIONAL)
+        total_chars = len(desc1) + len(desc2)
+        if total_chars > 175:
+            st.markdown(f"<p style='color:red; font-weight:bold;'>⚠️ Total combinado: {total_chars}/175 (Excedido)</p>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<p style='color:black; font-weight:bold;'>Total combinado: {total_chars}/175</p>", unsafe_allow_html=True)
 
         c_f1, c_f2 = st.columns(2)
         with c_f1:
@@ -501,7 +506,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             hora2 = st.time_input("lbl_hora2", key="lbl_hora2", label_visibility="collapsed", value=None)
         
         st.markdown('<div class="label-negro">DIRECCIÓN</div>', unsafe_allow_html=True)
-        # DIRECCIÓN: LÍMITE ESTRICTO DE 80
+        # LÍMITE 80
         dir_texto = st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80)
         
         st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
@@ -525,9 +530,9 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             if not st.session_state.lbl_fecha1: errores.append("Falta Fecha Inicio")
             if st.session_state.get('imagen_lista_para_flyer') is None: errores.append("Falta recortar la Imagen de Fondo")
             
-            # VALIDACIÓN DE SUMA DE CARACTERES
+            # BLOQUEO SI SUPERA 175 EN TOTAL
             if (len(st.session_state.lbl_desc) + len(st.session_state.lbl_desc2)) > 175:
-                errores.append(f"La suma de descripciones supera el límite (Llevas {len(st.session_state.lbl_desc) + len(st.session_state.lbl_desc2)}/175)")
+                errores.append(f"¡Has excedido el límite total de texto! (Llevas {len(st.session_state.lbl_desc) + len(st.session_state.lbl_desc2)}/175)")
 
             if errores:
                 for e in errores: st.error(f"⚠️ {e}")
@@ -536,9 +541,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
                 has_fecha2 = st.session_state.lbl_fecha2 is not None
                 num_colabs = len(st.session_state.get('lbl_logos', [])) if st.session_state.get('lbl_logos') else 0
                 
-                tipo_id = 0
-                # Lógica de tipo_id simplificada para brevedad, asumiendo Tipo 1 por defecto
-                tipo_id = 1
+                tipo_id = 1 # Por defecto
 
                 datos = {
                     'fondo': st.session_state.imagen_lista_para_flyer,

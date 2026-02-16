@@ -220,13 +220,13 @@ def generar_tipo_1(datos):
 
     # --- AJUSTES DE UBICACIÓN TIPO 1 (DERECHA) ---
     lugar = datos['lugar']
-    # Letra aumentada ligeramente
+    # Letra: 72/60
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     
-    # WRAPPING REDUCIDO (22-26 caracteres)
-    wrap_chars = 22 if s_lug == 72 else 26
+    # Wrap: 20-24 caracteres
+    wrap_chars = 20 if s_lug == 72 else 24
     lines_loc = textwrap.wrap(lugar, width=wrap_chars)
     
     line_height = int(s_lug * 1.1)
@@ -251,8 +251,11 @@ def generar_tipo_1(datos):
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         for _ in range(2): img.paste(logo, (margin_logos, 150), logo)
+    
+    # --- CAMBIO DE FIRMA: Altura 358 ---
     if os.path.exists("flyer_firma.png"):
-        firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 378)
+        firma = Image.open("flyer_firma.png").convert("RGBA")
+        firma = resize_por_alto(firma, 358) # CAMBIADO DE 378 A 358
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
     return img.convert("RGB")
@@ -294,27 +297,20 @@ def generar_tipo_1_v2(datos):
     for line in textwrap.wrap(desc1, width=(35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55))):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
+    # --- CAMBIO DE FIRMA: Altura 358 ---
     if os.path.exists("flyer_firma.png"):
-        firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 378)
+        firma = Image.open("flyer_firma.png").convert("RGBA")
+        firma = resize_por_alto(firma, 358) # CAMBIADO DE 378 A 358
         img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
 
     # --- AJUSTES DE UBICACIÓN TIPO 2 (IZQUIERDA) ---
     lugar = datos['lugar']
-    # 1. Letra aumentada ligeramente (+2 a +5 puntos)
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
-    
-    # 2. WRAPPING REDUCIDO (22-26 caracteres)
-    wrap_chars = 22 if s_lug == 72 else 26
-    lines_loc = textwrap.wrap(lugar, width=wrap_chars)
-    
-    line_height = int(s_lug * 1.1)
-    total_text_height = len(lines_loc) * line_height
-    y_base_txt = Y_BOTTOM_BASELINE
-    
-    # 3. Anclado a la IZQUIERDA
-    x_txt_start = SIDE_MARGIN + 130
+    lines_loc = textwrap.wrap(lugar, width=(20 if s_lug == 72 else 24))
+    line_height = int(s_lug * 1.1); total_text_height = len(lines_loc) * line_height
+    x_txt_start = SIDE_MARGIN + 130 
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
@@ -325,8 +321,7 @@ def generar_tipo_1_v2(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
-    # --- AJUSTE FECHA (SUBIR MÁS) ---
-    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 300
+    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 300 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
     str_hora = datos['hora1'].strftime('%H:%M %p')
     if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
@@ -501,17 +496,17 @@ elif area_seleccionada == "Final":
         generated = st.session_state.get('generated_images', {})
         sel = st.session_state.get('variant_selected', 'v1')
         
-        # --- DISEÑO FINAL DE 3 COLUMNAS ---
+        # --- CAMBIO DE LAYOUT PARA DAR MÁS ESPACIO A LOS LATERALES ---
         c_left, c_center, c_right = st.columns([1.5, 3, 1.5])
         
-        # IZQUIERDA (MASCOTAS)
+        # --- ZONA IZQUIERDA (MASCOTAS) ---
         with c_left:
             st.write("")
             if os.path.exists("mascota_pincel.png"): st.image("mascota_pincel.png", width=350)
             st.write("")
             if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
 
-        # CENTRO (IMAGEN + NAVEGACIÓN)
+        # --- ZONA CENTRAL (IMAGEN + NAVEGACIÓN) ---
         with c_center:
             if tipo == 1 and generated:
                 img_show = generated[sel]
@@ -538,7 +533,7 @@ elif area_seleccionada == "Final":
                         html_chola = f"""
                         <div style="text-align: center;">
                             <a href="data:image/png;base64,{img_b64_dl}" download="{fname}" style="text-decoration: none; border: none !important; outline: none !important;">
-                                <img src="data:image/png;base64,{chola_b64}" width="280" class="zoom-hover" style="border: none !important; outline: none !important; display: block; margin: auto;">
+                                <img src="data:image/png;base64,{chola_b64}" width="220" class="zoom-hover" style="border: none !important; outline: none !important; display: block; margin: auto;">
                                 <div style="font-family: 'Canaro'; font-weight: bold; font-size: 18px; color: white; margin-top: 5px; text-decoration: none;">DESCARGUE AQUÍ</div>
                             </a>
                         </div>

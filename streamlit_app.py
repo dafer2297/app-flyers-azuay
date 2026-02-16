@@ -167,6 +167,7 @@ def generar_tipo_1(datos):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
+        # Fallback sombra
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.3), H):
@@ -218,14 +219,12 @@ def generar_tipo_1(datos):
     dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, Y_BOTTOM_BASELINE - 100, f_dia_semana, offset=(8,8), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
 
-    # --- AJUSTES DE UBICACIÓN TIPO 1 (DERECHA) ---
+    # --- UBICACIÓN ---
     lugar = datos['lugar']
-    # Letra: 72/60
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     
-    # Wrap: 20-24 caracteres
     wrap_chars = 20 if s_lug == 72 else 24
     lines_loc = textwrap.wrap(lugar, width=wrap_chars)
     
@@ -233,7 +232,6 @@ def generar_tipo_1(datos):
     total_text_height = len(lines_loc) * line_height
     y_base_txt = Y_BOTTOM_BASELINE
     
-    # Anclado a la derecha
     x_txt_anchor = W - SIDE_MARGIN
     max_line_w = max([f_lugar.getlength(l) for l in lines_loc]) if lines_loc else 200
     x_text_start = x_txt_anchor - max_line_w
@@ -251,11 +249,11 @@ def generar_tipo_1(datos):
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         for _ in range(2): img.paste(logo, (margin_logos, 150), logo)
-    
-    # --- CAMBIO DE FIRMA: Altura 358 ---
+        
+    # --- FIRMA JOTA (Altura 345) ---
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA")
-        firma = resize_por_alto(firma, 358) # CAMBIADO DE 378 A 358
+        firma = resize_por_alto(firma, 345) # CAMBIADO A 345
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
     return img.convert("RGB")
@@ -297,13 +295,13 @@ def generar_tipo_1_v2(datos):
     for line in textwrap.wrap(desc1, width=(35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55))):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
-    # --- CAMBIO DE FIRMA: Altura 358 ---
+    # --- FIRMA JOTA (Altura 345) ---
     if os.path.exists("flyer_firma.png"):
-        firma = Image.open("flyer_firma.png").convert("RGBA")
-        firma = resize_por_alto(firma, 358) # CAMBIADO DE 378 A 358
+        firma = Image.open("flyer_firma.png").convert("RGBA"); 
+        firma = resize_por_alto(firma, 345) # CAMBIADO A 345
         img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
 
-    # --- AJUSTES DE UBICACIÓN TIPO 2 (IZQUIERDA) ---
+    # --- UBICACIÓN ---
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
@@ -496,17 +494,15 @@ elif area_seleccionada == "Final":
         generated = st.session_state.get('generated_images', {})
         sel = st.session_state.get('variant_selected', 'v1')
         
-        # --- CAMBIO DE LAYOUT PARA DAR MÁS ESPACIO A LOS LATERALES ---
+        # --- DISEÑO FINAL ---
         c_left, c_center, c_right = st.columns([1.5, 3, 1.5])
         
-        # --- ZONA IZQUIERDA (MASCOTAS) ---
         with c_left:
             st.write("")
             if os.path.exists("mascota_pincel.png"): st.image("mascota_pincel.png", width=350)
             st.write("")
             if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=280)
 
-        # --- ZONA CENTRAL (IMAGEN + NAVEGACIÓN) ---
         with c_center:
             if tipo == 1 and generated:
                 img_show = generated[sel]
@@ -549,7 +545,6 @@ elif area_seleccionada == "Final":
             else:
                 st.info(f"Flyer TIPO {tipo} en construcción.")
 
-        # DERECHA VACÍA (SIN "OTRAS OPCIONES")
         with c_right:
             st.empty()
 

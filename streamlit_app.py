@@ -236,6 +236,7 @@ def generar_tipo_1(datos):
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         for _ in range(2): img.paste(logo, (margin_logos, 150), logo)
+    
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
@@ -359,20 +360,20 @@ def generar_tipo_1_v3(datos):
     desc1 = datos['desc1']
     chars_desc = len(desc1)
     
-    # --- LÓGICA DINÁMICA DE TAMAÑO (3 NIVELES) ---
+    # --- TAMAÑO Y WRAPPING DINÁMICO (V3 CORREGIDA) ---
     if chars_desc < 60:
-        s_desc = 100 # GRANDE
-        wrap_w = 12  # Columna estrecha para letra grande
+        s_desc = 115 # GRANDE (ANTES 100)
+        wrap_w = 16  # MAS ANCHO (ANTES 12)
     elif chars_desc < 115:
-        s_desc = 80  # MEDIANO
-        wrap_w = 16  # Columna media
+        s_desc = 95  # MEDIANO (ANTES 80)
+        wrap_w = 22  # MAS ANCHO (ANTES 16)
     else:
-        s_desc = 65  # PEQUEÑO
-        wrap_w = 20  # Columna "normal"
+        s_desc = 75  # PEQUEÑO (ANTES 65)
+        wrap_w = 26  # MAS ANCHO (ANTES 20)
         
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     
-    # ESPACIO AUMENTADO: Bajamos el inicio del texto
+    # ESPACIO AUMENTADO: Bajamos aún más el inicio (y=1150)
     y_desc = 1150 
     
     for line in textwrap.wrap(desc1, width=wrap_w):

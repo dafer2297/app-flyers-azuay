@@ -1097,7 +1097,7 @@ def generar_tipo_3_v1(datos):
 
     # 6. CAJA FECHA LARGA (TIPO 3) - CORREGIDA
     h_caja = 352
-    w_caja = 950 
+    w_caja = 780 # <--- ANCHO AJUSTADO
     x_box = SIDE_MARGIN
     # Nueva posición vertical: Y_BOTTOM_BASELINE - h_caja - margen pequeño (50px)
     y_box = Y_BOTTOM_BASELINE - h_caja - 50 

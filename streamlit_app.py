@@ -506,8 +506,8 @@ def generar_tipo_1_v4(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
-    # FECHA BAJADA (-210)
-    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 210 
+    # FECHA BAJADA IZQUIERDA (OFFSET REDUCIDO A 130)
+    y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 130 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
     str_hora = datos['hora1'].strftime('%H:%M %p')
     if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
@@ -1063,14 +1063,17 @@ def generar_tipo_3_v1(datos):
         f_dias_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 160) # Aumentado de 140
         f_mes_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 130)  # Aumentado de 110
         
+        # DEFINIMOS AQUÍ path_extra PARA USARLO LUEGO
         path_extra = ruta_abs("Canaro-ExtraBold.ttf")
         if not os.path.exists(path_extra): path_extra = ruta_abs("Canaro-Black.ttf")
+        # f_hora inicial (se sobreescribe si hay 2 horas)
         f_hora = ImageFont.truetype(path_extra, 110)
         
         path_desc = ruta_abs("Canaro-SemiBold.ttf")
         f_desc = ImageFont.truetype(path_desc, 110) if os.path.exists(path_desc) else ImageFont.load_default()
     except:
         f_invita = f_dias_largo = f_mes_largo = f_hora = f_desc = ImageFont.load_default()
+        path_extra = ruta_abs("Canaro-Black.ttf") # Fallback path
 
     # 3. Logos Superiores (Igual a T1)
     margin_logos = 200
@@ -1128,8 +1131,15 @@ def generar_tipo_3_v1(datos):
 
     # Hora debajo de la caja (en la línea base original)
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-    dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
+    size_h = 110 # Tamaño por defecto
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 80 # REDUCIR TAMAÑO SI HAY 2 HORAS
+    
+    try: f_hora_dyn = ImageFont.truetype(ruta_abs("Canaro-ExtraBold.ttf"), size_h)
+    except: f_hora_dyn = ImageFont.load_default()
+
+    dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora_dyn, offset=(8,8), anchor="mm")
 
     # 7. UBICACIÓN (Derecha)
     lugar = datos['lugar']
@@ -1185,13 +1195,16 @@ def generar_tipo_3_v2(datos):
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
         f_dias_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 160)
         f_mes_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 130)
+        
         path_extra = ruta_abs("Canaro-ExtraBold.ttf")
         if not os.path.exists(path_extra): path_extra = ruta_abs("Canaro-Black.ttf")
         f_hora = ImageFont.truetype(path_extra, 110)
+        
         path_desc = ruta_abs("Canaro-SemiBold.ttf")
         f_desc = ImageFont.truetype(path_desc, 110) if os.path.exists(path_desc) else ImageFont.load_default()
     except:
         f_invita = f_dias_largo = f_mes_largo = f_hora = f_desc = ImageFont.load_default()
+        path_extra = ruta_abs("Canaro-Black.ttf")
 
     # 3. Logo Superior (Solo Prefectura Centrado)
     if os.path.exists("flyer_logo.png"):
@@ -1271,11 +1284,17 @@ def generar_tipo_3_v2(datos):
 
     # Hora debajo de la caja (Entre caja y ubicación)
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+    size_h = 110 # Tamaño por defecto
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 80 # REDUCIR TAMAÑO SI HAY 2 HORAS
+    
+    try: f_hora_dyn = ImageFont.truetype(ruta_abs("Canaro-ExtraBold.ttf"), size_h)
+    except: f_hora_dyn = ImageFont.load_default()
     
     # La hora va justo debajo de la caja
     y_hora = y_box + h_caja + 100 
-    dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora, offset=(8,8), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(8,8), anchor="mm")
 
     return img.convert("RGB")
 
@@ -1309,13 +1328,16 @@ def generar_tipo_3_v3(datos):
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
         f_dias_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 160)
         f_mes_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 130)
+        
         path_extra = ruta_abs("Canaro-ExtraBold.ttf")
         if not os.path.exists(path_extra): path_extra = ruta_abs("Canaro-Black.ttf")
-        f_hora = ImageFont.truetype(path_extra, 110)
+        # f_hora = ImageFont.truetype(path_extra, 110) # NO USAR ESTÁTICA
+        
         path_desc = ruta_abs("Canaro-SemiBold.ttf")
         f_desc = ImageFont.truetype(path_desc, 110) if os.path.exists(path_desc) else ImageFont.load_default()
     except:
-        f_invita = f_dias_largo = f_mes_largo = f_hora = f_desc = ImageFont.load_default()
+        f_invita = f_dias_largo = f_mes_largo = f_desc = ImageFont.load_default()
+        path_extra = ruta_abs("Canaro-Black.ttf") # Fallback path
 
     # 3. Logos (Divididos: Prefectura Izq, Jota Der)
     margin_logos = 200
@@ -1374,8 +1396,15 @@ def generar_tipo_3_v3(datos):
 
     # Hora (Debajo de la caja)
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-    dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
+    size_h = 110 # Tamaño por defecto
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 80 # REDUCIR TAMAÑO SI HAY 2 HORAS
+    
+    try: f_hora_dyn = ImageFont.truetype(ruta_abs("Canaro-ExtraBold.ttf"), size_h)
+    except: f_hora_dyn = ImageFont.load_default()
+
+    dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora_dyn, offset=(8,8), anchor="mm")
 
     # 7. UBICACIÓN (Abajo Derecha)
     lugar = datos['lugar']

@@ -196,10 +196,15 @@ def generar_tipo_1(datos):
 
     # FECHA IZQUIERDA ABAJO (FIJA)
     h_caja = 645; x_box = SIDE_MARGIN; y_box = Y_BOTTOM_BASELINE - 170 - h_caja
+    
+    # --- LOGICA DE TAMAÑO DE HORA DINÁMICA ---
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-    size_hora = 110 if not datos['hora2'] else 80
-    try: f_hora = ImageFont.truetype(path_extra, size_hora)
+    size_h = 110
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 80 # Se reduce si hay dos horas
+    
+    try: f_hora = ImageFont.truetype(path_extra, size_h)
     except: f_hora = ImageFont.load_default()
 
     w_caja = 645
@@ -210,10 +215,19 @@ def generar_tipo_1(datos):
         draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white"); color_fecha = "black"
         
     cx = x_box + (w_caja / 2); cy = int(y_box + (h_caja / 2))
+    
+    # Dibujar elementos dentro de la caja
     draw.text((cx, cy - 50), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 170), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
-    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, Y_BOTTOM_BASELINE - 100, f_dia_semana, offset=(8,8), anchor="mm")
-    dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
+    
+    # --- ESPACIADO IGUALADO ---
+    # Usamos offset de 85px para ambos espacios (Caja->Día y Día->Hora)
+    y_box_bottom = y_box + h_caja
+    y_dia_txt = y_box_bottom + 85
+    y_hora_txt = y_dia_txt + 85
+    
+    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(8,8), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(8,8), anchor="mm")
 
     # UBICACIÓN DERECHA ABAJO (FIJA)
     lugar = datos['lugar']
@@ -305,10 +319,15 @@ def generar_tipo_1_v2(datos):
 
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 300 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
+    
+    # --- LOGICA DE TAMAÑO DE HORA DINÁMICA ---
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-    size_hora = 110 if not datos['hora2'] else 80
-    try: f_hora = ImageFont.truetype(path_extra, size_hora)
+    size_h = 110
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 80
+    
+    try: f_hora = ImageFont.truetype(path_extra, size_h)
     except: f_hora = ImageFont.load_default()
 
     w_caja = 645
@@ -318,10 +337,17 @@ def generar_tipo_1_v2(datos):
     else:
         draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white"); color_fecha = "black"
     cx = x_box + (w_caja / 2); cy = int(y_box + (h_caja / 2))
+    
     draw.text((cx, cy - 50), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 170), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
-    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_linea_hora - 100, f_dia_semana, offset=(8,8), anchor="mm")
-    dibujar_texto_sombra(draw, str_hora, cx, y_linea_hora, f_hora, offset=(8,8), anchor="mm")
+    
+    # --- ESPACIADO IGUALADO ---
+    y_box_bottom = y_box + h_caja
+    y_dia_txt = y_box_bottom + 85
+    y_hora_txt = y_dia_txt + 85
+    
+    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(8,8), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(8,8), anchor="mm")
 
     return img.convert("RGB")
 
@@ -376,10 +402,15 @@ def generar_tipo_1_v3(datos):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
 
     h_caja = 645; x_box = SIDE_MARGIN; y_box = Y_BOTTOM_BASELINE - 170 - h_caja
+    
+    # --- LOGICA DE TAMAÑO DE HORA DINÁMICA ---
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-    size_hora = 110 if not datos['hora2'] else 80
-    try: f_hora = ImageFont.truetype(path_extra, size_hora)
+    size_h = 110
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 80
+    
+    try: f_hora = ImageFont.truetype(path_extra, size_h)
     except: f_hora = ImageFont.load_default()
 
     w_caja = 645
@@ -392,8 +423,14 @@ def generar_tipo_1_v3(datos):
     cx = x_box + (w_caja / 2); cy = int(y_box + (h_caja / 2))
     draw.text((cx, cy - 50), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 170), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
-    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, Y_BOTTOM_BASELINE - 100, f_dia_semana, offset=(8,8), anchor="mm")
-    dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
+    
+    # --- ESPACIADO IGUALADO ---
+    y_box_bottom = y_box + h_caja
+    y_dia_txt = y_box_bottom + 85
+    y_hora_txt = y_dia_txt + 85
+    
+    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(8,8), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(8,8), anchor="mm")
 
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
@@ -425,7 +462,6 @@ def generar_tipo_1_v3(datos):
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
     return img.convert("RGB")
-
 def generar_tipo_1_v4(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -468,19 +504,12 @@ def generar_tipo_1_v4(datos):
     desc1 = datos['desc1']
     chars_desc = len(desc1)
     
-    # --- 4 NIVELES DE TEXTO (V4) ---
-    if chars_desc < 50:
-        s_desc = 130; wrap_w = 15
-    elif chars_desc < 90:
-        s_desc = 110; wrap_w = 18
-    elif chars_desc < 140:
-        s_desc = 90; wrap_w = 22
-    else:
-        s_desc = 75; wrap_w = 25
+    if chars_desc < 50: s_desc = 130; wrap_w = 15
+    elif chars_desc < 90: s_desc = 110; wrap_w = 18
+    elif chars_desc < 140: s_desc = 90; wrap_w = 22
+    else: s_desc = 75; wrap_w = 25
         
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
-    
-    # Y_DESC 1070
     y_desc = 1070 
     
     for line in textwrap.wrap(desc1, width=wrap_w):
@@ -509,10 +538,14 @@ def generar_tipo_1_v4(datos):
     # FECHA BAJADA (-210)
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 210 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
+    
+    # --- HORA DINÁMICA ---
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-    size_hora = 110 if not datos['hora2'] else 80
-    try: f_hora = ImageFont.truetype(path_extra, size_hora)
+    size_h = 110
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 80
+    try: f_hora = ImageFont.truetype(path_extra, size_h)
     except: f_hora = ImageFont.load_default()
 
     w_caja = 645
@@ -521,11 +554,18 @@ def generar_tipo_1_v4(datos):
         img.paste(caja, (x_box, int(y_box)), caja); color_fecha = "white"
     else:
         draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white"); color_fecha = "black"
+    
     cx = x_box + (w_caja / 2); cy = int(y_box + (h_caja / 2))
     draw.text((cx, cy - 50), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 170), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
-    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_linea_hora - 100, f_dia_semana, offset=(8,8), anchor="mm")
-    dibujar_texto_sombra(draw, str_hora, cx, y_linea_hora, f_hora, offset=(8,8), anchor="mm")
+    
+    # --- ESPACIADO IGUALADO ---
+    y_box_bottom = y_box + h_caja
+    y_dia_txt = y_box_bottom + 85
+    y_hora_txt = y_dia_txt + 85
+    
+    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(8,8), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(8,8), anchor="mm")
 
     return img.convert("RGB")
 
@@ -533,7 +573,6 @@ def generar_tipo_1_v4(datos):
 # 4. GENERADORES DE PLANTILLAS TIPO 2
 # ==============================================================================
 
-# --- TIPO 2: PLANTILLA 1 (T2_V1) ---
 def generar_tipo_2_v1(datos):
     # COPIA EXACTA DE T1_V1 + DESC 2
     fondo = datos['fondo'].copy()
@@ -542,7 +581,6 @@ def generar_tipo_2_v1(datos):
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 1. Fondo Oscuro
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
@@ -555,7 +593,6 @@ def generar_tipo_2_v1(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img)
 
-    # 2. Fuentes
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
         f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 350)
@@ -568,35 +605,34 @@ def generar_tipo_2_v1(datos):
         f_invita = f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_desc = None
 
-    # 3. Logo Superior (Igual a T1_V1 - Prefectura IZQ, Firma DER)
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
-        img.paste(logo, (margin_logos, 150), logo) # IZQUIERDA
+        img.paste(logo, (margin_logos, 150), logo) 
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
-        img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma) # DERECHA
+        img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # 4. Título "INVITA" (Centrado - T1 Base)
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
     
-    # 5. Descripción 1 (Centrada - T1 Base)
     desc1 = datos['desc1']
-    chars_desc = len(desc1)
-    size_desc_val = 110 if chars_desc <= 75 else (90 if chars_desc <= 150 else 75)
+    size_desc_val = 110 if len(desc1) <= 75 else (90 if len(desc1) <= 150 else 75)
     f_desc = ImageFont.truetype(path_desc, size_desc_val) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     y_desc = 1030
     for line in textwrap.wrap(desc1, width=(35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55))):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
-    # 6. Bloque Inferior (Fecha Izq + Ubicación Der)
-    
     # FECHA IZQUIERDA ABAJO (FIJA)
     h_caja = 645; x_box = SIDE_MARGIN; y_box = Y_BOTTOM_BASELINE - 170 - h_caja
+    
+    # --- HORA DINÁMICA ---
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    size_hora = 110
-    try: f_hora = ImageFont.truetype(path_extra, size_hora)
+    size_h = 110
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 80
+    try: f_hora = ImageFont.truetype(path_extra, size_h)
     except: f_hora = ImageFont.load_default()
 
     w_caja = 645
@@ -609,10 +645,15 @@ def generar_tipo_2_v1(datos):
     cx = x_box + (w_caja / 2); cy = int(y_box + (h_caja / 2))
     draw.text((cx, cy - 50), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 170), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
-    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, Y_BOTTOM_BASELINE - 100, f_dia_semana, offset=(8,8), anchor="mm")
-    dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
+    
+    # --- ESPACIADO IGUALADO ---
+    y_box_bottom = y_box + h_caja
+    y_dia_txt = y_box_bottom + 85
+    y_hora_txt = y_dia_txt + 85
+    
+    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(8,8), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(8,8), anchor="mm")
 
-    # UBICACIÓN DERECHA ABAJO (FIJA)
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
@@ -633,35 +674,24 @@ def generar_tipo_2_v1(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
-    # 7. DESCRIPCIÓN 2 (ENCIMA DEL BLOQUE FECHA - ALINEADA A LA IZQUIERDA - CANARO MEDIUM)
-    # APPLIED WRAPPING 18 FOR DESC 2
     desc2 = datos['desc2']
     if desc2:
         y_desc2_bottom = y_box - 40 
         s_desc2 = 80 
-        
-        # USO DE CANARO MEDIUM PARA DESC 2
         path_medium = ruta_abs("Canaro-Medium.ttf")
         try: f_desc2 = ImageFont.truetype(path_medium, s_desc2)
         except: f_desc2 = ImageFont.load_default()
-        
-        # Ajustamos el ancho para que no choque con nada
         lines_d2 = textwrap.wrap(desc2, width=18)
         h_line_d2 = int(s_desc2 * 1.1)
         total_h_d2 = len(lines_d2) * h_line_d2
-        
         y_cursor_d2 = y_desc2_bottom - total_h_d2 + h_line_d2
-        
         for line in lines_d2:
-            # Alineado a la izquierda (misma X que la caja de fecha)
             dibujar_texto_sombra(draw, line, x_box, y_cursor_d2, f_desc2, offset=(5,5), anchor="ls") 
             y_cursor_d2 += h_line_d2
 
     return img.convert("RGB")
 
-# --- TIPO 2: PLANTILLA 2 (T2_V2) ---
 def generar_tipo_2_v2(datos):
-    # COPIA EXACTA DE T1_V2 + DESC 2 ENCIMA DE FIRMA
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -690,14 +720,12 @@ def generar_tipo_2_v2(datos):
 
     dibujar_texto_sombra(draw, "INVITA", W/2, 850, f_invita, offset=(10,10))
     desc1 = datos['desc1']
-    chars_desc = len(desc1)
-    size_desc_val = 110 if chars_desc <= 75 else (90 if chars_desc <= 150 else 75)
+    size_desc_val = 110 if len(desc1) <= 75 else (90 if len(desc1) <= 150 else 75)
     f_desc = ImageFont.truetype(path_desc, size_desc_val) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     y_desc = 1030
     for line in textwrap.wrap(desc1, width=(35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55))):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
-    # FIRMA JOTA LLORET (ABAJO DERECHA)
     y_firma = 0
     firma = None
     if os.path.exists("flyer_firma.png"):
@@ -705,37 +733,28 @@ def generar_tipo_2_v2(datos):
         y_firma = int(Y_BOTTOM_BASELINE - firma.height + 50)
         img.paste(firma, (W - firma.width - SIDE_MARGIN, y_firma), firma)
 
-    # --- DESCRIPCIÓN 2 (ENCIMA DE FIRMA - CENTRADA - MOVIDA 60PX IZQ) ---
     desc2 = datos['desc2']
     if desc2 and firma:
         s_desc2 = 80
         path_medium = ruta_abs("Canaro-Medium.ttf")
         try: f_desc2 = ImageFont.truetype(path_medium, s_desc2)
         except: f_desc2 = ImageFont.load_default()
-
-        # WRAPPING 26
         lines_d2 = textwrap.wrap(desc2, width=26)
         h_line_d2 = int(s_desc2 * 1.1)
         total_h_d2 = len(lines_d2) * h_line_d2
-
-        # Centro horizontal de la firma (MOVIDO 60 PX A LA IZQUIERDA)
         cx_firma = W - SIDE_MARGIN - (firma.width // 2) - 60
         y_cursor_d2 = y_firma - 100 - total_h_d2 + (h_line_d2 / 2)
-
         for line in lines_d2:
             dibujar_texto_sombra(draw, line, cx_firma, y_cursor_d2, f_desc2, offset=(5,5), anchor="mm")
             y_cursor_d2 += h_line_d2
 
-    # COLUMNA IZQUIERDA (UBICACIÓN + FECHA)
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     lines_loc = textwrap.wrap(lugar, width=(20 if s_lug == 72 else 24))
-    
     line_height_loc = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height_loc
-    
     x_txt_start = SIDE_MARGIN + 130 
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
@@ -748,10 +767,14 @@ def generar_tipo_2_v2(datos):
 
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 300 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
+    
+    # --- HORA DINÁMICA ---
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-    size_hora = 110 if not datos['hora2'] else 80
-    try: f_hora = ImageFont.truetype(path_extra, size_hora)
+    size_h = 110
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 80
+    try: f_hora = ImageFont.truetype(path_extra, size_h)
     except: f_hora = ImageFont.load_default()
 
     w_caja = 645
@@ -763,12 +786,17 @@ def generar_tipo_2_v2(datos):
     cx = x_box + (w_caja / 2); cy = int(y_box + (h_caja / 2))
     draw.text((cx, cy - 50), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 170), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
-    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_linea_hora - 100, f_dia_semana, offset=(8,8), anchor="mm")
-    dibujar_texto_sombra(draw, str_hora, cx, y_linea_hora, f_hora, offset=(8,8), anchor="mm")
+    
+    # --- ESPACIADO IGUALADO ---
+    y_box_bottom = y_box + h_caja
+    y_dia_txt = y_box_bottom + 85
+    y_hora_txt = y_dia_txt + 85
+    
+    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(8,8), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(8,8), anchor="mm")
 
     return img.convert("RGB")
 
-# --- TIPO 2: PLANTILLA 3 (T2_V3) ---
 def generar_tipo_2_v3(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -776,7 +804,6 @@ def generar_tipo_2_v3(datos):
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
 
-    # 1. Fondo
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
@@ -789,7 +816,6 @@ def generar_tipo_2_v3(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img)
 
-    # 2. Fuentes
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220)
         f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 350)
@@ -803,34 +829,29 @@ def generar_tipo_2_v3(datos):
         f_invita = f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_desc = path_medium = None
 
-    # 3. Título "INVITA" (SUBIDO A 750)
     y_titulo = 750
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
 
-    # 4. Descripción 1 (SUBIDA A 930)
     desc1 = datos['desc1']
-    chars_desc = len(desc1)
-
-    if chars_desc < 60:
-        s_desc = 130; wrap_w = 15
-    elif chars_desc < 115:
-        s_desc = 110; wrap_w = 18
-    else:
-        s_desc = 90; wrap_w = 22
+    if len(desc1) < 60: s_desc = 130; wrap_w = 15
+    elif len(desc1) < 115: s_desc = 110; wrap_w = 18
+    else: s_desc = 90; wrap_w = 22
 
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     y_desc = 930
-
     for line in textwrap.wrap(desc1, width=wrap_w):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
         y_desc += int(s_desc * 1.1)
     
-    # 5. FECHA IZQUIERDA ABAJO (FIJA)
     h_caja = 645; x_box = SIDE_MARGIN; y_box = Y_BOTTOM_BASELINE - 170 - h_caja
+    
+    # --- HORA DINÁMICA ---
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-    size_hora = 110 if not datos['hora2'] else 80
-    try: f_hora = ImageFont.truetype(path_extra, size_hora)
+    size_h = 110
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 80
+    try: f_hora = ImageFont.truetype(path_extra, size_h)
     except: f_hora = ImageFont.load_default()
 
     w_caja = 645
@@ -843,27 +864,28 @@ def generar_tipo_2_v3(datos):
     cx = x_box + (w_caja / 2); cy = int(y_box + (h_caja / 2))
     draw.text((cx, cy - 50), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 170), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
-    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, Y_BOTTOM_BASELINE - 100, f_dia_semana, offset=(8,8), anchor="mm")
-    dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora, offset=(8,8), anchor="mm")
+    
+    # --- ESPACIADO IGUALADO ---
+    y_box_bottom = y_box + h_caja
+    y_dia_txt = y_box_bottom + 85
+    y_hora_txt = y_dia_txt + 85
+    
+    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(8,8), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(8,8), anchor="mm")
 
-    # --- DESCRIPCIÓN 2 (Debajo de Desc 1, encima de Fecha) ---
     desc2 = datos['desc2']
     if desc2:
         s_desc2 = 80
         try: f_desc2 = ImageFont.truetype(path_medium, s_desc2)
         except: f_desc2 = ImageFont.load_default()
-
         lines_d2 = textwrap.wrap(desc2, width=25)
         h_line_d2 = int(s_desc2 * 1.1)
-
-        y_cursor_d2 = y_desc + 40 # Margen pequeño tras Desc 1
-
+        y_cursor_d2 = y_desc + 40 
         for line in lines_d2:
-            if y_cursor_d2 < y_box: # Solo dibujar si no choca
+            if y_cursor_d2 < y_box: 
                 dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_cursor_d2, f_desc2, offset=(5,5), anchor="ls")
                 y_cursor_d2 += h_line_d2
 
-    # 6. UBICACIÓN DERECHA ABAJO
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
@@ -872,7 +894,6 @@ def generar_tipo_2_v3(datos):
     lines_loc = textwrap.wrap(lugar, width=wrap_chars)
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
-    y_base_txt = Y_BOTTOM_BASELINE
     x_txt_anchor = W - SIDE_MARGIN
     max_line_w = max([f_lugar.getlength(l) for l in lines_loc]) if lines_loc else 200
     x_text_start = x_txt_anchor - max_line_w
@@ -884,7 +905,6 @@ def generar_tipo_2_v3(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
-    # 7. LOGOS
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
@@ -895,7 +915,6 @@ def generar_tipo_2_v3(datos):
 
     return img.convert("RGB")
 
-# --- TIPO 2: PLANTILLA 4 (T2_V4) ---
 def generar_tipo_2_v4(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -931,32 +950,20 @@ def generar_tipo_2_v4(datos):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
-    # TITULO IZQUIERDA
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
     desc1 = datos['desc1']
-    chars_desc = len(desc1)
-    
-    # --- 4 NIVELES DE TEXTO (V4) ---
-    if chars_desc < 50:
-        s_desc = 130; wrap_w = 15
-    elif chars_desc < 90:
-        s_desc = 110; wrap_w = 18
-    elif chars_desc < 140:
-        s_desc = 90; wrap_w = 22
-    else:
-        s_desc = 75; wrap_w = 25
+    if len(desc1) < 50: s_desc = 130; wrap_w = 15
+    elif len(desc1) < 90: s_desc = 110; wrap_w = 18
+    elif len(desc1) < 140: s_desc = 90; wrap_w = 22
+    else: s_desc = 75; wrap_w = 25
         
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
-    
-    # Y_DESC 1070
-    y_desc = 1070 
-    
+    y_desc = 960 
     for line in textwrap.wrap(desc1, width=wrap_w):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
 
-    # FIRMA (ABAJO DERECHA)
     y_firma = 0
     firma = None
     if os.path.exists("flyer_firma.png"):
@@ -964,39 +971,29 @@ def generar_tipo_2_v4(datos):
         y_firma = int(Y_BOTTOM_BASELINE - firma.height + 50)
         img.paste(firma, (W - firma.width - SIDE_MARGIN, y_firma), firma)
 
-    # --- DESCRIPCIÓN 2 (ENCIMA DE FIRMA - CENTRADA - MOVIDA 60PX IZQ) ---
     desc2 = datos['desc2']
     if desc2 and firma:
         s_desc2 = 80
         path_medium = ruta_abs("Canaro-Medium.ttf")
         try: f_desc2 = ImageFont.truetype(path_medium, s_desc2)
         except: f_desc2 = ImageFont.load_default()
-
-        # WRAPPING 26
         lines_d2 = textwrap.wrap(desc2, width=26) 
         h_line_d2 = int(s_desc2 * 1.1)
         total_h_d2 = len(lines_d2) * h_line_d2
-
-        # Centro horizontal firma - 60px
         cx_firma = W - SIDE_MARGIN - (firma.width // 2) - 60
         y_cursor_d2 = y_firma - 100 - total_h_d2 + (h_line_d2 / 2)
-
         for line in lines_d2:
             dibujar_texto_sombra(draw, line, cx_firma, y_cursor_d2, f_desc2, offset=(5,5), anchor="mm")
             y_cursor_d2 += h_line_d2
 
-    # UBICACIÓN IZQUIERDA ABAJO
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     lines_loc = textwrap.wrap(lugar, width=(20 if s_lug == 72 else 24))
-    
     line_height_loc = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height_loc
     
-    # CORRECCIÓN DE ERROR "NameError"
-    # Inicialización por defecto de x_pos_texto
     x_pos_texto = SIDE_MARGIN + 130 
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
@@ -1008,13 +1005,16 @@ def generar_tipo_2_v4(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_pos_texto, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height_loc
 
-    # FECHA BAJADA IZQUIERDA (OFFSET REDUCIDO A 130)
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 130 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
+    
+    # --- HORA DINÁMICA ---
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    if datos['hora2']: str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-    size_hora = 110 if not datos['hora2'] else 80
-    try: f_hora = ImageFont.truetype(path_extra, size_hora)
+    size_h = 110
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 80
+    try: f_hora = ImageFont.truetype(path_extra, size_h)
     except: f_hora = ImageFont.load_default()
 
     w_caja = 645
@@ -1026,14 +1026,16 @@ def generar_tipo_2_v4(datos):
     cx = x_box + (w_caja / 2); cy = int(y_box + (h_caja / 2))
     draw.text((cx, cy - 50), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 170), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
-    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_linea_hora - 100, f_dia_semana, offset=(8,8), anchor="mm")
-    dibujar_texto_sombra(draw, str_hora, cx, y_linea_hora, f_hora, offset=(8,8), anchor="mm")
+    
+    # --- ESPACIADO IGUALADO ---
+    y_box_bottom = y_box + h_caja
+    y_dia_txt = y_box_bottom + 85
+    y_hora_txt = y_dia_txt + 85
+    
+    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(8,8), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(8,8), anchor="mm")
 
     return img.convert("RGB")
-
-# ==============================================================================
-# 5. GENERADORES DE PLANTILLAS TIPO 3 (1 Párrafo, 2 Fechas, 0 Logos)
-# ==============================================================================
 
 def generar_tipo_3_v1(datos):
     fondo = datos['fondo'].copy()
@@ -1042,12 +1044,10 @@ def generar_tipo_3_v1(datos):
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 1. Fondo Sombra
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
-        # Fallback sombra
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.3), H):
@@ -1056,23 +1056,18 @@ def generar_tipo_3_v1(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img)
 
-    # 2. Fuentes
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
-        # Fuentes aumentadas para la caja larga
-        f_dias_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 160) # Aumentado de 140
-        f_mes_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 130)  # Aumentado de 110
-        
+        f_dias_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 160)
+        f_mes_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 130)  
         path_extra = ruta_abs("Canaro-ExtraBold.ttf")
         if not os.path.exists(path_extra): path_extra = ruta_abs("Canaro-Black.ttf")
-        f_hora = ImageFont.truetype(path_extra, 110)
-        
         path_desc = ruta_abs("Canaro-SemiBold.ttf")
         f_desc = ImageFont.truetype(path_desc, 110) if os.path.exists(path_desc) else ImageFont.load_default()
     except:
-        f_invita = f_dias_largo = f_mes_largo = f_hora = f_desc = ImageFont.load_default()
+        f_invita = f_dias_largo = f_mes_largo = f_desc = ImageFont.load_default()
+        path_extra = ruta_abs("Canaro-Black.ttf")
 
-    # 3. Logos Superiores (Igual a T1)
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
@@ -1081,28 +1076,21 @@ def generar_tipo_3_v1(datos):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # 4. Título INVITA
     dibujar_texto_sombra(draw, "INVITA", W/2, 850, f_invita, offset=(10,10))
 
-    # 5. Descripción (1 Párrafo)
     desc1 = datos['desc1']
-    chars_desc = len(desc1)
-    size_desc_val = 110 if chars_desc <= 75 else (90 if chars_desc <= 150 else 75)
+    size_desc_val = 110 if len(desc1) <= 75 else (90 if len(desc1) <= 150 else 75)
     f_desc = ImageFont.truetype(ruta_abs("Canaro-SemiBold.ttf"), size_desc_val)
-    
     wrap_width = 35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55)
     y_desc = 1030
     for line in textwrap.wrap(desc1, width=wrap_width):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
-    # 6. CAJA FECHA LARGA (TIPO 3) - CORREGIDA
     h_caja = 352
-    w_caja = 780 # <--- ANCHO AJUSTADO
+    w_caja = 780 
     x_box = SIDE_MARGIN
-    # Nueva posición vertical: Y_BOTTOM_BASELINE - h_caja - margen pequeño (50px)
     y_box = Y_BOTTOM_BASELINE - h_caja - 50 
     
-    # Usar el nombre de archivo correcto
     if os.path.exists("flyer_caja_fecha_larga.png"):
         caja = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
         caja = caja.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
@@ -1112,69 +1100,50 @@ def generar_tipo_3_v1(datos):
         draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white")
         color_fecha = "black"
 
-    # Texto dentro de la caja larga
     cx = x_box + (w_caja / 2)
     cy = y_box + (h_caja / 2)
-    
     dia1 = datos['fecha1'].day
     dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month) # "DICIEMBRE"
-    
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
     texto_dias = f"{dia1} al {dia2}"
-    
-    # Dibujar textos con offsets ajustados para las nuevas fuentes más grandes
     draw.text((cx, cy - 60), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 80), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
 
-    # Hora debajo de la caja (en la línea base original)
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    size_h = 110 # Tamaño por defecto
+    size_h = 110 
     if datos['hora2']: 
         str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-        size_h = 80 # REDUCIR TAMAÑO SI HAY 2 HORAS
-    
+        size_h = 80 
     try: f_hora_dyn = ImageFont.truetype(ruta_abs("Canaro-ExtraBold.ttf"), size_h)
     except: f_hora_dyn = ImageFont.load_default()
 
     dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora_dyn, offset=(8,8), anchor="mm")
 
-    # 7. UBICACIÓN (Derecha)
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
-    
     lines_loc = textwrap.wrap(lugar, width=(20 if s_lug == 72 else 24))
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
-    
     x_txt_anchor = W - SIDE_MARGIN
     max_line_w = max([f_lugar.getlength(l) for l in lines_loc]) if lines_loc else 200
     x_text_start = x_txt_anchor - max_line_w
     h_icon = 260
-    
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
         img.paste(icon, (int(x_text_start - icon.width - 30), int(Y_BOTTOM_BASELINE - (total_text_height/2) - (h_icon/2))), icon)
-        
     curr_y = Y_BOTTOM_BASELINE - total_text_height + line_height
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
 
     return img.convert("RGB")
-
 def generar_tipo_3_v2(datos):
-    """
-    TIPO 3 - PLANTILLA 2:
-    - Base: Tipo 1 - Plantilla 2 (Logo Prefectura centrado arriba, Firma Jota abajo der, Ubicación izq)
-    - Modificación: Caja de fecha larga (780x352) ENCIMA del bloque de ubicación
-    """
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 1. Fondo Sombra
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
@@ -1187,28 +1156,24 @@ def generar_tipo_3_v2(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img)
 
-    # 2. Fuentes
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
         f_dias_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 160)
         f_mes_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 130)
         path_extra = ruta_abs("Canaro-ExtraBold.ttf")
         if not os.path.exists(path_extra): path_extra = ruta_abs("Canaro-Black.ttf")
-        f_hora = ImageFont.truetype(path_extra, 110)
         path_desc = ruta_abs("Canaro-SemiBold.ttf")
         f_desc = ImageFont.truetype(path_desc, 110) if os.path.exists(path_desc) else ImageFont.load_default()
     except:
-        f_invita = f_dias_largo = f_mes_largo = f_hora = f_desc = ImageFont.load_default()
+        f_invita = f_dias_largo = f_mes_largo = f_desc = ImageFont.load_default()
+        path_extra = ruta_abs("Canaro-Black.ttf")
 
-    # 3. Logo Superior (Solo Prefectura Centrado)
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
-    # 4. Título INVITA Centrado
     dibujar_texto_sombra(draw, "INVITA", W/2, 850, f_invita, offset=(10,10))
 
-    # 5. Descripción (1 Párrafo Centrado)
     desc1 = datos['desc1']
     chars_desc = len(desc1)
     size_desc_val = 110 if chars_desc <= 75 else (90 if chars_desc <= 150 else 75)
@@ -1218,14 +1183,11 @@ def generar_tipo_3_v2(datos):
     for line in textwrap.wrap(desc1, width=wrap_width):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
-    # 6. Firma Jota (Abajo Derecha)
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
 
-    # 7. COLUMNA IZQUIERDA: Ubicación + Caja Fecha Larga ENCIMA
-    
-    # A. Calcular altura del bloque de ubicación
+    # UBICACIÓN (Izquierda Abajo)
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
@@ -1234,7 +1196,6 @@ def generar_tipo_3_v2(datos):
     line_height_loc = int(s_lug * 1.1)
     total_h_loc = len(lines_loc) * line_height_loc
     
-    # B. Dibujar Ubicación (Abajo Izquierda)
     x_txt_start = SIDE_MARGIN + 130
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
@@ -1247,12 +1208,10 @@ def generar_tipo_3_v2(datos):
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y_loc, f_lugar, anchor="ls", offset=(4,4))
         curr_y_loc += line_height_loc
 
-    # C. Caja Fecha Larga (ENCIMA de la ubicación)
+    # CAJA LARGA (Encima de la ubicación)
     h_caja = 352
     w_caja = 780
     x_box = SIDE_MARGIN
-    # Posición Y: Línea base ubicación - altura ubicación - margen (250px aprox) - altura caja
-    # Ajustamos para que quede "encima" con un buen margen
     y_box = Y_BOTTOM_BASELINE - total_h_loc - 280 - h_caja 
     
     if os.path.exists("flyer_caja_fecha_larga.png"):
@@ -1264,47 +1223,36 @@ def generar_tipo_3_v2(datos):
         draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white")
         color_fecha = "black"
 
-    # Texto dentro de la caja larga
     cx = x_box + (w_caja / 2)
     cy = y_box + (h_caja / 2)
-    
     dia1 = datos['fecha1'].day
     dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
     mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    
     texto_dias = f"{dia1} al {dia2}"
     draw.text((cx, cy - 60), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 80), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
 
-    # Hora debajo de la caja (Entre caja y ubicación)
+    # HORA (Entre caja y ubicación)
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    size_h = 110 # Tamaño por defecto
+    size_h = 110
     if datos['hora2']: 
         str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-        size_h = 80 # REDUCIR TAMAÑO SI HAY 2 HORAS
-    
-    try: f_hora_dyn = ImageFont.truetype(ruta_abs("Canaro-ExtraBold.ttf"), size_h)
+        size_h = 80
+    try: f_hora_dyn = ImageFont.truetype(path_extra, size_h)
     except: f_hora_dyn = ImageFont.load_default()
     
-    # La hora va justo debajo de la caja
     y_hora = y_box + h_caja + 100 
     dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(8,8), anchor="mm")
 
     return img.convert("RGB")
 
 def generar_tipo_3_v3(datos):
-    """
-    TIPO 3 - PLANTILLA 3:
-    - Base: Tipo 1 - Plantilla 3 (Títulos Izq, Fecha Izq Abajo, Ubicación Der Abajo, Logos Divididos Arriba)
-    - Modificación: Caja de fecha larga (780x352)
-    """
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 1. Fondo Sombra
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
@@ -1317,23 +1265,18 @@ def generar_tipo_3_v3(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img)
 
-    # 2. Fuentes
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
         f_dias_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 160)
         f_mes_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 130)
-        
         path_extra = ruta_abs("Canaro-ExtraBold.ttf")
         if not os.path.exists(path_extra): path_extra = ruta_abs("Canaro-Black.ttf")
-        # f_hora = ImageFont.truetype(path_extra, 110) # NO USAR ESTÁTICA
-        
         path_desc = ruta_abs("Canaro-SemiBold.ttf")
         f_desc = ImageFont.truetype(path_desc, 110) if os.path.exists(path_desc) else ImageFont.load_default()
     except:
         f_invita = f_dias_largo = f_mes_largo = f_desc = ImageFont.load_default()
-        path_extra = ruta_abs("Canaro-Black.ttf") # Fallback path
+        path_extra = ruta_abs("Canaro-Black.ttf") 
 
-    # 3. Logos (Divididos: Prefectura Izq, Jota Der)
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
@@ -1343,29 +1286,23 @@ def generar_tipo_3_v3(datos):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # 4. Título INVITA (Alineado a la Izquierda)
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 5. Descripción 1 (Alineada a la Izquierda)
     desc1 = datos['desc1']
     chars_desc = len(desc1)
-    
     if chars_desc < 60: s_desc = 130; wrap_w = 15
     elif chars_desc < 115: s_desc = 110; wrap_w = 18
     else: s_desc = 90; wrap_w = 22
-        
     f_desc = ImageFont.truetype(ruta_abs("Canaro-SemiBold.ttf"), s_desc)
     y_desc = 1150 
-    
     for line in textwrap.wrap(desc1, width=wrap_w):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
 
-    # 6. CAJA FECHA LARGA (Abajo Izquierda)
+    # CAJA (Abajo Izquierda)
     h_caja = 352
     w_caja = 780
     x_box = SIDE_MARGIN
-    # Posición Y: Bajada para estar cerca de la base
     y_box = Y_BOTTOM_BASELINE - h_caja - 50 
     
     if os.path.exists("flyer_caja_fecha_larga.png"):
@@ -1377,47 +1314,39 @@ def generar_tipo_3_v3(datos):
         draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white")
         color_fecha = "black"
 
-    # Texto Fecha
     cx = x_box + (w_caja / 2)
     cy = y_box + (h_caja / 2)
     dia1 = datos['fecha1'].day
     dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
     mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    
     texto_dias = f"{dia1} al {dia2}"
     draw.text((cx, cy - 60), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 80), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
 
-    # Hora (Debajo de la caja)
+    # HORA (Debajo Caja)
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    size_h = 110 # Tamaño por defecto
+    size_h = 110
     if datos['hora2']: 
         str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-        size_h = 80 # REDUCIR TAMAÑO SI HAY 2 HORAS
-    
+        size_h = 80
     try: f_hora_dyn = ImageFont.truetype(ruta_abs("Canaro-ExtraBold.ttf"), size_h)
     except: f_hora_dyn = ImageFont.load_default()
-
     dibujar_texto_sombra(draw, str_hora, cx, Y_BOTTOM_BASELINE, f_hora_dyn, offset=(8,8), anchor="mm")
 
-    # 7. UBICACIÓN (Abajo Derecha)
+    # UBICACIÓN (Derecha)
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
-    
     lines_loc = textwrap.wrap(lugar, width=(20 if s_lug == 72 else 24))
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
-    
     x_txt_anchor = W - SIDE_MARGIN
     max_line_w = max([f_lugar.getlength(l) for l in lines_loc]) if lines_loc else 200
     x_text_start = x_txt_anchor - max_line_w
     h_icon = 260
-    
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
         img.paste(icon, (int(x_text_start - icon.width - 30), int(Y_BOTTOM_BASELINE - (total_text_height/2) - (h_icon/2))), icon)
-        
     curr_y = Y_BOTTOM_BASELINE - total_text_height + line_height
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
@@ -1425,18 +1354,12 @@ def generar_tipo_3_v3(datos):
     return img.convert("RGB")
 
 def generar_tipo_3_v4(datos):
-    """
-    TIPO 3 - PLANTILLA 4:
-    - Base: Tipo 1 - Plantilla 4 (Logo Prefectura centrado arriba, Firma Jota abajo der, Ubicación izq)
-    - Modificación: Caja de fecha larga (780x352) ENCIMA del bloque de ubicación
-    """
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 1. Fondo Sombra
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
@@ -1449,7 +1372,6 @@ def generar_tipo_3_v4(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img)
 
-    # 2. Fuentes
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
         f_dias_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 160)
@@ -1466,33 +1388,24 @@ def generar_tipo_3_v4(datos):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
-    # TITULO IZQUIERDA
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # DESCRIPCION IZQUIERDA (V4 Styles)
     desc1 = datos['desc1']
     chars_desc = len(desc1)
-    
     if chars_desc < 50: s_desc = 130; wrap_w = 15
     elif chars_desc < 90: s_desc = 110; wrap_w = 18
     elif chars_desc < 140: s_desc = 90; wrap_w = 22
     else: s_desc = 75; wrap_w = 25
-        
     f_desc = ImageFont.truetype(ruta_abs("Canaro-SemiBold.ttf"), s_desc)
     y_desc = 1070 
-    
     for line in textwrap.wrap(desc1, width=wrap_w):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
 
-    # FIRMA (ABAJO DERECHA)
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
 
-    # 7. COLUMNA IZQUIERDA: Ubicación + Caja Fecha Larga ENCIMA
-    
-    # A. Calcular altura del bloque de ubicación
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
@@ -1501,7 +1414,6 @@ def generar_tipo_3_v4(datos):
     line_height_loc = int(s_lug * 1.1)
     total_h_loc = len(lines_loc) * line_height_loc
     
-    # B. Dibujar Ubicación (Abajo Izquierda)
     x_txt_start = SIDE_MARGIN + 130
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
@@ -1514,11 +1426,9 @@ def generar_tipo_3_v4(datos):
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y_loc, f_lugar, anchor="ls", offset=(4,4))
         curr_y_loc += line_height_loc
 
-    # C. Caja Fecha Larga (ENCIMA de la ubicación)
     h_caja = 352
     w_caja = 780
     x_box = SIDE_MARGIN
-    # Posición Y: Línea base ubicación - altura ubicación - margen (250px aprox) - altura caja
     y_box = Y_BOTTOM_BASELINE - total_h_loc - 280 - h_caja 
     
     if os.path.exists("flyer_caja_fecha_larga.png"):
@@ -1530,29 +1440,22 @@ def generar_tipo_3_v4(datos):
         draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white")
         color_fecha = "black"
 
-    # Texto dentro de la caja larga
     cx = x_box + (w_caja / 2)
     cy = y_box + (h_caja / 2)
-    
     dia1 = datos['fecha1'].day
     dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
     mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    
     texto_dias = f"{dia1} al {dia2}"
     draw.text((cx, cy - 60), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 80), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
 
-    # Hora debajo de la caja (Entre caja y ubicación)
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    size_h = 110 # Tamaño por defecto
+    size_h = 110
     if datos['hora2']: 
         str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-        size_h = 80 # REDUCIR TAMAÑO SI HAY 2 HORAS
-    
+        size_h = 80
     try: f_hora_dyn = ImageFont.truetype(ruta_abs("Canaro-ExtraBold.ttf"), size_h)
     except: f_hora_dyn = ImageFont.load_default()
-    
-    # La hora va justo debajo de la caja
     y_hora = y_box + h_caja + 100 
     dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(8,8), anchor="mm")
 

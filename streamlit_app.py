@@ -2132,11 +2132,14 @@ def generar_tipo_5_v1(datos):
     lines_loc = textwrap.wrap(lugar, width=(20 if s_lug == 72 else 24))
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
-    x_txt_start = W - SIDE_MARGIN - max([f_lugar.getlength(l) for l in lines_loc] or [200])
+    
+    # === CORRECCIÓN AQUÍ: Se llama x_text_start y no x_txt_start ===
+    x_text_start = W - SIDE_MARGIN - max([f_lugar.getlength(l) for l in lines_loc] or [200])
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
         img.paste(icon, (int(x_text_start - icon.width - 30), int(Y_BOTTOM_BASELINE - (total_text_height/2) - (h_icon/2))), icon)
+        
     curr_y = Y_BOTTOM_BASELINE - total_text_height + line_height
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(4,4)); curr_y += line_height
@@ -2215,8 +2218,10 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         dir_texto = st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80)
         st.markdown(f"<p style='text-align:right; color:black; font-size:12px; margin-top:-5px;'>Caracteres: {len(dir_texto)} / 80</p>", unsafe_allow_html=True)
         
-        st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(SÓLO 1 PARA TIPO 5)</span></div>', unsafe_allow_html=True)
+        # === CORRECCIÓN AQUÍ: Volvió a decir solo (OPCIONAL) ===
+        st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         logos = st.file_uploader("lbl_logos", key="lbl_logos", accept_multiple_files=True, label_visibility="collapsed")
+        
         st.markdown('<div class="label-negro" style="margin-top: 15px;">SUBIR Y RECORTAR IMAGEN DE FONDO</div>', unsafe_allow_html=True)
         archivo_subido = st.file_uploader("lbl_img", type=['jpg', 'png', 'jpeg'], label_visibility="collapsed")
         

@@ -2133,7 +2133,6 @@ def generar_tipo_5_v1(datos):
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     
-    # === CORRECCIÓN AQUÍ: Se llama x_text_start y no x_txt_start ===
     x_text_start = W - SIDE_MARGIN - max([f_lugar.getlength(l) for l in lines_loc] or [200])
     h_icon = 260
     if os.path.exists("flyer_icono_lugar.png"):
@@ -2218,7 +2217,6 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         dir_texto = st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80)
         st.markdown(f"<p style='text-align:right; color:black; font-size:12px; margin-top:-5px;'>Caracteres: {len(dir_texto)} / 80</p>", unsafe_allow_html=True)
         
-        # === CORRECCIÓN AQUÍ: Volvió a decir solo (OPCIONAL) ===
         st.markdown('<div class="label-negro">LOGOS COLABORADORES <span class="label-blanco">(OPCIONAL)</span></div>', unsafe_allow_html=True)
         logos = st.file_uploader("lbl_logos", key="lbl_logos", accept_multiple_files=True, label_visibility="collapsed")
         
@@ -2249,16 +2247,17 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             else:
                 has_desc2 = bool(st.session_state.lbl_desc2.strip())
                 has_fecha2 = st.session_state.lbl_fecha2 is not None
-                num_logos = len(st.session_state.get('lbl_logos', []))
                 
-                # Para guardar los temporales si los hay
+                # Forma segura y libre de errores de procesar los archivos subidos
                 rutas_logos = []
-                if num_logos > 0:
-                    for i, uploaded_logo in enumerate(st.session_state.lbl_logos):
+                if logos is not None:
+                    for i, uploaded_logo in enumerate(logos):
                         logo_path = f"temp_logo_{i}.png"
                         with open(logo_path, "wb") as f:
-                            f.write(uploaded_logo.getbuffer())
+                            f.write(uploaded_logo.getvalue())
                         rutas_logos.append(logo_path)
+                
+                num_logos = len(rutas_logos)
 
                 datos = {
                     'fondo': st.session_state.imagen_lista_para_flyer,

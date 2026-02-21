@@ -2010,6 +2010,8 @@ def generar_tipo_5_v1(datos):
     - Logo colaborador debajo de la fecha (y todo el bloque de fecha se empuja hacia arriba).
     - Desc 1 centrada, Ubicación derecha, Logos divididos arriba.
     - BLOQUE FECHA y UBICACIÓN reducidos al ~85%.
+    - Título y Desc1 movidos hacia arriba.
+    - Separación aumentada entre el logo y la fecha.
     """
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -2039,11 +2041,11 @@ def generar_tipo_5_v1(datos):
         
     # Fuentes Reducidas (~85%) para Fecha
     try:
-        f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 297) # 350 * 0.85
-        f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 170) # 200 * 0.85
+        f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 297) 
+        f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 170) 
         path_extra = ruta_abs("Canaro-ExtraBold.ttf")
         if not os.path.exists(path_extra): path_extra = ruta_abs("Canaro-Black.ttf")
-        f_dia_semana = ImageFont.truetype(path_extra, 93) # 110 * 0.85
+        f_dia_semana = ImageFont.truetype(path_extra, 93) 
     except:
         f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_extra = ruta_abs("Canaro-Black.ttf")
@@ -2057,12 +2059,13 @@ def generar_tipo_5_v1(datos):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # Título y Desc1
-    dibujar_texto_sombra(draw, "INVITA", W/2, 850, f_invita, offset=(10,10))
+    # Título y Desc1 (SUBIDOS)
+    y_titulo = 780 # Antes era 850
+    dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
     desc1 = datos['desc1']
     size_desc_val = 110 if len(desc1) <= 75 else (90 if len(desc1) <= 150 else 75)
     f_desc = ImageFont.truetype(path_desc, size_desc_val) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
-    y_desc = 1030
+    y_desc = 960 # Antes era 1030
     for line in textwrap.wrap(desc1, width=(35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55))):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
@@ -2090,8 +2093,8 @@ def generar_tipo_5_v1(datos):
         x_logo = int(cx - (collab_img.width / 2))
         img.paste(collab_img, (x_logo, int(y_logo)), collab_img)
 
-    # Coordenadas Fecha (Empujadas hacia arriba, espacios reducidos a 72px)
-    y_hora_txt = y_logo - 35
+    # Coordenadas Fecha (MÁS SEPARADAS DEL LOGO)
+    y_hora_txt = y_logo - 90 # Antes - 35, lo separamos más para que no se vea pegado
     y_dia_txt = y_hora_txt - 72
     y_box_bottom = y_dia_txt - 72
     y_box = y_box_bottom - h_caja
@@ -2109,9 +2112,9 @@ def generar_tipo_5_v1(datos):
     draw.text((cx, cy + 144), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
-    size_h = 93 # 110 * 0.85
+    size_h = 93 
     if datos['hora2']: 
-        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"; size_h = 68 # 80 * 0.85
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"; size_h = 68 
     try: f_hora = ImageFont.truetype(path_extra, size_h)
     except: f_hora = ImageFont.load_default()
 
@@ -2120,7 +2123,7 @@ def generar_tipo_5_v1(datos):
 
     # Ubicación Derecha (REDUCIDA AL ~85%)
     lugar = datos['lugar']
-    s_lug = 61 if len(lugar) < 45 else 51 # 72->61, 60->51
+    s_lug = 61 if len(lugar) < 45 else 51 
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
     except: f_lugar = ImageFont.load_default()
     lines_loc = textwrap.wrap(lugar, width=(24 if s_lug == 61 else 28))
@@ -2128,7 +2131,7 @@ def generar_tipo_5_v1(datos):
     total_text_height = len(lines_loc) * line_height
     
     x_text_start = W - SIDE_MARGIN - max([f_lugar.getlength(l) for l in lines_loc] or [200])
-    h_icon = 221 # 260 * 0.85
+    h_icon = 221 
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
         img.paste(icon, (int(x_text_start - icon.width - 25), int(Y_BOTTOM_BASELINE - (total_text_height/2) - (h_icon/2))), icon)

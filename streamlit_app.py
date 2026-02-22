@@ -1705,7 +1705,7 @@ def generar_tipo_4_v3(datos):
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
     return img.convert("RGB")
-def generar_tipo_4_v4(datos):
+    def generar_tipo_4_v4(datos):
     """
     TIPO 4 - PLANTILLA 4:
     - Base: Tipo 2 - V4 (Logo centrado, Título/Desc1 izq, Firma derecha)
@@ -1852,6 +1852,7 @@ def generar_tipo_5_v1(datos):
     - Desc 1 centrada, Ubicación derecha, Logos divididos arriba.
     - BLOQUE FECHA y UBICACIÓN reducidos al ~85%.
     - Título y Desc1 movidos hacia arriba.
+    - Separación aumentada entre el logo y la fecha.
     """
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -1871,6 +1872,7 @@ def generar_tipo_5_v1(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img)
 
+    # Fuentes Estándar (Título, Desc)
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
         path_desc = ruta_abs("Canaro-SemiBold.ttf")
@@ -1878,6 +1880,7 @@ def generar_tipo_5_v1(datos):
         f_invita = ImageFont.load_default()
         path_desc = None
         
+    # Fuentes Reducidas (~85%) para Fecha
     try:
         f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 297) 
         f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 170) 
@@ -1888,6 +1891,7 @@ def generar_tipo_5_v1(datos):
         f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_extra = ruta_abs("Canaro-Black.ttf")
 
+    # Logos Arriba
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
@@ -1896,6 +1900,7 @@ def generar_tipo_5_v1(datos):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
+    # Título y Desc1 (SUBIDOS)
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
     desc1 = datos['desc1']
@@ -1905,6 +1910,7 @@ def generar_tipo_5_v1(datos):
     for line in textwrap.wrap(desc1, width=(35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55))):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
+    # Preparar Logo Colaborador
     collab_img = None
     if datos.get('logos') and len(datos['logos']) > 0:
         try:
@@ -1913,30 +1919,36 @@ def generar_tipo_5_v1(datos):
         except Exception as e:
             print("Error cargando logo colaborador:", e)
 
+    # Variables de la caja (REDUCIDA AL ~85%)
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
     cx = x_box + (w_caja / 2)
 
+    # Cálculos dinámicos hacia arriba para la Fecha + Logo
     y_logo_bottom = Y_BOTTOM_BASELINE
     y_logo = y_logo_bottom - collab_img.height if collab_img else y_logo_bottom
     
+    # Pegar Colaborador (Centrado respecto a la caja)
     if collab_img:
         x_logo = int(cx - (collab_img.width / 2))
         img.paste(collab_img, (x_logo, int(y_logo)), collab_img)
 
+    # Coordenadas Fecha (MÁS SEPARADAS DEL LOGO)
     y_hora_txt = y_logo - 90 
     y_dia_txt = y_hora_txt - 72
     y_box_bottom = y_dia_txt - 72
     y_box = y_box_bottom - h_caja
     cy = int(y_box + (h_caja / 2))
 
+    # Dibujar Caja
     if os.path.exists("flyer_caja_fecha.png"):
         caja = Image.open("flyer_caja_fecha.png").convert("RGBA").resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box)), caja); color_fecha = "white"
     else:
         draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white"); color_fecha = "black"
 
+    # Textos de Fecha (posiciones internas ajustadas)
     draw.text((cx, cy - 42), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 144), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
     
@@ -1950,6 +1962,7 @@ def generar_tipo_5_v1(datos):
     dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(6,6), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(6,6), anchor="mm")
 
+    # Ubicación Derecha (REDUCIDA AL ~85%)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51 
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
@@ -1977,6 +1990,7 @@ def generar_tipo_5_v2(datos):
     - Fecha y Ubicación en la esquina inferior izquierda (TAMAÑOS NORMALES).
     - Firma esquina inferior derecha.
     - Logos arriba: Prefectura (Izquierda), Colaborador (Derecha).
+    - AJUSTE: Logos superiores más juntos (margen 550).
     """
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -2008,11 +2022,11 @@ def generar_tipo_5_v2(datos):
         f_invita = f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_desc = None
 
-    # DISTRIBUCIÓN LOGOS (Prefectura Izq, Colaborador Der)
-    margin_logos = 200
+    # DISTRIBUCIÓN LOGOS (JUNTOS AL CENTRO - Margen 550)
+    margin_logos_inward = 550
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
-        img.paste(logo, (margin_logos, 150), logo)
+        img.paste(logo, (margin_logos_inward, 150), logo)
 
     if datos.get('logos') and len(datos['logos']) > 0:
         try:
@@ -2021,7 +2035,7 @@ def generar_tipo_5_v2(datos):
             
             # Centrado ópticamente respecto a la altura del logo de prefectura (378)
             y_collab = 150 + (378 - collab_img.height) // 2
-            x_collab = W - margin_logos - collab_img.width
+            x_collab = W - margin_logos_inward - collab_img.width
             
             img.paste(collab_img, (int(x_collab), int(y_collab)), collab_img)
         except Exception as e:
@@ -2041,7 +2055,7 @@ def generar_tipo_5_v2(datos):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
 
-    # UBICACIÓN (Abajo Izquierda)
+    # UBICACIÓN (Abajo Izquierda - TAMAÑO NORMAL)
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
@@ -2061,7 +2075,7 @@ def generar_tipo_5_v2(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y_loc, f_lugar, anchor="ls", offset=(4,4)); curr_y_loc += line_height_loc
 
-    # CAJA FECHA (Abajo Izquierda, encima de la ubicación)
+    # CAJA FECHA (Abajo Izquierda, encima de la ubicación - TAMAÑO NORMAL)
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 300 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
     
@@ -2372,3 +2386,4 @@ elif area_seleccionada == "Final":
                 os.remove(item)
                 
         st.rerun()
+

@@ -3,6 +3,7 @@ import base64
 import os
 import datetime
 import io
+import textwrap
 from PIL import Image, ImageDraw, ImageFont
 from streamlit_cropper import st_cropper
 
@@ -96,21 +97,16 @@ def redimensionar_logo_colaborador(img):
         return img.resize((700, new_h), Image.Resampling.LANCZOS)
 
 def get_text_width(font, text):
-    if hasattr(font, 'getbbox'):
-        bbox = font.getbbox(text)
-        return bbox[2] - bbox[0]
-    else:
-        return font.getmask(text).getbbox()[2]
+    if hasattr(font, 'getbbox'): return font.getbbox(text)[2] - font.getbbox(text)[0]
+    else: return font.getmask(text).getbbox()[2]
 
 def wrap_text_pixel(texto, fuente, max_w):
     if not texto: return []
     palabras = texto.split()
-    lineas = []
-    linea_actual = ""
+    lineas, linea_actual = [], ""
     for p in palabras:
         test_linea = linea_actual + " " + p if linea_actual else p
-        if get_text_width(fuente, test_linea) <= max_w:
-            linea_actual = test_linea
+        if get_text_width(fuente, test_linea) <= max_w: linea_actual = test_linea
         else:
             if linea_actual: lineas.append(linea_actual)
             linea_actual = p
@@ -123,14 +119,13 @@ def calcular_fuente_dinamica(texto, font_file, size_start, max_w, max_h):
         f_desc = get_font(font_file, s_desc)
         lineas = wrap_text_pixel(texto, f_desc, max_w)
         h_total = len(lineas) * int(s_desc * 1.1)
-        if h_total <= max_h:
-            return f_desc, lineas, s_desc
+        if h_total <= max_h: return f_desc, lineas, s_desc
         s_desc -= 5
     f_desc = get_font(font_file, 40)
     return f_desc, wrap_text_pixel(texto, f_desc, max_w), 40
 
 # ==============================================================================
-# 3. GENERADORES DE PLANTILLAS TIPO 1 (REDUCIDAS 85% Y ESPACIOS EXACTOS)
+# 3. GENERADORES DE PLANTILLAS TIPO 1 (CON ALINEACION EXACTA Y ANTICHOQUES)
 # ==============================================================================
 
 def generar_tipo_1(datos):
@@ -166,37 +161,37 @@ def generar_tipo_1(datos):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma) 
 
-    # 1. Calculo de Ubicación (Derecha)
+    # Titulo Centro
+    y_titulo = 850 
+    dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
+
+    # Descripcion 1 Centro (LOGICA ORIGINAL DE TAMAÑOS)
+    chars_desc = len(datos['desc1'])
+    if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
+    elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
+    elif chars_desc <= 150: size_desc_val = 75; wrap_width = 55
+    else: size_desc_val = 65; wrap_width = 65
+
+    f_desc = get_font("Canaro-SemiBold.ttf", size_desc_val)
+    y_desc = y_titulo + 180
+    for line in textwrap.wrap(datos['desc1'], width=wrap_width):
+        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
+        y_desc += int(size_desc_val * 1.1)
+
+    # Ubicacion Derecha
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 800)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
-
-    # 2. Calculo de Caja Fecha (Izquierda)
+    
+    # Caja Izquierda
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
     y_box_top = Y_BOTTOM_BASELINE - 144 - h_caja
 
-    # 3. Dibujar Titulo
-    y_titulo = 850 
-    dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
-
-    # 4. Ajuste Dinamico de Descripcion 1
-    limit_y = min(y_loc_top, y_box_top) - 50
-    y_start_desc1 = y_titulo + 150
-    max_h_desc1 = limit_y - y_start_desc1
-    
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
-    y_desc = y_start_desc1
-    for l in lines_d1:
-        dibujar_texto_sombra(draw, l, W/2, y_desc, f_desc, offset=(8,8))
-        y_desc += int(s_desc * 1.1)
-
-    # 5. Dibujar Caja de Fecha
     if os.path.exists("flyer_caja_fecha.png"):
         caja = resize_por_alto(Image.open("flyer_caja_fecha.png").convert("RGBA"), h_caja)
         img.paste(caja, (x_box, int(y_box_top)), caja)
@@ -225,11 +220,10 @@ def generar_tipo_1(datos):
     dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(6,6), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(6,6), anchor="mm")
 
-    # 6. Dibujar Ubicacion
+    # Dibujar Ubicacion
     x_txt_anchor = W - SIDE_MARGIN
     max_line_w = max([get_text_width(f_lugar, l) for l in lines_loc]) if lines_loc else 200
     x_text_start = x_txt_anchor - max_line_w
-    
     if os.path.exists("flyer_icono_lugar.png"):
         icon = resize_por_alto(Image.open("flyer_icono_lugar.png").convert("RGBA"), h_icon)
         img.paste(icon, (int(x_text_start - icon.width - 25), int(Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2))), icon)
@@ -262,43 +256,58 @@ def generar_tipo_1_v2(datos):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
-    # 1. Calculo de Ubicación (Izquierda)
+    # Firma Derecha
+    if os.path.exists("flyer_firma.png"):
+        firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
+        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
+
+    # 1. Calculo EXACTO de la parte superior del Bloque Ubicacion
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 1000)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top) # PUNTO EXACTO SUPERIOR DE LA UBICACION
 
-    # 2. Calculo de Caja (Apilada con 100px exactos)
+    # 2. Calculo Caja Fecha (APILADA A 100px SOBRE LA UBICACION)
     GAP_LOC_BOX = 100
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
-    y_box_top = y_loc_top - GAP_LOC_BOX - h_caja
+    
+    str_hora = datos['hora1'].strftime('%H:%M %p')
+    size_h = 93
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 68
+    f_hora = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # 3. Dibujar Firma
-    if os.path.exists("flyer_firma.png"):
-        firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
-        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
+    # La caja total incluye los textos debajo de ella (dia y hora)
+    total_h_date_block = h_caja + 72 + 72 + (size_h / 2)
+    y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
-    # 4. Dibujar Titulo
+    # Titulo
     y_titulo = 850
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
 
-    # 5. Ajuste Dinamico de Descripcion 1
-    limit_y = y_box_top - 50
-    y_start_desc1 = y_titulo + 150
-    max_h_desc1 = limit_y - y_start_desc1
-    
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
-    y_desc = y_start_desc1
-    for l in lines_d1:
-        dibujar_texto_sombra(draw, l, W/2, y_desc, f_desc, offset=(8,8))
-        y_desc += int(s_desc * 1.1)
+    # Descripcion 1 Centro (LOGICA ORIGINAL)
+    chars_desc = len(datos['desc1'])
+    if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
+    elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
+    elif chars_desc <= 150: size_desc_val = 75; wrap_width = 55
+    else: size_desc_val = 65; wrap_width = 65
 
-    # 6. Dibujar Caja
+    f_desc = get_font("Canaro-SemiBold.ttf", size_desc_val)
+    y_desc = y_titulo + 180
+    for line in textwrap.wrap(datos['desc1'], width=wrap_width):
+        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
+        y_desc += int(size_desc_val * 1.1)
+
+    # Dibujar Caja
     if os.path.exists("flyer_caja_fecha.png"):
         caja = resize_por_alto(Image.open("flyer_caja_fecha.png").convert("RGBA"), h_caja)
         img.paste(caja, (x_box, int(y_box_top)), caja)
@@ -313,13 +322,6 @@ def generar_tipo_1_v2(datos):
     draw.text((cx, cy - 42), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 144), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
     
-    str_hora = datos['hora1'].strftime('%H:%M %p')
-    size_h = 93
-    if datos['hora2']: 
-        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-        size_h = 68
-    f_hora = get_font("Canaro-ExtraBold.ttf", size_h)
-    
     y_box_bottom = y_box_top + h_caja
     y_dia_txt = y_box_bottom + 72
     y_hora_txt = y_dia_txt + 72
@@ -327,7 +329,7 @@ def generar_tipo_1_v2(datos):
     dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(6,6), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(6,6), anchor="mm")
 
-    # 7. Dibujar Ubicacion
+    # Dibujar Ubicacion
     x_txt_start = SIDE_MARGIN + 110 
     if os.path.exists("flyer_icono_lugar.png"):
         icon = resize_por_alto(Image.open("flyer_icono_lugar.png").convert("RGBA"), h_icon)
@@ -373,26 +375,29 @@ def generar_tipo_1_v3(datos):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # Ubicacion (Derecha)
+    # 1. Calculo Exacto Ubicacion (Derecha)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 800)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha (Izquierda)
+    # 2. Caja Fecha (Izquierda, No Apilada)
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
     y_box_top = Y_BOTTOM_BASELINE - 144 - h_caja
 
-    # Titulo
+    # Titulo (Izquierda)
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # Texto Dinamico (Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda)
     limit_y = min(y_box_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -476,32 +481,36 @@ def generar_tipo_1_v4(datos):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
-    # 1. Calculo Ubicacion (Izquierda)
+    # Firma (Derecha)
+    if os.path.exists("flyer_firma.png"):
+        firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
+        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
+
+    # 1. Calculo Exacto Ubicacion (Izquierda)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 1000)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Calculo Caja (Apilada 100px arriba de la ubicacion)
+    # 2. Calculo Caja (Apilada EXACTAMENTE a 100px)
     GAP_LOC_BOX = 100
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
-    y_box_top = y_loc_top - GAP_LOC_BOX - h_caja
+    total_h_date_block = h_caja + 144
+    y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
-    # Firma
-    if os.path.exists("flyer_firma.png"):
-        firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
-        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
-
-    # Titulo
+    # Titulo (Izquierda)
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # Descripcion Dinamica
+    # 3. Descripcion 1 (DINAMICA, Izquierda)
     limit_y = y_box_top - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -592,16 +601,19 @@ def generar_tipo_2_v1(datos):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma) 
 
-    # Ubicacion (Derecha)
+    # 1. Calculo Ubicacion (Derecha)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 800)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha (Izquierda)
+    # 2. Caja Fecha (Izquierda)
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
@@ -619,16 +631,18 @@ def generar_tipo_2_v1(datos):
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
     
-    # Descripcion 1 (Dinamico, Centro)
-    limit_y = min(y_desc2_top, y_loc_top) - 50
-    y_start_desc1 = y_titulo + 150
-    max_h_desc1 = limit_y - y_start_desc1
-    
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
-    y_desc = y_start_desc1
-    for l in lines_d1:
-        dibujar_texto_sombra(draw, l, W/2, y_desc, f_desc, offset=(8,8))
-        y_desc += int(s_desc * 1.1)
+    # 3. Descripcion 1 Centro (LOGICA ORIGINAL)
+    chars_desc = len(datos['desc1'])
+    if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
+    elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
+    elif chars_desc <= 150: size_desc_val = 75; wrap_width = 55
+    else: size_desc_val = 65; wrap_width = 65
+
+    f_desc = get_font("Canaro-SemiBold.ttf", size_desc_val)
+    y_desc = y_titulo + 180
+    for line in textwrap.wrap(datos['desc1'], width=wrap_width):
+        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
+        y_desc += int(size_desc_val * 1.1)
 
     # Dibujar Caja
     if os.path.exists("flyer_caja_fecha.png"):
@@ -703,21 +717,25 @@ def generar_tipo_2_v2(datos):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
-    # 1. Calculo Ubicacion (Izquierda)
+    # 1. Calculo Exacto Ubicacion (Izquierda)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 1000)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Calculo Caja (Apilada)
+    # 2. Calculo Caja (Apilada a 100px)
     GAP_LOC_BOX = 100
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
-    y_box_top = y_loc_top - GAP_LOC_BOX - h_caja
+    total_h_date_block = h_caja + 144
+    y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
     # 3. Firma y Desc2 (Derecha)
     y_firma_top = Y_BOTTOM_BASELINE
@@ -738,16 +756,18 @@ def generar_tipo_2_v2(datos):
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
 
-    # Descripcion 1 (Dinamica)
-    limit_y = min(y_box_top, y_desc2_top) - 50
-    y_start_desc1 = y_titulo + 150
-    max_h_desc1 = limit_y - y_start_desc1
-    
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
-    y_desc = y_start_desc1
-    for l in lines_d1:
-        dibujar_texto_sombra(draw, l, W/2, y_desc, f_desc, offset=(8,8))
-        y_desc += int(s_desc * 1.1)
+    # 4. Descripcion 1 Centro (LOGICA ORIGINAL)
+    chars_desc = len(datos['desc1'])
+    if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
+    elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
+    elif chars_desc <= 150: size_desc_val = 75; wrap_width = 55
+    else: size_desc_val = 65; wrap_width = 65
+
+    f_desc = get_font("Canaro-SemiBold.ttf", size_desc_val)
+    y_desc = y_titulo + 180
+    for line in textwrap.wrap(datos['desc1'], width=wrap_width):
+        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
+        y_desc += int(size_desc_val * 1.1)
 
     # Dibujar Desc2
     if desc2 and firma:
@@ -833,14 +853,17 @@ def generar_tipo_2_v3(datos):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # Ubicacion (Derecha)
+    # 1. Calculo Exacto Ubicacion (Derecha)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 800)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
     # Caja Fecha (Izquierda)
     h_caja = 548
@@ -860,7 +883,7 @@ def generar_tipo_2_v3(datos):
     y_titulo = 750
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
 
-    # Descripcion 1 (Dinamica, Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda)
     limit_y = min(y_desc2_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -951,21 +974,25 @@ def generar_tipo_2_v4(datos):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
-    # 1. Calculo Ubicacion (Izquierda)
+    # 1. Calculo Exacto Ubicacion (Izquierda)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 1000)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Calculo Caja Fecha (Apilada 100px arriba)
+    # 2. Calculo Caja Fecha (Apilada a 100px)
     GAP_LOC_BOX = 100
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
-    y_box_top = y_loc_top - GAP_LOC_BOX - h_caja
+    total_h_date_block = h_caja + 144
+    y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
     # 3. Firma y Desc2 (Derecha)
     y_firma_top = Y_BOTTOM_BASELINE
@@ -986,7 +1013,7 @@ def generar_tipo_2_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # Descripcion 1 (Dinamica)
+    # Descripcion 1 (Dinamica, Izquierda)
     limit_y = min(y_box_top, y_desc2_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -1080,21 +1107,23 @@ def generar_tipo_3_v1(datos):
     if os.path.exists("flyer_logo.png"):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
         img.paste(logo, (margin_logos, 150), logo)
-        
     if os.path.exists("flyer_firma.png"):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # Ubicacion (Derecha)
+    # 1. Calculo Exacto Ubicacion (Derecha)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 800)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha Larga (Izquierda)
+    # 2. Caja Larga Fecha (Izquierda, Fija)
     h_caja = 299
     w_caja = 663 
     x_box = SIDE_MARGIN
@@ -1109,22 +1138,24 @@ def generar_tipo_3_v1(datos):
     h_caja_block = h_caja + 38 + size_h
     y_box_top = Y_BOTTOM_BASELINE - 50 - h_caja_block 
 
-    # Titulo
+    # Titulo Centro
     y_titulo = 850
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
 
-    # Descripcion 1 (Dinamica)
-    limit_y = min(y_box_top, y_loc_top) - 50
-    y_start_desc1 = y_titulo + 150
-    max_h_desc1 = limit_y - y_start_desc1
-    
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
-    y_desc = y_start_desc1
-    for l in lines_d1:
-        dibujar_texto_sombra(draw, l, W/2, y_desc, f_desc, offset=(8,8))
-        y_desc += int(s_desc * 1.1)
+    # 3. Descripcion 1 Centro (LOGICA ORIGINAL)
+    chars_desc = len(datos['desc1'])
+    if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
+    elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
+    elif chars_desc <= 150: size_desc_val = 75; wrap_width = 55
+    else: size_desc_val = 65; wrap_width = 65
 
-    # Dibujar Caja
+    f_desc = get_font("Canaro-SemiBold.ttf", size_desc_val)
+    y_desc = y_titulo + 180
+    for line in textwrap.wrap(datos['desc1'], width=wrap_width):
+        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
+        y_desc += int(size_desc_val * 1.1)
+
+    # Dibujar Caja Larga
     if os.path.exists("flyer_caja_fecha_larga.png"):
         caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
         img.paste(caja, (x_box, int(y_box_top)), caja)
@@ -1146,7 +1177,7 @@ def generar_tipo_3_v1(datos):
     y_hora = y_box_top + h_caja + 38
     dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
 
-    # Dibujar Ubicacion
+    # Dibujar Ubicacion Derecha
     x_txt_anchor = W - SIDE_MARGIN
     max_line_w = max([get_text_width(f_lugar, l) for l in lines_loc]) if lines_loc else 200
     x_text_start = x_txt_anchor - max_line_w
@@ -1182,16 +1213,24 @@ def generar_tipo_3_v2(datos):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
-    # Ubicacion (Izquierda)
+    # Firma (Derecha)
+    if os.path.exists("flyer_firma.png"):
+        firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
+        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
+
+    # 1. Calculo Exacto Ubicacion (Izquierda)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 1000)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha Larga (Izquierda, Apilada 100px)
+    # 2. Caja Larga Fecha (Izquierda, Apilada 100px)
     GAP_LOC_BOX = 100
     h_caja = 299
     w_caja = 663
@@ -1207,27 +1246,22 @@ def generar_tipo_3_v2(datos):
     h_caja_block = h_caja + 38 + size_h
     y_box_top = y_loc_top - GAP_LOC_BOX - h_caja_block
 
-    # Firma (Derecha)
-    y_firma_top = Y_BOTTOM_BASELINE
-    if os.path.exists("flyer_firma.png"):
-        firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
-        y_firma_top = Y_BOTTOM_BASELINE - firma.height + 50
-        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(y_firma_top)), firma)
-
-    # Titulo
+    # Titulo Centro
     y_titulo = 850
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
 
-    # Descripcion 1 (Dinamica)
-    limit_y = min(y_box_top, y_firma_top) - 50
-    y_start_desc1 = y_titulo + 150
-    max_h_desc1 = limit_y - y_start_desc1
-    
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
-    y_desc = y_start_desc1
-    for l in lines_d1:
-        dibujar_texto_sombra(draw, l, W/2, y_desc, f_desc, offset=(8,8))
-        y_desc += int(s_desc * 1.1)
+    # 3. Descripcion 1 Centro (LOGICA ORIGINAL)
+    chars_desc = len(datos['desc1'])
+    if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
+    elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
+    elif chars_desc <= 150: size_desc_val = 75; wrap_width = 55
+    else: size_desc_val = 65; wrap_width = 65
+
+    f_desc = get_font("Canaro-SemiBold.ttf", size_desc_val)
+    y_desc = y_titulo + 180
+    for line in textwrap.wrap(datos['desc1'], width=wrap_width):
+        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
+        y_desc += int(size_desc_val * 1.1)
 
     # Dibujar Ubicacion
     x_txt_start = SIDE_MARGIN + 110
@@ -1285,21 +1319,23 @@ def generar_tipo_3_v3(datos):
     if os.path.exists("flyer_logo.png"):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
         img.paste(logo, (margin_logos, 150), logo)
-    
     if os.path.exists("flyer_firma.png"):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # Ubicacion (Derecha)
+    # 1. Calculo Exacto Ubicacion (Derecha)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 800)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha (Izquierda)
+    # Caja Fecha Larga (Izquierda Fija)
     h_caja = 299
     w_caja = 663
     x_box = SIDE_MARGIN
@@ -1318,7 +1354,7 @@ def generar_tipo_3_v3(datos):
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # Descripcion 1 (Dinamica, Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda)
     limit_y = min(y_box_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -1387,16 +1423,26 @@ def generar_tipo_3_v4(datos):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
-    # Ubicacion (Izquierda)
+    # Firma (Derecha)
+    y_firma_top = Y_BOTTOM_BASELINE
+    if os.path.exists("flyer_firma.png"):
+        firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
+        y_firma_top = Y_BOTTOM_BASELINE - firma.height + 50
+        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(y_firma_top)), firma)
+
+    # 1. Calculo Exacto Ubicacion (Izquierda)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 1000)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha Larga (Izquierda, Apilada 100px)
+    # 2. Caja Larga Fecha (Izquierda, Apilada 100px)
     GAP_LOC_BOX = 100
     h_caja = 299
     w_caja = 663
@@ -1412,18 +1458,11 @@ def generar_tipo_3_v4(datos):
     h_caja_block = h_caja + 38 + size_h
     y_box_top = y_loc_top - GAP_LOC_BOX - h_caja_block
 
-    # Firma
-    y_firma_top = Y_BOTTOM_BASELINE
-    if os.path.exists("flyer_firma.png"):
-        firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
-        y_firma_top = Y_BOTTOM_BASELINE - firma.height + 50
-        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(y_firma_top)), firma)
-
     # Titulo (Izquierda)
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # Descripcion 1 (Dinamica)
+    # 3. Descripcion 1 (DINAMICA, Izquierda)
     limit_y = min(y_box_top, y_firma_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -1470,6 +1509,10 @@ def generar_tipo_3_v4(datos):
 
     return img.convert("RGB")
 
+# ==============================================================================
+# 6. GENERADORES DE PLANTILLAS TIPO 4
+# ==============================================================================
+
 def generar_tipo_4_v1(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -1494,16 +1537,19 @@ def generar_tipo_4_v1(datos):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma) 
 
-    # Ubicacion (Derecha)
+    # 1. Calculo Exacto Ubicacion (Derecha)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 800)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha Larga (Izquierda)
+    # Caja Fecha Larga (Izquierda Fija)
     h_caja = 299
     w_caja = 663 
     x_box = SIDE_MARGIN
@@ -1530,16 +1576,18 @@ def generar_tipo_4_v1(datos):
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
     
-    # Descripcion 1 (Dinamica)
-    limit_y = min(y_desc2_top, y_loc_top) - 50
-    y_start_desc1 = y_titulo + 150
-    max_h_desc1 = limit_y - y_start_desc1
-    
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
-    y_desc = y_start_desc1
-    for l in lines_d1:
-        dibujar_texto_sombra(draw, l, W/2, y_desc, f_desc, offset=(8,8))
-        y_desc += int(s_desc * 1.1)
+    # 3. Descripcion 1 Centro (LOGICA ORIGINAL)
+    chars_desc = len(datos['desc1'])
+    if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
+    elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
+    elif chars_desc <= 150: size_desc_val = 75; wrap_width = 55
+    else: size_desc_val = 65; wrap_width = 65
+
+    f_desc = get_font("Canaro-SemiBold.ttf", size_desc_val)
+    y_desc = y_titulo + 180
+    for line in textwrap.wrap(datos['desc1'], width=wrap_width):
+        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
+        y_desc += int(size_desc_val * 1.1)
 
     # Dibujar Desc2
     if desc2:
@@ -1606,16 +1654,19 @@ def generar_tipo_4_v2(datos):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
-    # Ubicacion (Izquierda)
+    # 1. Calculo Exacto Ubicacion (Izquierda)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 1000)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha Larga (Izquierda, Apilada)
+    # 2. Caja Fecha Larga (Izquierda, Apilada 100px)
     GAP_LOC_BOX = 100
     h_caja = 299
     w_caja = 663
@@ -1650,16 +1701,18 @@ def generar_tipo_4_v2(datos):
     y_titulo = 850
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
     
-    # Descripcion 1 (Dinamica)
-    limit_y = min(y_box_top, y_desc2_top) - 50
-    y_start_desc1 = y_titulo + 150
-    max_h_desc1 = limit_y - y_start_desc1
-    
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
-    y_desc = y_start_desc1
-    for l in lines_d1:
-        dibujar_texto_sombra(draw, l, W/2, y_desc, f_desc, offset=(8,8))
-        y_desc += int(s_desc * 1.1)
+    # 3. Descripcion 1 Centro (LOGICA ORIGINAL)
+    chars_desc = len(datos['desc1'])
+    if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
+    elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
+    elif chars_desc <= 150: size_desc_val = 75; wrap_width = 55
+    else: size_desc_val = 65; wrap_width = 65
+
+    f_desc = get_font("Canaro-SemiBold.ttf", size_desc_val)
+    y_desc = y_titulo + 180
+    for line in textwrap.wrap(datos['desc1'], width=wrap_width):
+        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
+        y_desc += int(size_desc_val * 1.1)
 
     # Dibujar Desc2
     if desc2 and firma:
@@ -1729,16 +1782,19 @@ def generar_tipo_4_v3(datos):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # Ubicacion (Derecha)
+    # 1. Calculo Exacto Ubicacion (Derecha)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 800)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha Larga (Izquierda)
+    # Caja Fecha Larga (Izquierda Fija)
     h_caja = 299
     w_caja = 663
     x_box = SIDE_MARGIN
@@ -1765,7 +1821,7 @@ def generar_tipo_4_v3(datos):
     y_titulo = 850
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
 
-    # Descripcion 1 (Dinamica)
+    # 3. Descripcion 1 (DINAMICA, Izquierda)
     limit_y = min(y_desc2_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -1831,6 +1887,14 @@ def generar_tipo_4_v4(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
+    else:
+        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+        d_over = ImageDraw.Draw(overlay)
+        for y in range(int(H*0.3), H):
+            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
+            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
     f_dias_largo = get_font("Canaro-Black.ttf", 136)
@@ -1840,16 +1904,19 @@ def generar_tipo_4_v4(datos):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
-    # 1. Calculo Ubicacion (Izquierda)
+    # 1. Calculo Exacto Ubicacion (Izquierda)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 1000)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Calculo Caja Larga (Apilada 100px)
+    # 2. Caja Larga Fecha (Izquierda, Apilada 100px)
     GAP_LOC_BOX = 100
     h_caja = 299
     w_caja = 663
@@ -1876,7 +1943,7 @@ def generar_tipo_4_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # Descripcion 1 (Dinamica)
+    # 3. Descripcion 1 (DINAMICA, Izquierda)
     limit_y = min(y_box_top, y_firma_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -1938,11 +2005,19 @@ def generar_tipo_5_v1(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
+    else:
+        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+        d_over = ImageDraw.Draw(overlay)
+        for y in range(int(H*0.3), H):
+            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
+            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
     f_dia_box = get_font("Canaro-Black.ttf", 297) 
     f_mes_box = get_font("Canaro-Black.ttf", 170) 
-    f_dia_semana = get_font("Canaro-ExtraBold.ttf", 93)
+    f_dia_semana = get_font("Canaro-ExtraBold.ttf", 93) 
 
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
@@ -1952,14 +2027,17 @@ def generar_tipo_5_v1(datos):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # Ubicacion (Derecha)
+    # 1. Calculo Exacto Ubicacion (Derecha)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51 
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 800)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
     # Logo Colaborador (Centro, sobre la base)
     collab_img = None
@@ -1970,31 +2048,34 @@ def generar_tipo_5_v1(datos):
             y_logo_collab_top = Y_BOTTOM_BASELINE - collab_img.height
         except Exception as e: pass
 
-    # Caja Fecha (Izquierda, guiada por el logo collab)
+    # 2. Caja Fecha (Izquierda, guiada por el logo collab)
+    GAP_COLLAB_BOX = 90
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
-    y_box_top = y_logo_collab_top - 90 - 72 - 72 - h_caja
+    y_box_top = y_logo_collab_top - GAP_COLLAB_BOX - 72 - 72 - h_caja
 
-    # Titulo (Centro)
+    # Titulo Centro
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
     
-    # Descripcion 1 (Dinamica, Centro)
-    limit_y = min(y_box_top, y_loc_top) - 50
-    y_start_desc1 = y_titulo + 150
-    max_h_desc1 = limit_y - y_start_desc1
-    
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
-    y_desc = y_start_desc1
-    for l in lines_d1:
-        dibujar_texto_sombra(draw, l, W/2, y_desc, f_desc, offset=(8,8))
-        y_desc += int(s_desc * 1.1)
+    # 3. Descripcion 1 Centro (LOGICA ORIGINAL)
+    chars_desc = len(datos['desc1'])
+    if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
+    elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
+    elif chars_desc <= 150: size_desc_val = 75; wrap_width = 55
+    else: size_desc_val = 65; wrap_width = 65
+
+    f_desc = get_font("Canaro-SemiBold.ttf", size_desc_val)
+    y_desc = y_titulo + 180
+    for line in textwrap.wrap(datos['desc1'], width=wrap_width):
+        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
+        y_desc += int(size_desc_val * 1.1)
 
     # Dibujar Collab
     cx_box = x_box + (w_caja / 2)
     if collab_img:
-        x_logo = int(cx_box - (collab_img.width / 2))
+        x_logo = int((W / 2) - (collab_img.width / 2)) # Centrado en la imagen, no en la caja
         img.paste(collab_img, (x_logo, int(y_logo_collab_top)), collab_img)
 
     # Dibujar Caja
@@ -2048,6 +2129,14 @@ def generar_tipo_5_v2(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
+    else:
+        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+        d_over = ImageDraw.Draw(overlay)
+        for y in range(int(H*0.3), H):
+            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
+            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
     f_dia_box = get_font("Canaro-Black.ttf", 297) 
@@ -2067,43 +2156,47 @@ def generar_tipo_5_v2(datos):
             img.paste(collab_img, (int(x_collab), int(y_collab)), collab_img)
         except Exception as e: pass
 
-    # Ubicacion (Izquierda)
+    # 1. Calculo Exacto Ubicacion (Izquierda)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51 
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 1000)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha (Apilada 100px arriba de Ubicacion)
+    # 2. Caja Fecha (Apilada 100px arriba de Ubicacion)
     GAP_LOC_BOX = 100
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
-    y_box_top = y_loc_top - GAP_LOC_BOX - h_caja
+    total_h_date_block = h_caja + 144
+    y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
     # Firma (Derecha)
-    y_firma_top = Y_BOTTOM_BASELINE
     if os.path.exists("flyer_firma.png"):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
-        y_firma_top = Y_BOTTOM_BASELINE - firma.height + 50
-        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(y_firma_top)), firma)
+        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
 
-    # Titulo (Centro)
+    # Titulo Centro
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
     
-    # Descripcion 1 (Dinamica)
-    limit_y = min(y_box_top, y_firma_top) - 50
-    y_start_desc1 = y_titulo + 150
-    max_h_desc1 = limit_y - y_start_desc1
-    
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
-    y_desc = y_start_desc1
-    for l in lines_d1:
-        dibujar_texto_sombra(draw, l, W/2, y_desc, f_desc, offset=(8,8))
-        y_desc += int(s_desc * 1.1)
+    # 3. Descripcion 1 Centro (LOGICA ORIGINAL)
+    chars_desc = len(datos['desc1'])
+    if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
+    elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
+    elif chars_desc <= 150: size_desc_val = 75; wrap_width = 55
+    else: size_desc_val = 65; wrap_width = 65
+
+    f_desc = get_font("Canaro-SemiBold.ttf", size_desc_val)
+    y_desc = y_titulo + 180
+    for line in textwrap.wrap(datos['desc1'], width=wrap_width):
+        dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
+        y_desc += int(size_desc_val * 1.1)
 
     # Dibujar Ubicacion
     x_txt_start = SIDE_MARGIN + 110 
@@ -2173,14 +2266,17 @@ def generar_tipo_5_v3(datos):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # Ubicacion (Derecha)
+    # 1. Calculo Exacto Ubicacion (Derecha)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51 
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 800)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
     # Logo Colaborador (Centro, sobre la base)
     collab_img = None
@@ -2201,7 +2297,7 @@ def generar_tipo_5_v3(datos):
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # Descripcion 1 (Dinamica)
+    # 3. Descripcion 1 (DINAMICA, Izquierda)
     limit_y = min(y_box_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -2215,7 +2311,7 @@ def generar_tipo_5_v3(datos):
     # Dibujar Collab
     cx_box = x_box + (w_caja / 2)
     if collab_img:
-        x_logo = int(cx_box - (collab_img.width / 2))
+        x_logo = int((W / 2) - (collab_img.width / 2))
         img.paste(collab_img, (x_logo, int(y_logo_collab_top)), collab_img)
 
     # Dibujar Caja
@@ -2227,8 +2323,9 @@ def generar_tipo_5_v3(datos):
         draw.rectangle([x_box, y_box_top, x_box+w_caja, y_box_top+h_caja], fill="white")
         color_fecha = "black"
 
-    draw.text((cx_box, int(y_box_top + h_caja/2) - 42), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
-    draw.text((cx_box, int(y_box_top + h_caja/2) + 144), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
+    cy = int(y_box_top + (h_caja / 2))
+    draw.text((cx_box, cy - 42), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
+    draw.text((cx_box, cy + 144), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
     size_h = 93 
@@ -2268,6 +2365,14 @@ def generar_tipo_5_v4(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
+    else:
+        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+        d_over = ImageDraw.Draw(overlay)
+        for y in range(int(H*0.3), H):
+            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
+            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
     f_dia_box = get_font("Canaro-Black.ttf", 297) 
@@ -2287,21 +2392,25 @@ def generar_tipo_5_v4(datos):
             img.paste(collab_img, (int(x_collab), int(y_collab)), collab_img)
         except Exception as e: pass
 
-    # Ubicacion (Izquierda)
+    # 1. Calculo Exacto Ubicacion (Izquierda)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51 
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
     lines_loc = wrap_text_pixel(lugar, f_lugar, 1000)
     total_h_loc = len(lines_loc) * int(s_lug * 1.1)
     h_icon = 221
-    y_loc_top = Y_BOTTOM_BASELINE - max(total_h_loc, h_icon)
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha (Apilada 100px arriba)
+    # 2. Caja Fecha (Apilada 100px arriba)
     GAP_LOC_BOX = 100
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
-    y_box_top = y_loc_top - GAP_LOC_BOX - h_caja
+    total_h_date_block = h_caja + 144
+    y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
     # Firma (Derecha)
     y_firma_top = Y_BOTTOM_BASELINE
@@ -2314,7 +2423,7 @@ def generar_tipo_5_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # Descripcion 1 (Dinamica)
+    # 3. Descripcion 1 (Dinamica)
     limit_y = min(y_box_top, y_firma_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -2374,7 +2483,8 @@ def generar_tipo_5_v4(datos):
 
 if os.path.exists("logo_superior.png"):
     c1, c2, c3 = st.columns([1, 2, 1])
-    with c2: st.image("logo_superior.png", use_container_width=True)
+    with c2: 
+        st.image("logo_superior.png", use_container_width=True)
 
 query_params = st.query_params
 area_seleccionada = query_params.get("area", None)
@@ -2448,10 +2558,12 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         
         st.markdown("<div class='label-negro'>LOGOS COLABORADORES (OPCIONAL)</div>", unsafe_allow_html=True)
         
-        # Sistema de memoria para el logo: revisamos si ya hay logos subidos de una ejecución anterior
         rutas_memoria = st.session_state.get('rutas_logos', [])
         if rutas_memoria and os.path.exists(rutas_memoria[0]):
             st.success("✅ LOGO COLABORADOR GUARDADO. Sube uno nuevo solo si quieres reemplazarlo.")
+            if st.button("❌ ELIMINAR LOGO GUARDADO", type="secondary"):
+                st.session_state['rutas_logos'] = []
+                st.rerun()
             
         logos = st.file_uploader("lg", key="lg", accept_multiple_files=True, label_visibility="collapsed")
         
@@ -2481,7 +2593,6 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
             else:
                 rutas_logos = st.session_state.get('rutas_logos', [])
                 
-                # Si el usuario sube un nuevo logo, reemplaza el de memoria
                 if logos:
                     rutas_logos = []
                     for i, l in enumerate(logos):
@@ -2489,7 +2600,6 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                             f.write(l.getvalue())
                         rutas_logos.append(f"temp_{i}.png")
                 
-                # Guardar en memoria para volver a editar sin perder datos
                 st.session_state.update({
                     'v_d1': desc1,
                     'v_d2': desc2,

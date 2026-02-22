@@ -1867,6 +1867,7 @@ def generar_tipo_4_v3(datos):
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
     return img.convert("RGB")
+    
     def generar_tipo_4_v4(datos):
     # TIPO 4 - PLANTILLA 4: Base Tipo 2 - V4. Caja Larga encima de la ubicación.
     fondo = datos['fondo'].copy()
@@ -2512,4 +2513,3 @@ elif area_seleccionada == "Final":
                 os.remove(item)
                 
         st.rerun()
-

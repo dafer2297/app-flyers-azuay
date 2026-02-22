@@ -1867,7 +1867,7 @@ def generar_tipo_4_v3(datos):
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
     return img.convert("RGB")
-def generar_tipo_4_v4(datos):
+    def generar_tipo_4_v4(datos):
     # TIPO 4 - PLANTILLA 4: Base Tipo 2 - V4. Caja Larga encima de la ubicación.
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -1999,10 +1999,6 @@ def generar_tipo_4_v4(datos):
 
     return img.convert("RGB")
 
-# ==============================================================================
-# 7. GENERADORES DE PLANTILLAS TIPO 5 (1 Párrafo, 1 Fecha, 1 Colaborador)
-# ==============================================================================
-
 def generar_tipo_5_v1(datos):
     # TIPO 5 - V1: Base T1_V1. Logo colaborador debajo de la fecha.
     # BLOQUE FECHA y UBICACIÓN reducidos al ~85%. Título y Desc1 subidos.
@@ -2130,7 +2126,7 @@ def generar_tipo_5_v1(datos):
     return img.convert("RGB")
 
 def generar_tipo_5_v2(datos):
-    # TIPO 5 - V2: Base T1_V2. Fecha Izquierda. Logos superiores MAS JUNTOS AL CENTRO.
+    # TIPO 5 - V2: Base T1_V2. Fecha Izquierda. Logos superiores con margen 300.
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -2161,19 +2157,22 @@ def generar_tipo_5_v2(datos):
         f_invita = f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_desc = None
 
-    # LOGOS MAS JUNTOS
-    margin_logos_inward = 550
+    # DISTRIBUCIÓN LOGOS SUPERIORES (Corregido: Margen 300)
+    margin_logos_top = 300
+    
+    # 1. Logo Prefectura (Izquierda)
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
-        img.paste(logo, (margin_logos_inward, 150), logo)
+        img.paste(logo, (margin_logos_top, 150), logo)
 
+    # 2. Logo Colaborador (Derecha)
     if datos.get('logos') and len(datos['logos']) > 0:
         try:
             collab_img = Image.open(datos['logos'][0]).convert("RGBA")
             collab_img = redimensionar_logo_colaborador(collab_img)
             
             y_collab = 150 + (378 - collab_img.height) // 2
-            x_collab = W - margin_logos_inward - collab_img.width
+            x_collab = W - margin_logos_top - collab_img.width
             
             img.paste(collab_img, (int(x_collab), int(y_collab)), collab_img)
         except Exception as e:
@@ -2513,3 +2512,4 @@ elif area_seleccionada == "Final":
                 os.remove(item)
                 
         st.rerun()
+

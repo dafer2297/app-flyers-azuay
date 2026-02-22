@@ -1868,7 +1868,7 @@ def generar_tipo_4_v3(datos):
 
     return img.convert("RGB")
     
-    def generar_tipo_4_v4(datos):
+def generar_tipo_4_v4(datos):
     # TIPO 4 - PLANTILLA 4: Base Tipo 2 - V4. Caja Larga encima de la ubicación.
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000

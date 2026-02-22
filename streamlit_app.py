@@ -397,12 +397,12 @@ def generar_tipo_1_v3(datos):
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Ancho MAX: 1150px)
     limit_y = min(y_box_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -510,12 +510,12 @@ def generar_tipo_1_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
     limit_y = y_box_top - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -883,12 +883,12 @@ def generar_tipo_2_v3(datos):
     y_titulo = 750
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
 
-    # 3. Descripcion 1 (DINAMICA, Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
     limit_y = min(y_desc2_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1600, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -1013,12 +1013,12 @@ def generar_tipo_2_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # Descripcion 1 (Dinamica, Izquierda)
+    # Descripcion 1 (Dinamica, Izquierda, Max Ancho 1150)
     limit_y = min(y_box_top, y_desc2_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -1107,11 +1107,12 @@ def generar_tipo_3_v1(datos):
     if os.path.exists("flyer_logo.png"):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
         img.paste(logo, (margin_logos, 150), logo)
+        
     if os.path.exists("flyer_firma.png"):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # 1. Calculo Exacto Ubicacion (Derecha)
+    # Ubicacion (Derecha)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
@@ -1123,7 +1124,7 @@ def generar_tipo_3_v1(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Caja Larga Fecha (Izquierda, Fija)
+    # Caja Fecha Larga (Izquierda, Fija)
     h_caja = 299
     w_caja = 663 
     x_box = SIDE_MARGIN
@@ -1214,9 +1215,11 @@ def generar_tipo_3_v2(datos):
         img.paste(logo, ((W - logo.width)//2, 150), logo)
 
     # Firma (Derecha)
+    y_firma_top = Y_BOTTOM_BASELINE
     if os.path.exists("flyer_firma.png"):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
-        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
+        y_firma_top = Y_BOTTOM_BASELINE - firma.height + 50
+        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(y_firma_top)), firma)
 
     # 1. Calculo Exacto Ubicacion (Izquierda)
     lugar = datos['lugar']
@@ -1354,12 +1357,12 @@ def generar_tipo_3_v3(datos):
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
     limit_y = min(y_box_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1600, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -1462,12 +1465,12 @@ def generar_tipo_3_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
     limit_y = min(y_box_top, y_firma_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -1572,7 +1575,7 @@ def generar_tipo_4_v1(datos):
     total_h_d2 = len(lines_d2) * int(s_desc2 * 1.1)
     y_desc2_top = y_box_top - 42 - total_h_d2
 
-    # Titulo
+    # Titulo Centro
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
     
@@ -1618,7 +1621,7 @@ def generar_tipo_4_v1(datos):
     y_hora = y_box_top + h_caja + 38
     dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
 
-    # Dibujar Ubicacion
+    # Dibujar Ubicacion Derecha
     x_txt_anchor = W - SIDE_MARGIN
     max_line_w = max([get_text_width(f_lugar, l) for l in lines_loc]) if lines_loc else 200
     x_text_start = x_txt_anchor - max_line_w
@@ -1697,7 +1700,7 @@ def generar_tipo_4_v2(datos):
     total_h_d2 = len(lines_d2) * int(s_desc2 * 1.1)
     y_desc2_top = y_firma_top - 85 - total_h_d2
 
-    # Titulo
+    # Titulo Centro
     y_titulo = 850
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
     
@@ -1821,12 +1824,12 @@ def generar_tipo_4_v3(datos):
     y_titulo = 850
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
 
-    # 3. Descripcion 1 (DINAMICA, Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
     limit_y = min(y_desc2_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1600, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -1861,7 +1864,7 @@ def generar_tipo_4_v3(datos):
     y_hora = y_box_top + h_caja + 38
     dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
 
-    # Dibujar Ubicacion
+    # Dibujar Ubicacion Derecha
     x_txt_anchor = W - SIDE_MARGIN
     max_line_w = max([get_text_width(f_lugar, l) for l in lines_loc]) if lines_loc else 200
     x_text_start = x_txt_anchor - max_line_w
@@ -1943,12 +1946,12 @@ def generar_tipo_4_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
     limit_y = min(y_box_top, y_firma_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -2005,14 +2008,6 @@ def generar_tipo_5_v1(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
-    else:
-        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
-        d_over = ImageDraw.Draw(overlay)
-        for y in range(int(H*0.3), H):
-            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
-            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
-        img = Image.alpha_composite(img, overlay)
-        draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
     f_dia_box = get_font("Canaro-Black.ttf", 297) 
@@ -2039,21 +2034,32 @@ def generar_tipo_5_v1(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Logo Colaborador (Centro, sobre la base)
+    # Logo Colaborador (Abajo a la Izquierda)
     collab_img = None
     y_logo_collab_top = Y_BOTTOM_BASELINE
     if datos.get('logos') and len(datos['logos']) > 0:
         try:
             collab_img = redimensionar_logo_colaborador(Image.open(datos['logos'][0]).convert("RGBA"))
             y_logo_collab_top = Y_BOTTOM_BASELINE - collab_img.height
+            # Alineado exactamente a la izquierda
+            img.paste(collab_img, (SIDE_MARGIN, int(y_logo_collab_top)), collab_img)
         except Exception as e: pass
 
-    # 2. Caja Fecha (Izquierda, guiada por el logo collab)
-    GAP_COLLAB_BOX = 90
+    # 2. Caja Fecha (Izquierda, Apilada 100px sobre el logo colaborador)
+    GAP_COLLAB_BOX = 100
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
-    y_box_top = y_logo_collab_top - GAP_COLLAB_BOX - 72 - 72 - h_caja
+    
+    str_hora = datos['hora1'].strftime('%H:%M %p')
+    size_h = 93 
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 68 
+    f_hora = get_font("Canaro-ExtraBold.ttf", size_h)
+
+    total_h_date_block = h_caja + 144
+    y_box_top = y_logo_collab_top - GAP_COLLAB_BOX - total_h_date_block
 
     # Titulo Centro
     y_titulo = 780 
@@ -2072,12 +2078,6 @@ def generar_tipo_5_v1(datos):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
         y_desc += int(size_desc_val * 1.1)
 
-    # Dibujar Collab
-    cx_box = x_box + (w_caja / 2)
-    if collab_img:
-        x_logo = int((W / 2) - (collab_img.width / 2)) # Centrado en la imagen, no en la caja
-        img.paste(collab_img, (x_logo, int(y_logo_collab_top)), collab_img)
-
     # Dibujar Caja
     if os.path.exists("flyer_caja_fecha.png"):
         caja = resize_por_alto(Image.open("flyer_caja_fecha.png").convert("RGBA"), h_caja)
@@ -2087,16 +2087,11 @@ def generar_tipo_5_v1(datos):
         draw.rectangle([x_box, y_box_top, x_box+w_caja, y_box_top+h_caja], fill="white")
         color_fecha = "black"
 
+    cx_box = x_box + (w_caja / 2)
     cy = int(y_box_top + (h_caja / 2))
+    
     draw.text((cx_box, cy - 42), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx_box, cy + 144), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
-    
-    str_hora = datos['hora1'].strftime('%H:%M %p')
-    size_h = 93 
-    if datos['hora2']: 
-        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-        size_h = 68 
-    f_hora = get_font("Canaro-ExtraBold.ttf", size_h)
 
     y_dia_txt = y_box_top + h_caja + 72
     y_hora_txt = y_dia_txt + 72
@@ -2129,14 +2124,6 @@ def generar_tipo_5_v2(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
-    else:
-        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
-        d_over = ImageDraw.Draw(overlay)
-        for y in range(int(H*0.3), H):
-            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
-            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
-        img = Image.alpha_composite(img, overlay)
-        draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
     f_dia_box = get_font("Canaro-Black.ttf", 297) 
@@ -2177,9 +2164,11 @@ def generar_tipo_5_v2(datos):
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
     # Firma (Derecha)
+    y_firma_top = Y_BOTTOM_BASELINE
     if os.path.exists("flyer_firma.png"):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
-        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
+        y_firma_top = Y_BOTTOM_BASELINE - firma.height + 50
+        img.paste(firma, (W - firma.width - SIDE_MARGIN, int(y_firma_top)), firma)
 
     # Titulo Centro
     y_titulo = 850 
@@ -2278,41 +2267,47 @@ def generar_tipo_5_v3(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Logo Colaborador (Centro, sobre la base)
+    # Logo Colaborador (Abajo Izquierda)
     collab_img = None
     y_logo_collab_top = Y_BOTTOM_BASELINE
     if datos.get('logos') and len(datos['logos']) > 0:
         try:
             collab_img = redimensionar_logo_colaborador(Image.open(datos['logos'][0]).convert("RGBA"))
             y_logo_collab_top = Y_BOTTOM_BASELINE - collab_img.height
+            # Alineado exactamente a la izquierda
+            img.paste(collab_img, (SIDE_MARGIN, int(y_logo_collab_top)), collab_img)
         except Exception as e: pass
 
-    # Caja Fecha (Izquierda)
+    # Caja Fecha (Izquierda, Apilada 100px sobre el logo colaborador)
+    GAP_COLLAB_BOX = 100
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
-    y_box_top = y_logo_collab_top - 90 - 72 - 72 - h_caja
+    
+    str_hora = datos['hora1'].strftime('%H:%M %p')
+    size_h = 93 
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 68 
+    f_hora = get_font("Canaro-ExtraBold.ttf", size_h)
+
+    total_h_date_block = h_caja + 144
+    y_box_top = y_logo_collab_top - GAP_COLLAB_BOX - total_h_date_block
 
     # Titulo (Izquierda)
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150px)
     limit_y = min(y_box_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1600, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
         y_desc += int(s_desc * 1.1)
-
-    # Dibujar Collab
-    cx_box = x_box + (w_caja / 2)
-    if collab_img:
-        x_logo = int((W / 2) - (collab_img.width / 2))
-        img.paste(collab_img, (x_logo, int(y_logo_collab_top)), collab_img)
 
     # Dibujar Caja
     if os.path.exists("flyer_caja_fecha.png"):
@@ -2323,16 +2318,10 @@ def generar_tipo_5_v3(datos):
         draw.rectangle([x_box, y_box_top, x_box+w_caja, y_box_top+h_caja], fill="white")
         color_fecha = "black"
 
+    cx_box = x_box + (w_caja / 2)
     cy = int(y_box_top + (h_caja / 2))
     draw.text((cx_box, cy - 42), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
     draw.text((cx_box, cy + 144), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
-    
-    str_hora = datos['hora1'].strftime('%H:%M %p')
-    size_h = 93 
-    if datos['hora2']: 
-        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
-        size_h = 68 
-    f_hora = get_font("Canaro-ExtraBold.ttf", size_h)
 
     y_dia_txt = y_box_top + h_caja + 72
     y_hora_txt = y_dia_txt + 72
@@ -2365,14 +2354,6 @@ def generar_tipo_5_v4(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
-    else:
-        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
-        d_over = ImageDraw.Draw(overlay)
-        for y in range(int(H*0.3), H):
-            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
-            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
-        img = Image.alpha_composite(img, overlay)
-        draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
     f_dia_box = get_font("Canaro-Black.ttf", 297) 
@@ -2423,12 +2404,12 @@ def generar_tipo_5_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (Dinamica)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
     limit_y = min(y_box_top, y_firma_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 2000, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -2558,9 +2539,10 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         
         st.markdown("<div class='label-negro'>LOGOS COLABORADORES (OPCIONAL)</div>", unsafe_allow_html=True)
         
+        # Sistema de memoria y boton de eliminar logo
         rutas_memoria = st.session_state.get('rutas_logos', [])
         if rutas_memoria and os.path.exists(rutas_memoria[0]):
-            st.success("✅ LOGO COLABORADOR GUARDADO. Sube uno nuevo solo si quieres reemplazarlo.")
+            st.success("✅ LOGO COLABORADOR GUARDADO.")
             if st.button("❌ ELIMINAR LOGO GUARDADO", type="secondary"):
                 st.session_state['rutas_logos'] = []
                 st.rerun()
@@ -2593,6 +2575,7 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
             else:
                 rutas_logos = st.session_state.get('rutas_logos', [])
                 
+                # Si el usuario sube un nuevo logo, reemplaza el de memoria
                 if logos:
                     rutas_logos = []
                     for i, l in enumerate(logos):
@@ -2600,6 +2583,7 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                             f.write(l.getvalue())
                         rutas_logos.append(f"temp_{i}.png")
                 
+                # Guardar en memoria para volver a editar sin perder datos
                 st.session_state.update({
                     'v_d1': desc1,
                     'v_d2': desc2,

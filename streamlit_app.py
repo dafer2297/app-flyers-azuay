@@ -460,7 +460,7 @@ def generar_tipo_1_v3(datos):
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
-        img.paste(logo, (margin_logos, 150), logo)
+        for _ in range(2): img.paste(logo, (margin_logos, 150), logo)
     
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
@@ -577,6 +577,7 @@ def generar_tipo_1_v4(datos):
 # ==============================================================================
 
 def generar_tipo_2_v1(datos):
+    # TIPO 2 - V1
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -691,6 +692,7 @@ def generar_tipo_2_v1(datos):
     return img.convert("RGB")
 
 def generar_tipo_2_v2(datos):
+    # TIPO 2 - V2
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -795,6 +797,7 @@ def generar_tipo_2_v2(datos):
     return img.convert("RGB")
 
 def generar_tipo_2_v3(datos):
+    # TIPO 2 - V3
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -914,6 +917,7 @@ def generar_tipo_2_v3(datos):
     return img.convert("RGB")
 
 def generar_tipo_2_v4(datos):
+    # TIPO 2 - V4
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -1040,6 +1044,7 @@ def generar_tipo_2_v4(datos):
 # ==============================================================================
 
 def generar_tipo_3_v1(datos):
+    # TIPO 3 - V1
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -1145,6 +1150,7 @@ def generar_tipo_3_v1(datos):
     return img.convert("RGB")
 
 def generar_tipo_3_v2(datos):
+    # TIPO 3 - V2
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -1481,8 +1487,8 @@ def generar_tipo_3_v4(datos):
 
 def generar_tipo_4_v1(datos):
     # TIPO 4 - PLANTILLA 1:
-    # Base: Tipo 2 - V1 (Desc1 Centrada, Ubicación Der)
-    # Modificación: Caja larga. Desc2 a la izquierda, encima de la caja larga.
+    # Base: Tipo 2 - V1 (Desc1 Centrada, Ubicacion Der)
+    # Modificacion: Caja larga. Desc2 a la izquierda, encima de la caja larga.
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -1603,8 +1609,8 @@ def generar_tipo_4_v1(datos):
 
 def generar_tipo_4_v2(datos):
     # TIPO 4 - PLANTILLA 2:
-    # Base: Tipo 2 - V2 (Desc1 Centrada, Ubicación Izq)
-    # Modificación: Caja larga encima de la ubicación. Desc2 encima del recuadro.
+    # Base: Tipo 2 - V2 (Desc1 Centrada, Ubicacion Izq)
+    # Modificacion: Caja larga encima de la ubicacion. Desc2 encima del recuadro.
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -1728,8 +1734,8 @@ def generar_tipo_4_v2(datos):
 
 def generar_tipo_4_v3(datos):
     # TIPO 4 - PLANTILLA 3:
-    # Base: Tipo 2 - V3 (Desc1 Izquierda, Ubicación Derecha)
-    # Modificación: Caja larga. Desc2 a la izquierda, encima de la caja larga.
+    # Base: Tipo 2 - V3 (Desc1 Izquierda, Ubicacion Derecha)
+    # Modificacion: Caja larga. Desc2 a la izquierda, encima de la caja larga.
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -2018,7 +2024,6 @@ def generar_tipo_5_v1(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img)
 
-    # Fuentes Estandar
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
         path_desc = ruta_abs("Canaro-SemiBold.ttf")
@@ -2026,7 +2031,6 @@ def generar_tipo_5_v1(datos):
         f_invita = ImageFont.load_default()
         path_desc = None
         
-    # Fuentes Reducidas (~85%) para Fecha
     try:
         f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 297) 
         f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 170) 
@@ -2037,7 +2041,6 @@ def generar_tipo_5_v1(datos):
         f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_extra = ruta_abs("Canaro-Black.ttf")
 
-    # Logos Arriba
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
@@ -2046,7 +2049,6 @@ def generar_tipo_5_v1(datos):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # Titulo y Desc1
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
     desc1 = datos['desc1']
@@ -2056,16 +2058,14 @@ def generar_tipo_5_v1(datos):
     for line in textwrap.wrap(desc1, width=(35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55))):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
-    # Preparar Logo Colaborador
     collab_img = None
     if datos.get('logos') and len(datos['logos']) > 0:
         try:
             collab_img = Image.open(datos['logos'][0]).convert("RGBA")
             collab_img = redimensionar_logo_colaborador(collab_img)
         except Exception as e:
-            print("Error cargando logo colaborador:", e)
+            pass
 
-    # Variables de la caja
     h_caja = 548
     w_caja = 548
     x_box = SIDE_MARGIN
@@ -2155,7 +2155,6 @@ def generar_tipo_5_v2(datos):
         f_invita = f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_desc = None
 
-    # LOGOS SUPERIORES - Corregido a 300
     margin_logos_top = 300
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
@@ -2171,9 +2170,8 @@ def generar_tipo_5_v2(datos):
             
             img.paste(collab_img, (int(x_collab), int(y_collab)), collab_img)
         except Exception as e:
-            print("Error cargando logo colaborador:", e)
+            pass
 
-    # TITULO Y DESC CENTRADOS
     dibujar_texto_sombra(draw, "INVITA", W/2, 850, f_invita, offset=(10,10))
     desc1 = datos['desc1']
     size_desc_val = 110 if len(desc1) <= 75 else (90 if len(desc1) <= 150 else 75)
@@ -2182,12 +2180,10 @@ def generar_tipo_5_v2(datos):
     for line in textwrap.wrap(desc1, width=(35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55))):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
-    # FIRMA
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
 
-    # UBICACION IZQUIERDA
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
@@ -2207,7 +2203,6 @@ def generar_tipo_5_v2(datos):
     for l in lines_loc:
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y_loc, f_lugar, anchor="ls", offset=(4,4)); curr_y_loc += line_height_loc
 
-    # CAJA FECHA IZQUIERDA
     y_linea_hora = Y_BOTTOM_BASELINE - total_text_height - 300 
     h_caja = 645; y_box = y_linea_hora - 170 - h_caja; x_box = SIDE_MARGIN
     
@@ -2261,7 +2256,6 @@ def generar_tipo_5_v3(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img)
 
-    # Fuentes
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
         path_desc = ruta_abs("Canaro-SemiBold.ttf")
@@ -2279,7 +2273,6 @@ def generar_tipo_5_v3(datos):
         f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_extra = ruta_abs("Canaro-Black.ttf")
 
-    # Logos Superiores (Prefectura Izquierda, Jota Derecha - Como en T1_V3)
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
@@ -2289,7 +2282,6 @@ def generar_tipo_5_v3(datos):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # Titulo y Descripcion (Alineados a la izquierda)
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
@@ -2308,14 +2300,13 @@ def generar_tipo_5_v3(datos):
     for line in textwrap.wrap(desc1, width=wrap_w):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
 
-    # Logo Colaborador
     collab_img = None
     if datos.get('logos') and len(datos['logos']) > 0:
         try:
             collab_img = Image.open(datos['logos'][0]).convert("RGBA")
             collab_img = redimensionar_logo_colaborador(collab_img)
         except Exception as e:
-            print("Error cargando logo colaborador:", e)
+            pass
 
     h_caja = 548
     w_caja = 548
@@ -2354,7 +2345,6 @@ def generar_tipo_5_v3(datos):
     dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(6,6), anchor="mm")
     dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(6,6), anchor="mm")
 
-    # Ubicacion Derecha
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51 
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
@@ -2363,7 +2353,7 @@ def generar_tipo_5_v3(datos):
     line_height = int(s_lug * 1.1)
     total_text_height = len(lines_loc) * line_height
     
-    x_txt_start = W - SIDE_MARGIN - max([f_lugar.getlength(l) for l in lines_loc] or [200])
+    x_text_start = W - SIDE_MARGIN - max([f_lugar.getlength(l) for l in lines_loc] or [200])
     h_icon = 221 
     if os.path.exists("flyer_icono_lugar.png"):
         icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
@@ -2398,14 +2388,14 @@ if not area_seleccionada:
     with col_recreacion:
         if os.path.exists("btn_recreacion.png"):
             img_b64 = get_base64_of_bin_file("btn_recreacion.png")
-            st.markdown(f"<a href='?area=Recreación' target='_self' style='text-decoration:none;'><div style='text-align: center;'><img src='data:image/png;base64,{img_b64}' class='zoom-hover' width='100%'><div class='label-menu'>RECREACIÓN</div></div></a>", unsafe_allow_html=True)
+            st.markdown(f"<a href='?area=Recreación' target='_self' style='text-decoration:none;'><div style='text-align: center;'><img src='data:image/png;base64,{img_b64}' class='zoom-hover' width='100%'><div class='label-menu'>RECREACION</div></div></a>", unsafe_allow_html=True)
     st.write("")
     c1, c2, c3 = st.columns([1, 1, 1])
     with c1:
          if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=300)
 
 elif area_seleccionada in ["Cultura", "Recreación"]:
-    if st.button("⬅️ VOLVER AL INICIO", type="primary", key="back_btn"):
+    if st.button("VOLVER AL INICIO", type="primary", key="back_btn"):
         st.query_params.clear()
         st.rerun()
 
@@ -2460,10 +2450,10 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
                 st.session_state['imagen_lista_para_flyer'] = None
             img_crop = st_cropper(img_orig, realtime_update=True, box_color='#FF0000', aspect_ratio=(4, 5), should_resize_image=False)
             st.session_state['imagen_lista_para_flyer'] = img_crop.resize((2400, 3000), Image.Resampling.LANCZOS)
-            st.write("✅ Imagen lista.")
+            st.write("Imagen lista.")
 
         st.write("")
-        if st.button("✨ GENERAR FLYERS ✨", type="primary", use_container_width=True):
+        if st.button("GENERAR FLYERS", type="primary", use_container_width=True):
             errores = []
             if not st.session_state.lbl_desc: errores.append("Falta Descripcion 1")
             if not st.session_state.lbl_fecha1: errores.append("Falta Fecha Inicio")

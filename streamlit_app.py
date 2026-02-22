@@ -36,7 +36,7 @@ def set_design():
     font_css = ""
     if os.path.exists("Canaro-Black.ttf"):
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
-        font_css += f"""@font-face {{ font-family: 'Canaro'; src: url('data:font/ttf;base64,{font_b64}') format('truetype'); }}"""
+        font_css += f"@font-face {{ font-family: 'Canaro'; src: url('data:font/ttf;base64,{font_b64}') format('truetype'); }}"
 
     st.markdown(
         f"""
@@ -147,18 +147,15 @@ def resize_por_alto(img, alto_objetivo):
 
 def redimensionar_logo_colaborador(img):
     w, h = img.size
-    # Regla 3: Si es cuadrado perfecto
     if w == h:
         return resize_por_alto(img, 400)
     
-    # Regla 1: Intentar alto 400px
     ratio = 400 / h
     new_w = int(w * ratio)
     
     if new_w <= 700:
         return img.resize((new_w, 400), Image.Resampling.LANCZOS)
     else:
-        # Regla 2: Si el ancho supera 700px, forzar ancho a 700px
         ratio = 700 / w
         new_h = int(h * ratio)
         return img.resize((700, new_h), Image.Resampling.LANCZOS)
@@ -463,7 +460,7 @@ def generar_tipo_1_v3(datos):
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
-        for _ in range(2): img.paste(logo, (margin_logos, 150), logo)
+        img.paste(logo, (margin_logos, 150), logo)
     
     if os.path.exists("flyer_firma.png"):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
@@ -1049,12 +1046,10 @@ def generar_tipo_3_v1(datos):
     img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
     draw = ImageDraw.Draw(img)
     
-    # 1. Fondo Sombra
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
     else:
-        # Fallback sombra
         overlay = Image.new('RGBA', (W, H), (0,0,0,0))
         d_over = ImageDraw.Draw(overlay)
         for y in range(int(H*0.3), H):
@@ -1063,7 +1058,6 @@ def generar_tipo_3_v1(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img)
 
-    # 2. Fuentes
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
         f_dias_largo = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 160) 
@@ -1867,9 +1861,8 @@ def generar_tipo_4_v3(datos):
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
     return img.convert("RGB")
-    
 def generar_tipo_4_v4(datos):
-    # TIPO 4 - PLANTILLA 4: Base Tipo 2 - V4. Caja Larga encima de la ubicación.
+    # TIPO 4 - PLANTILLA 4: Base Tipo 2 - V4. Caja Larga encima de la ubicacion.
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -2000,9 +1993,13 @@ def generar_tipo_4_v4(datos):
 
     return img.convert("RGB")
 
+# ==============================================================================
+# 7. GENERADORES DE PLANTILLAS TIPO 5 (1 Parrafo, 1 Fecha, 1 Colaborador)
+# ==============================================================================
+
 def generar_tipo_5_v1(datos):
     # TIPO 5 - V1: Base T1_V1. Logo colaborador debajo de la fecha.
-    # BLOQUE FECHA y UBICACIÓN reducidos al ~85%. Título y Desc1 subidos.
+    # BLOQUE FECHA y UBICACION reducidos al ~85%. Titulo y Desc1 subidos.
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -2021,7 +2018,7 @@ def generar_tipo_5_v1(datos):
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img)
 
-    # Fuentes Estándar
+    # Fuentes Estandar
     try:
         f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
         path_desc = ruta_abs("Canaro-SemiBold.ttf")
@@ -2049,7 +2046,7 @@ def generar_tipo_5_v1(datos):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # Título y Desc1
+    # Titulo y Desc1
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
     desc1 = datos['desc1']
@@ -2158,15 +2155,12 @@ def generar_tipo_5_v2(datos):
         f_invita = f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
         path_desc = None
 
-    # DISTRIBUCIÓN LOGOS SUPERIORES (Corregido: Margen 300)
+    # LOGOS SUPERIORES - Corregido a 300
     margin_logos_top = 300
-    
-    # 1. Logo Prefectura (Izquierda)
     if os.path.exists("flyer_logo.png"):
         logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
         img.paste(logo, (margin_logos_top, 150), logo)
 
-    # 2. Logo Colaborador (Derecha)
     if datos.get('logos') and len(datos['logos']) > 0:
         try:
             collab_img = Image.open(datos['logos'][0]).convert("RGBA")
@@ -2179,7 +2173,7 @@ def generar_tipo_5_v2(datos):
         except Exception as e:
             print("Error cargando logo colaborador:", e)
 
-    # TÍTULO Y DESC CENTRADOS
+    # TITULO Y DESC CENTRADOS
     dibujar_texto_sombra(draw, "INVITA", W/2, 850, f_invita, offset=(10,10))
     desc1 = datos['desc1']
     size_desc_val = 110 if len(desc1) <= 75 else (90 if len(desc1) <= 150 else 75)
@@ -2193,7 +2187,7 @@ def generar_tipo_5_v2(datos):
         firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
         img.paste(firma, (W - firma.width - SIDE_MARGIN, int(Y_BOTTOM_BASELINE - firma.height + 50)), firma)
 
-    # UBICACIÓN IZQUIERDA
+    # UBICACION IZQUIERDA
     lugar = datos['lugar']
     s_lug = 72 if len(lugar) < 45 else 60
     try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
@@ -2246,6 +2240,141 @@ def generar_tipo_5_v2(datos):
 
     return img.convert("RGB")
 
+def generar_tipo_5_v3(datos):
+    # TIPO 5 - V3: Base T1_V3. Desc Izquierda. 
+    # Logo colaborador debajo de la fecha (reducida 85%). Ubicacion derecha (reducida 85%).
+    fondo = datos['fondo'].copy()
+    W, H = 2400, 3000
+    SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
+    img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
+    draw = ImageDraw.Draw(img)
+    
+    if os.path.exists("flyer_sombra.png"):
+        sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
+        img.paste(sombra_img, (0, 0), sombra_img)
+    else:
+        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+        d_over = ImageDraw.Draw(overlay)
+        for y in range(int(H*0.3), H):
+            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
+            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img)
+
+    # Fuentes
+    try:
+        f_invita = ImageFont.truetype(ruta_abs("Canaro-Bold.ttf"), 220) 
+        path_desc = ruta_abs("Canaro-SemiBold.ttf")
+    except:
+        f_invita = ImageFont.load_default()
+        path_desc = None
+        
+    try:
+        f_dia_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 297) 
+        f_mes_box = ImageFont.truetype(ruta_abs("Canaro-Black.ttf"), 170) 
+        path_extra = ruta_abs("Canaro-ExtraBold.ttf")
+        if not os.path.exists(path_extra): path_extra = ruta_abs("Canaro-Black.ttf")
+        f_dia_semana = ImageFont.truetype(path_extra, 93) 
+    except:
+        f_dia_box = f_mes_box = f_dia_semana = ImageFont.load_default()
+        path_extra = ruta_abs("Canaro-Black.ttf")
+
+    # Logos Superiores (Prefectura Izquierda, Jota Derecha - Como en T1_V3)
+    margin_logos = 200
+    if os.path.exists("flyer_logo.png"):
+        logo = Image.open("flyer_logo.png").convert("RGBA"); logo = resize_por_alto(logo, 378)
+        img.paste(logo, (margin_logos, 150), logo)
+    
+    if os.path.exists("flyer_firma.png"):
+        firma = Image.open("flyer_firma.png").convert("RGBA"); firma = resize_por_alto(firma, 325)
+        img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
+
+    # Titulo y Descripcion (Alineados a la izquierda)
+    y_titulo = 780 
+    dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
+    
+    desc1 = datos['desc1']
+    chars_desc = len(desc1)
+    if chars_desc < 60:
+        s_desc = 130; wrap_w = 15
+    elif chars_desc < 115:
+        s_desc = 110; wrap_w = 18
+    else:
+        s_desc = 90; wrap_w = 22
+        
+    f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
+    
+    y_desc = y_titulo + 70 + s_desc
+    for line in textwrap.wrap(desc1, width=wrap_w):
+        dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
+
+    # Logo Colaborador
+    collab_img = None
+    if datos.get('logos') and len(datos['logos']) > 0:
+        try:
+            collab_img = Image.open(datos['logos'][0]).convert("RGBA")
+            collab_img = redimensionar_logo_colaborador(collab_img)
+        except Exception as e:
+            print("Error cargando logo colaborador:", e)
+
+    h_caja = 548
+    w_caja = 548
+    x_box = SIDE_MARGIN
+    cx = x_box + (w_caja / 2)
+
+    y_logo_bottom = Y_BOTTOM_BASELINE
+    y_logo = y_logo_bottom - collab_img.height if collab_img else y_logo_bottom
+    
+    if collab_img:
+        x_logo = int(cx - (collab_img.width / 2))
+        img.paste(collab_img, (x_logo, int(y_logo)), collab_img)
+
+    y_hora_txt = y_logo - 90 
+    y_dia_txt = y_hora_txt - 72
+    y_box_bottom = y_dia_txt - 72
+    y_box = y_box_bottom - h_caja
+    cy = int(y_box + (h_caja / 2))
+
+    if os.path.exists("flyer_caja_fecha.png"):
+        caja = Image.open("flyer_caja_fecha.png").convert("RGBA").resize((w_caja, h_caja), Image.Resampling.LANCZOS)
+        img.paste(caja, (x_box, int(y_box)), caja); color_fecha = "white"
+    else:
+        draw.rectangle([x_box, y_box, x_box+w_caja, y_box+h_caja], fill="white"); color_fecha = "black"
+
+    draw.text((cx, cy - 42), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
+    draw.text((cx, cy + 144), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
+    
+    str_hora = datos['hora1'].strftime('%H:%M %p')
+    size_h = 93 
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"; size_h = 68 
+    try: f_hora = ImageFont.truetype(path_extra, size_h)
+    except: f_hora = ImageFont.load_default()
+
+    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(6,6), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(6,6), anchor="mm")
+
+    # Ubicacion Derecha
+    lugar = datos['lugar']
+    s_lug = 61 if len(lugar) < 45 else 51 
+    try: f_lugar = ImageFont.truetype(ruta_abs("Canaro-Medium.ttf"), s_lug)
+    except: f_lugar = ImageFont.load_default()
+    lines_loc = textwrap.wrap(lugar, width=(24 if s_lug == 61 else 28))
+    line_height = int(s_lug * 1.1)
+    total_text_height = len(lines_loc) * line_height
+    
+    x_txt_start = W - SIDE_MARGIN - max([f_lugar.getlength(l) for l in lines_loc] or [200])
+    h_icon = 221 
+    if os.path.exists("flyer_icono_lugar.png"):
+        icon = Image.open("flyer_icono_lugar.png").convert("RGBA"); icon = resize_por_alto(icon, h_icon)
+        img.paste(icon, (int(x_text_start - icon.width - 25), int(Y_BOTTOM_BASELINE - (total_text_height/2) - (h_icon/2))), icon)
+        
+    curr_y = Y_BOTTOM_BASELINE - total_text_height + line_height
+    for l in lines_loc:
+        dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(3,3)); curr_y += line_height
+
+    return img.convert("RGB")
+
 # ==============================================================================
 # 8. INTERFAZ DE USUARIO
 # ==============================================================================
@@ -2289,10 +2418,10 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=200)
 
     with col_der:
-        st.markdown("<div class='label-negro'>DESCRIPCIÓN 1</div>", unsafe_allow_html=True)
-        desc1 = st.text_area("lbl_desc", key="lbl_desc", label_visibility="collapsed", placeholder="Escribe aquí...", height=150, max_chars=175)
+        st.markdown("<div class='label-negro'>DESCRIPCION 1</div>", unsafe_allow_html=True)
+        desc1 = st.text_area("lbl_desc", key="lbl_desc", label_visibility="collapsed", placeholder="Escribe aqui...", height=150, max_chars=175)
         
-        st.markdown("<div class='label-negro'>DESCRIPCIÓN 2 <span class='label-blanco'>(OPCIONAL)</span></div>", unsafe_allow_html=True)
+        st.markdown("<div class='label-negro'>DESCRIPCION 2 <span class='label-blanco'>(OPCIONAL)</span></div>", unsafe_allow_html=True)
         desc2 = st.text_area("lbl_desc2", key="lbl_desc2", label_visibility="collapsed", placeholder="", height=100, max_chars=175)
         
         total_chars = len(desc1) + len(desc2)
@@ -2314,8 +2443,8 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
             st.markdown("<div class='label-negro'>HORARIO FINAL <span class='label-blanco'>(OPCIONAL)</span></div>", unsafe_allow_html=True)
             hora2 = st.time_input("lbl_hora2", key="lbl_hora2", label_visibility="collapsed", value=None)
         
-        st.markdown("<div class='label-negro'>DIRECCIÓN</div>", unsafe_allow_html=True)
-        dir_texto = st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80)
+        st.markdown("<div class='label-negro'>DIRECCION</div>", unsafe_allow_html=True)
+        dir_texto = st.text_input("lbl_dir", key="lbl_dir", label_visibility="collapsed", placeholder="Ubicacion del evento", max_chars=80)
         st.markdown(f"<p style='text-align:right; color:black; font-size:12px; margin-top:-5px;'>Caracteres: {len(dir_texto)} / 80</p>", unsafe_allow_html=True)
         
         st.markdown("<div class='label-negro'>LOGOS COLABORADORES <span class='label-blanco'>(OPCIONAL)</span></div>", unsafe_allow_html=True)
@@ -2326,7 +2455,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         
         if archivo_subido:
             img_orig = Image.open(archivo_subido)
-            st.info("Ajusta el recorte. Recuerda usar imágenes de buena calidad.")
+            st.info("Ajusta el recorte. Recuerda usar imagenes de buena calidad.")
             if 'imagen_lista_para_flyer' not in st.session_state:
                 st.session_state['imagen_lista_para_flyer'] = None
             img_crop = st_cropper(img_orig, realtime_update=True, box_color='#FF0000', aspect_ratio=(4, 5), should_resize_image=False)
@@ -2336,15 +2465,15 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
         st.write("")
         if st.button("✨ GENERAR FLYERS ✨", type="primary", use_container_width=True):
             errores = []
-            if not st.session_state.lbl_desc: errores.append("Falta Descripción 1")
+            if not st.session_state.lbl_desc: errores.append("Falta Descripcion 1")
             if not st.session_state.lbl_fecha1: errores.append("Falta Fecha Inicio")
             if st.session_state.get('imagen_lista_para_flyer') is None: errores.append("Falta recortar la Imagen de Fondo")
             
             if (len(st.session_state.lbl_desc) + len(st.session_state.lbl_desc2)) > 175:
-                errores.append(f"¡Has excedido el límite total de texto! (Llevas {len(st.session_state.lbl_desc) + len(st.session_state.lbl_desc2)}/175)")
+                errores.append(f"Has excedido el limite total de texto (Llevas {len(st.session_state.lbl_desc) + len(st.session_state.lbl_desc2)}/175)")
 
             if errores:
-                for e in errores: st.error(f"⚠️ {e}")
+                for e in errores: st.error(f" {e}")
             else:
                 has_desc2 = bool(st.session_state.lbl_desc2.strip())
                 has_fecha2 = st.session_state.lbl_fecha2 is not None
@@ -2377,6 +2506,7 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
                 if num_logos >= 1 and not has_fecha2 and not has_desc2:
                     generated_images['t5_v1'] = generar_tipo_5_v1(datos)
                     generated_images['t5_v2'] = generar_tipo_5_v2(datos)
+                    generated_images['t5_v3'] = generar_tipo_5_v3(datos)
                     st.session_state['variant_selected'] = 't5_v1'
                     st.session_state['tipo_id'] = 5
 
@@ -2418,11 +2548,11 @@ elif area_seleccionada in ["Cultura", "Recreación"]:
                 st.rerun()
 
 elif area_seleccionada == "Final":
-    st.markdown("<h1 style='text-align: center; font-size: 60px;'>¡ARTE LISTO!</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; font-size: 60px;'>ARTE LISTO</h1>", unsafe_allow_html=True)
     st.write("") 
     
     if 'datos_finales' not in st.session_state:
-        st.warning("⚠️ No hay datos. Vuelve al inicio.")
+        st.warning("No hay datos. Vuelve al inicio.")
         if st.button("Volver al Inicio", type="primary"):
             st.query_params.clear()
             st.rerun()
@@ -2451,7 +2581,7 @@ elif area_seleccionada == "Final":
                 c_prev, c_down, c_next = st.columns([1, 2, 1])
                 
                 if tipo == 5:
-                    order = ['t5_v1', 't5_v2']
+                    order = ['t5_v1', 't5_v2', 't5_v3']
                 elif tipo == 4:
                     order = ['t4_v1', 't4_v2', 't4_v3', 't4_v4']
                 elif tipo == 3:
@@ -2483,12 +2613,12 @@ elif area_seleccionada == "Final":
                             "<div style='text-align: center;'>"
                             f"<a href='data:image/png;base64,{img_b64_dl}' download='{fname}' style='text-decoration: none; border: none !important; outline: none !important;'>"
                             f"<img src='data:image/png;base64,{chola_b64}' width='220' class='zoom-hover' style='border: none !important; outline: none !important; display: block; margin: auto;'>"
-                            "<div style='font-family: \"Canaro\"; font-weight: bold; font-size: 18px; color: white; margin-top: 5px; text-decoration: none;'>DESCARGUE AQUÍ</div>"
+                            "<div style='font-family: \"Canaro\"; font-weight: bold; font-size: 18px; color: white; margin-top: 5px; text-decoration: none;'>DESCARGUE AQUI</div>"
                             "</a></div>"
                         )
                         st.markdown(html_chola, unsafe_allow_html=True)
                     else:
-                        st.download_button("⬇️ DESCARGAR", data=buf.getvalue(), file_name=fname, mime="image/png", use_container_width=True)
+                        st.download_button("DESCARGAR", data=buf.getvalue(), file_name=fname, mime="image/png", use_container_width=True)
 
                 with c_next:
                     if len(order) > 1:
@@ -2496,13 +2626,13 @@ elif area_seleccionada == "Final":
                             st.session_state['variant_selected'] = next_var
                             st.rerun()
             else:
-                st.info("No se generaron imágenes.")
+                st.info("No se generaron imagenes.")
 
         with c_right:
             st.empty()
 
     st.write("---")
-    if st.button("🔄 CREAR NUEVO", type="primary"):
+    if st.button(" CREAR NUEVO", type="primary"):
         st.query_params.clear()
         keys_borrar = ['imagen_lista_para_flyer', 'datos_finales', 'lbl_desc', 'lbl_desc2', 'lbl_dir', 'variant_selected', 'generated_images', 'tipo_id']
         for k in keys_borrar:

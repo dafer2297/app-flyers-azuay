@@ -2004,8 +2004,7 @@ def generar_tipo_4_v4(datos):
 # ==============================================================================
 
 def generar_tipo_5_v1(datos):
-    # TIPO 5 - V1: Base T1_V1. Logo colaborador debajo de la fecha.
-    # BLOQUE FECHA y UBICACION reducidos al ~85%. Titulo y Desc1 subidos.
+    # TIPO 5 - V1
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -2050,12 +2049,22 @@ def generar_tipo_5_v1(datos):
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
     y_titulo = 780 
-    dibujar_texto_sombra(draw, "INVITA", W/2, y_titulo, f_invita, offset=(10,10))
+    dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
+    
     desc1 = datos['desc1']
-    size_desc_val = 110 if len(desc1) <= 75 else (90 if len(desc1) <= 150 else 75)
+    chars_desc = len(desc1)
+    if chars_desc < 60:
+        size_desc_val = 110; wrap_w = 35
+    elif chars_desc < 120:
+        size_desc_val = 90; wrap_w = 45
+    elif chars_desc < 150:
+        size_desc_val = 75; wrap_w = 55
+    else:
+        size_desc_val = 65; wrap_w = 65
+        
     f_desc = ImageFont.truetype(path_desc, size_desc_val) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     y_desc = 960 
-    for line in textwrap.wrap(desc1, width=(35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55))):
+    for line in textwrap.wrap(desc1, width=wrap_w):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
     collab_img = None
@@ -2124,7 +2133,7 @@ def generar_tipo_5_v1(datos):
     return img.convert("RGB")
 
 def generar_tipo_5_v2(datos):
-    # TIPO 5 - V2: Base T1_V2. Fecha Izquierda. Logos superiores con margen 300.
+    # TIPO 5 - V2
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -2164,20 +2173,27 @@ def generar_tipo_5_v2(datos):
         try:
             collab_img = Image.open(datos['logos'][0]).convert("RGBA")
             collab_img = redimensionar_logo_colaborador(collab_img)
-            
             y_collab = 150 + (378 - collab_img.height) // 2
             x_collab = W - margin_logos_top - collab_img.width
-            
             img.paste(collab_img, (int(x_collab), int(y_collab)), collab_img)
         except Exception as e:
             pass
 
-    dibujar_texto_sombra(draw, "INVITA", W/2, 850, f_invita, offset=(10,10))
+    dibujar_texto_sombra(draw, "INVITAN", W/2, 850, f_invita, offset=(10,10))
     desc1 = datos['desc1']
-    size_desc_val = 110 if len(desc1) <= 75 else (90 if len(desc1) <= 150 else 75)
+    chars_desc = len(desc1)
+    if chars_desc < 60:
+        size_desc_val = 110; wrap_w = 35
+    elif chars_desc < 120:
+        size_desc_val = 90; wrap_w = 45
+    elif chars_desc < 150:
+        size_desc_val = 75; wrap_w = 55
+    else:
+        size_desc_val = 65; wrap_w = 65
+        
     f_desc = ImageFont.truetype(path_desc, size_desc_val) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     y_desc = 1030
-    for line in textwrap.wrap(desc1, width=(35 if size_desc_val >= 110 else (45 if size_desc_val >= 90 else 55))):
+    for line in textwrap.wrap(desc1, width=wrap_w):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8)); y_desc += int(size_desc_val * 1.1)
 
     if os.path.exists("flyer_firma.png"):
@@ -2236,8 +2252,7 @@ def generar_tipo_5_v2(datos):
     return img.convert("RGB")
 
 def generar_tipo_5_v3(datos):
-    # TIPO 5 - V3: Base T1_V3. Desc Izquierda. 
-    # Logo colaborador debajo de la fecha (reducida 85%). Ubicacion derecha (reducida 85%).
+    # TIPO 5 - V3
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
     SIDE_MARGIN = 180; Y_BOTTOM_BASELINE = H - 150
@@ -2283,20 +2298,22 @@ def generar_tipo_5_v3(datos):
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
     y_titulo = 780 
-    dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
+    dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
     desc1 = datos['desc1']
     chars_desc = len(desc1)
-    if chars_desc < 60:
+    if chars_desc < 50:
         s_desc = 130; wrap_w = 15
-    elif chars_desc < 115:
+    elif chars_desc < 90:
         s_desc = 110; wrap_w = 18
+    elif chars_desc < 130:
+        s_desc = 85; wrap_w = 24
     else:
-        s_desc = 90; wrap_w = 22
+        s_desc = 70; wrap_w = 28
         
     f_desc = ImageFont.truetype(path_desc, s_desc) if path_desc and os.path.exists(path_desc) else ImageFont.load_default()
     
-    y_desc = y_titulo + 70 + s_desc
+    y_desc = 940
     for line in textwrap.wrap(desc1, width=wrap_w):
         dibujar_texto_sombra(draw, line, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls"); y_desc += int(s_desc * 1.1)
 

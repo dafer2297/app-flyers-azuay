@@ -883,7 +883,7 @@ def generar_tipo_2_v3(datos):
     y_titulo = 750
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
 
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Ancho MAX: 1150)
     limit_y = min(y_desc2_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -1013,7 +1013,7 @@ def generar_tipo_2_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # Descripcion 1 (Dinamica, Izquierda, Max Ancho 1150)
+    # Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
     limit_y = min(y_box_top, y_desc2_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -1112,7 +1112,7 @@ def generar_tipo_3_v1(datos):
         firma = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 325)
         img.paste(firma, (W - firma.width - margin_logos, 150 + 20), firma)
 
-    # Ubicacion (Derecha)
+    # 1. Calculo Exacto Ubicacion (Derecha)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
@@ -1124,7 +1124,7 @@ def generar_tipo_3_v1(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha Larga (Izquierda, Fija)
+    # 2. Caja Larga Fecha (Izquierda, Fija)
     h_caja = 299
     w_caja = 663 
     x_box = SIDE_MARGIN
@@ -2008,6 +2008,14 @@ def generar_tipo_5_v1(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
+    else:
+        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+        d_over = ImageDraw.Draw(overlay)
+        for y in range(int(H*0.3), H):
+            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
+            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
     f_dia_box = get_font("Canaro-Black.ttf", 297) 
@@ -2041,7 +2049,7 @@ def generar_tipo_5_v1(datos):
         try:
             collab_img = redimensionar_logo_colaborador(Image.open(datos['logos'][0]).convert("RGBA"))
             y_logo_collab_top = Y_BOTTOM_BASELINE - collab_img.height
-            # Alineado exactamente a la izquierda
+            # Alineado exactamente a la izquierda (SIDE_MARGIN)
             img.paste(collab_img, (SIDE_MARGIN, int(y_logo_collab_top)), collab_img)
         except Exception as e: pass
 
@@ -2124,6 +2132,14 @@ def generar_tipo_5_v2(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
+    else:
+        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+        d_over = ImageDraw.Draw(overlay)
+        for y in range(int(H*0.3), H):
+            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
+            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
     f_dia_box = get_font("Canaro-Black.ttf", 297) 
@@ -2241,6 +2257,14 @@ def generar_tipo_5_v3(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
+    else:
+        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+        d_over = ImageDraw.Draw(overlay)
+        for y in range(int(H*0.3), H):
+            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
+            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
     f_dia_box = get_font("Canaro-Black.ttf", 297) 
@@ -2354,6 +2378,14 @@ def generar_tipo_5_v4(datos):
     if os.path.exists("flyer_sombra.png"):
         sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
         img.paste(sombra_img, (0, 0), sombra_img)
+    else:
+        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+        d_over = ImageDraw.Draw(overlay)
+        for y in range(int(H*0.3), H):
+            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
+            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
     f_dia_box = get_font("Canaro-Black.ttf", 297) 
@@ -2539,11 +2571,11 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         
         st.markdown("<div class='label-negro'>LOGOS COLABORADORES (OPCIONAL)</div>", unsafe_allow_html=True)
         
-        # Sistema de memoria y boton de eliminar logo
+        # Sistema de memoria y boton de eliminar logo (Corregido a type="primary")
         rutas_memoria = st.session_state.get('rutas_logos', [])
         if rutas_memoria and os.path.exists(rutas_memoria[0]):
             st.success("✅ LOGO COLABORADOR GUARDADO.")
-            if st.button("❌ ELIMINAR LOGO GUARDADO", type="secondary"):
+            if st.button("❌ ELIMINAR LOGO GUARDADO", type="primary"):
                 st.session_state['rutas_logos'] = []
                 st.rerun()
             

@@ -28,16 +28,14 @@ def set_design():
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
         font_css += "@font-face { font-family: 'Canaro'; src: url('data:font/ttf;base64," + font_b64 + "') format('truetype'); }\n"
 
+    # CSS Limpio: Sin alterar las cajas de texto nativas ni romper botones secundarios
     css_str = (
         "<style>\n"
         + ".stApp { " + bg_style + " }\n"
         + font_css +
         "h1, h2, h3 { font-family: 'Canaro', sans-serif !important; color: white !important; text-transform: uppercase; }\n"
-        "div[data-testid='stButton'] button[kind='secondary'] { background-color: white; color: #1E88E5; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; box-shadow: 0px 4px 6px rgba(0,0,0,0.2); transition: all 0.2s; display: flex; align-items: center; justify-content: center; margin: auto; }\n"
-        "div[data-testid='stButton'] button[kind='secondary']:hover { background-color: #f0f0f0; transform: scale(1.1); color: #1565C0; }\n"
         "div[data-testid='stButton'] button[kind='primary'] { background-color: transparent; color: white; border: 2px solid white; border-radius: 15px; width: 100%; height: auto; padding: 10px 20px; font-weight: bold; font-size: 16px; box-shadow: none; }\n"
         "div[data-testid='stButton'] button[kind='primary']:hover { background-color: #D81B60; border-color: #D81B60; transform: none; }\n"
-        ".stTextInput > div > div > input, .stTextArea > div > div > textarea, .stDateInput > div > div > input, .stTimeInput > div > div > input { background-color: white !important; color: black !important; border-radius: 8px; border: none; }\n"
         ".stTextInput label, .stTextArea label, .stDateInput label, .stTimeInput label, .stFileUploader label { display: none !important; }\n"
         ".label-negro { font-family: 'Canaro', sans-serif; font-weight: bold; font-size: 16px; color: black !important; margin-bottom: 2px; margin-top: 10px; }\n"
         ".label-blanco { font-family: 'Canaro', sans-serif; font-weight: normal; font-size: 12px; color: white !important; margin-left: 5px; }\n"
@@ -125,7 +123,7 @@ def calcular_fuente_dinamica(texto, font_file, size_start, max_w, max_h):
     return f_desc, wrap_text_pixel(texto, f_desc, max_w), 40
 
 # ==============================================================================
-# 3. GENERADORES DE PLANTILLAS TIPO 1 (CON ALINEACION EXACTA Y ANTICHOQUES)
+# 3. GENERADORES DE PLANTILLAS TIPO 1 
 # ==============================================================================
 
 def generar_tipo_1(datos):
@@ -271,7 +269,7 @@ def generar_tipo_1_v2(datos):
     
     y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
-    y_loc_top = min(y_loc_text_top, y_loc_icon_top) # PUNTO EXACTO SUPERIOR DE LA UBICACION
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top) # PUNTO EXACTO SUPERIOR
 
     # 2. Calculo Caja Fecha (APILADA A 100px SOBRE LA UBICACION)
     GAP_LOC_BOX = 100
@@ -286,7 +284,6 @@ def generar_tipo_1_v2(datos):
         size_h = 68
     f_hora = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # La caja total incluye los textos debajo de ella (dia y hora)
     total_h_date_block = h_caja + 72 + 72 + (size_h / 2)
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
@@ -397,12 +394,12 @@ def generar_tipo_1_v3(datos):
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Ancho MAX: 1150px)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Ancho MAX REDUCIDO A 900px)
     limit_y = min(y_box_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 900, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -510,12 +507,12 @@ def generar_tipo_1_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 900)
     limit_y = y_box_top - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 900, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -883,12 +880,12 @@ def generar_tipo_2_v3(datos):
     y_titulo = 750
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
 
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Ancho MAX: 1150)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Ancho MAX REDUCIDO A 900)
     limit_y = min(y_desc2_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 900, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -1013,12 +1010,12 @@ def generar_tipo_2_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
+    # Descripcion 1 (DINAMICA, Izquierda, Max Ancho reducido a 900)
     limit_y = min(y_box_top, y_desc2_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 900, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -1357,12 +1354,12 @@ def generar_tipo_3_v3(datos):
     y_titulo = 850 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho reducido a 900)
     limit_y = min(y_box_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 900, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -1465,12 +1462,12 @@ def generar_tipo_3_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho reducido a 900)
     limit_y = min(y_box_top, y_firma_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 900, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -1824,12 +1821,12 @@ def generar_tipo_4_v3(datos):
     y_titulo = 850
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
 
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho reducido a 900)
     limit_y = min(y_desc2_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 900, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -1946,12 +1943,12 @@ def generar_tipo_4_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITA", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 900)
     limit_y = min(y_box_top, y_firma_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 900, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -2322,12 +2319,12 @@ def generar_tipo_5_v3(datos):
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150px)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 900px)
     limit_y = min(y_box_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 900, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -2436,12 +2433,12 @@ def generar_tipo_5_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 1150)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 900)
     limit_y = min(y_box_top, y_firma_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
     
-    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 1150, max_h_desc1)
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 900, max_h_desc1)
     y_desc = y_start_desc1
     for l in lines_d1:
         dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
@@ -2571,10 +2568,10 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         
         st.markdown("<div class='label-negro'>LOGOS COLABORADORES (OPCIONAL)</div>", unsafe_allow_html=True)
         
-        # Sistema de memoria y boton de eliminar logo (Corregido a type="primary")
         rutas_memoria = st.session_state.get('rutas_logos', [])
         if rutas_memoria and os.path.exists(rutas_memoria[0]):
             st.success("✅ LOGO COLABORADOR GUARDADO.")
+            # Botón de eliminar con type="primary" para que sea visible
             if st.button("❌ ELIMINAR LOGO GUARDADO", type="primary"):
                 st.session_state['rutas_logos'] = []
                 st.rerun()

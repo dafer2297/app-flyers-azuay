@@ -2495,7 +2495,7 @@ def generar_tipo_5_v4(datos):
 
 
 # ==============================================================================
-# NUEVO: 8. GENERADORES DE PLANTILLA TIPO 6 (Logos, 2 Descripciones, 1 Fecha)
+# NUEVO: 8. GENERADOR DE PLANTILLAS TIPO 6 (Logos, 2 Descripciones, 1 Fecha)
 # ==============================================================================
 
 def generar_tipo_6_v1(datos):
@@ -2792,6 +2792,155 @@ def generar_tipo_6_v2(datos):
 
     return img.convert("RGB")
 
+def generar_tipo_6_v3(datos):
+    fondo = datos['fondo'].copy()
+    W, H = 2400, 3000
+    SIDE_MARGIN = 180
+    Y_BOTTOM_BASELINE = H - 150
+    img = fondo.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
+    draw = ImageDraw.Draw(img)
+
+    if os.path.exists("flyer_sombra.png"):
+        sombra_img = Image.open("flyer_sombra.png").convert("RGBA").resize((W, H), Image.Resampling.LANCZOS)
+        img.paste(sombra_img, (0, 0), sombra_img)
+    else:
+        overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+        d_over = ImageDraw.Draw(overlay)
+        for y in range(int(H*0.3), H):
+            alpha = int(255 * ((y - H*0.3)/(H*0.7)))
+            d_over.line([(0,y), (W,y)], fill=(0,0,0, int(alpha*0.9)))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img)
+
+    f_invita = get_font("Canaro-Bold.ttf", 220)
+    f_dia_box = get_font("Canaro-Black.ttf", 297)
+    f_mes_box = get_font("Canaro-Black.ttf", 170)
+    f_dia_semana = get_font("Canaro-ExtraBold.ttf", 93)
+
+    # 1. LOGICA DE DISTRIBUCION EQUITATIVA DE LOS 3 LOGOS SUPERIORES
+    collab_img = None
+    if datos.get('logos') and len(datos['logos']) > 0:
+        try:
+            collab_img = redimensionar_logo_colaborador(Image.open(datos['logos'][0]).convert("RGBA"))
+        except Exception as e: pass
+
+    prefectura_img = None
+    if os.path.exists("flyer_logo.png"):
+        prefectura_img = resize_por_ancho(Image.open("flyer_logo.png").convert("RGBA"), 775)
+
+    firma_img = None
+    if os.path.exists("flyer_firma.png"):
+        firma_img = resize_por_ancho(Image.open("flyer_firma.png").convert("RGBA"), 600)
+
+    w1 = collab_img.width if collab_img else 0
+    w2 = prefectura_img.width if prefectura_img else 0
+    w3 = firma_img.width if firma_img else 0
+
+    espacio_restante = W - (w1 + w2 + w3)
+    gap = espacio_restante / 4
+
+    x1 = gap
+    x2 = x1 + w1 + gap
+    x3 = x2 + w2 + gap
+    y_logos = 150
+
+    if collab_img: img.paste(collab_img, (int(x1), y_logos), collab_img)
+    if prefectura_img: img.paste(prefectura_img, (int(x2), y_logos), prefectura_img)
+    if firma_img: img.paste(firma_img, (int(x3), y_logos), firma_img)
+
+    # 2. Calculo Exacto Ubicacion (Derecha)
+    lugar = datos['lugar']
+    s_lug = 61 if len(lugar) < 45 else 51
+    f_lugar = get_font("Canaro-Medium.ttf", s_lug)
+    lines_loc = wrap_text_pixel(lugar, f_lugar, 800)
+    total_h_loc = len(lines_loc) * int(s_lug * 1.1)
+    h_icon = 221
+    
+    y_loc_text_top = Y_BOTTOM_BASELINE - total_h_loc
+    y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
+    y_loc_top = min(y_loc_text_top, y_loc_icon_top)
+
+    # Caja Fecha (Izquierda)
+    h_caja = 548
+    w_caja = 548
+    x_box = SIDE_MARGIN
+    y_box_top = Y_BOTTOM_BASELINE - 144 - h_caja
+
+    # Descripcion 2 (Izquierda, sobre la caja)
+    desc2 = datos.get('desc2', "")
+    s_desc2 = 68
+    f_desc2 = get_font("Canaro-Medium.ttf", s_desc2)
+    lines_d2 = wrap_text_pixel(desc2, f_desc2, 700)
+    total_h_d2 = len(lines_d2) * int(s_desc2 * 1.1)
+    y_desc2_top = y_box_top - 42 - total_h_d2
+
+    # Titulo (Izquierda) - A 690 como se solicito
+    y_titulo = 690
+    dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
+
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Ancho MAX REDUCIDO A 900)
+    limit_y = min(y_desc2_top, y_loc_top) - 50
+    y_start_desc1 = y_titulo + 150
+    max_h_desc1 = limit_y - y_start_desc1
+    
+    f_desc, lines_d1, s_desc = calcular_fuente_dinamica(datos['desc1'], "Canaro-SemiBold.ttf", 130, 900, max_h_desc1)
+    y_desc = y_start_desc1
+    for l in lines_d1:
+        dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_desc, f_desc, offset=(8,8), anchor="ls")
+        y_desc += int(s_desc * 1.1)
+
+    # Dibujar Descripcion 2
+    if desc2:
+        y_cursor_d2 = y_desc2_top + int(s_desc2 * 1.1)
+        for l in lines_d2:
+            dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_cursor_d2, f_desc2, offset=(4,4), anchor="ls")
+            y_cursor_d2 += int(s_desc2 * 1.1)
+
+    # Dibujar Caja
+    if os.path.exists("flyer_caja_fecha.png"):
+        caja = resize_por_alto(Image.open("flyer_caja_fecha.png").convert("RGBA"), h_caja)
+        img.paste(caja, (x_box, int(y_box_top)), caja)
+        color_fecha = "white"
+    else:
+        draw.rectangle([x_box, y_box_top, x_box+w_caja, y_box_top+h_caja], fill="white")
+        color_fecha = "black"
+
+    cx = x_box + (w_caja / 2)
+    cy = int(y_box_top + (h_caja / 2))
+    
+    draw.text((cx, cy - 42), str(datos['fecha1'].day), font=f_dia_box, fill=color_fecha, anchor="mm")
+    draw.text((cx, cy + 144), obtener_mes_abbr(datos['fecha1'].month), font=f_mes_box, fill=color_fecha, anchor="mm")
+    
+    str_hora = datos['hora1'].strftime('%H:%M %p')
+    size_h = 93
+    if datos['hora2']: 
+        str_hora += f" a {datos['hora2'].strftime('%H:%M %p')}"
+        size_h = 68
+    f_hora = get_font("Canaro-ExtraBold.ttf", size_h)
+    
+    y_box_bottom = y_box_top + h_caja
+    y_dia_txt = y_box_bottom + 72
+    y_hora_txt = y_dia_txt + 72
+    
+    dibujar_texto_sombra(draw, obtener_dia_semana(datos['fecha1']), cx, y_dia_txt, f_dia_semana, offset=(6,6), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx, y_hora_txt, f_hora, offset=(6,6), anchor="mm")
+
+    # Dibujar Ubicacion
+    x_txt_anchor = W - SIDE_MARGIN
+    max_line_w = max([get_text_width(f_lugar, l) for l in lines_loc]) if lines_loc else 200
+    x_text_start = x_txt_anchor - max_line_w
+    
+    if os.path.exists("flyer_icono_lugar.png"):
+        icon = resize_por_alto(Image.open("flyer_icono_lugar.png").convert("RGBA"), h_icon)
+        img.paste(icon, (int(x_text_start - icon.width - 25), int(Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2))), icon)
+        
+    curr_y = Y_BOTTOM_BASELINE - total_h_loc + int(s_lug * 1.1)
+    for l in lines_loc:
+        dibujar_texto_sombra(draw, l, x_text_start, curr_y, f_lugar, anchor="ls", offset=(3,3))
+        curr_y += int(s_lug * 1.1)
+
+    return img.convert("RGB")
+
 # ==============================================================================
 # 9. INTERFAZ DE USUARIO Y LOGICA PRINCIPAL
 # ==============================================================================
@@ -2941,9 +3090,9 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                 generated = {}
                 num_lg = len(rutas_logos)
                 
-                # ENRUTAMIENTO INTELIGENTE INCLUYENDO TIPO 6 (Variante 1 y 2)
+                # ENRUTAMIENTO INTELIGENTE INCLUYENDO TIPO 6 (Variantes 1, 2 y 3)
                 if num_lg >= 1 and not fecha2 and desc2:
-                    generated = {'t6_v1': generar_tipo_6_v1(datos), 't6_v2': generar_tipo_6_v2(datos)}
+                    generated = {'t6_v1': generar_tipo_6_v1(datos), 't6_v2': generar_tipo_6_v2(datos), 't6_v3': generar_tipo_6_v3(datos)}
                     tid = 6
                 elif num_lg >= 1 and not fecha2 and not desc2:
                     generated = {'t5_v1': generar_tipo_5_v1(datos), 't5_v2': generar_tipo_5_v2(datos), 't5_v3': generar_tipo_5_v3(datos), 't5_v4': generar_tipo_5_v4(datos)}
@@ -3046,4 +3195,3 @@ elif area_seleccionada == "Final":
                 if item.startswith("temp_") and item.endswith(".png"): 
                     os.remove(item)
             st.rerun()
-

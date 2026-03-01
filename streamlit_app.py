@@ -2495,7 +2495,7 @@ def generar_tipo_5_v4(datos):
 
 
 # ==============================================================================
-# NUEVO: 8. GENERADOR DE PLANTILLAS TIPO 6 (Logos, 2 Descripciones, 1 Fecha)
+# NUEVO: 8. GENERADORES DE PLANTILLA TIPO 6 (Logos, 2 Descripciones, 1 Fecha)
 # ==============================================================================
 
 def generar_tipo_6_v1(datos):
@@ -2580,11 +2580,11 @@ def generar_tipo_6_v1(datos):
     total_h_d2 = len(lines_d2) * int(s_desc2 * 1.1)
     y_desc2_top = y_box_top - 34 - total_h_d2
 
-    # Titulo (Centro) - Ajustado a 790 para 3 logos
+    # Titulo (Centro) - Ajustado a 790
     y_titulo = 790 
     dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
     
-    # 5. Descripcion 1 Centro
+    # 5. Descripcion 1 Centro (LOGICA ORIGINAL)
     chars_desc = len(datos['desc1'])
     if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
     elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
@@ -2649,6 +2649,7 @@ def generar_tipo_6_v1(datos):
 
     return img.convert("RGB")
 
+
 def generar_tipo_6_v2(datos):
     fondo = datos['fondo'].copy()
     W, H = 2400, 3000
@@ -2674,15 +2675,16 @@ def generar_tipo_6_v2(datos):
     f_mes_box = get_font("Canaro-Black.ttf", 170)
     f_dia_semana = get_font("Canaro-ExtraBold.ttf", 93)
 
-    # 1. LOGOS ARRIBA (Izquierda Prefectura, Derecha Colaborador)
+    # 1. LOGOS ARRIBA (Izquierda Prefectura, Derecha Colaborador con Margen Interno de 300px)
+    margin_logos_top = 300
     if os.path.exists("flyer_logo.png"):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
-        img.paste(logo, (SIDE_MARGIN, 150), logo)
+        img.paste(logo, (margin_logos_top, 150), logo)
 
     if datos.get('logos') and len(datos['logos']) > 0:
         try:
             collab_img = redimensionar_logo_colaborador(Image.open(datos['logos'][0]).convert("RGBA"))
-            x_collab = W - SIDE_MARGIN - collab_img.width
+            x_collab = W - margin_logos_top - collab_img.width
             y_collab = 150 + (378 - collab_img.height) // 2
             img.paste(collab_img, (int(x_collab), int(y_collab)), collab_img)
         except Exception as e: pass
@@ -3044,3 +3046,4 @@ elif area_seleccionada == "Final":
                 if item.startswith("temp_") and item.endswith(".png"): 
                     os.remove(item)
             st.rerun()
+

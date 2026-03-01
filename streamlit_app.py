@@ -2578,8 +2578,8 @@ def generar_tipo_6_v1(datos):
     total_h_d2 = len(lines_d2) * int(s_desc2 * 1.1)
     y_desc2_top = y_box_top - 34 - total_h_d2
 
-    # Titulo (Centro) (CORREGIDO A 850 PARA MANTENER LA ARMONÍA)
-    y_titulo = 850 
+    # Titulo (Centro) - Subido un "poquito" a 810 (antes 850) para que respire
+    y_titulo = 810 
     dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
     
     # 5. Descripcion 1 Centro (LOGICA ORIGINAL)
@@ -2901,3 +2901,4 @@ elif area_seleccionada == "Final":
                 if item.startswith("temp_") and item.endswith(".png"): 
                     os.remove(item)
             st.rerun()
+

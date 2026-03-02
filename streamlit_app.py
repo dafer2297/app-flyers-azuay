@@ -28,7 +28,6 @@ def set_design():
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
         font_css += "@font-face { font-family: 'Canaro'; src: url('data:font/ttf;base64," + font_b64 + "') format('truetype'); }\n"
 
-    # CSS Limpio: Sin alterar las cajas de texto nativas ni romper botones secundarios
     css_str = (
         "<style>\n"
         + ".stApp { " + bg_style + " }\n"
@@ -128,7 +127,7 @@ def calcular_fuente_dinamica(texto, font_file, size_start, max_w, max_h):
     return f_desc, wrap_text_pixel(texto, f_desc, max_w), 40
 
 # ==============================================================================
-# 3. GENERADORES DE PLANTILLAS TIPO 1 
+# 3. GENERADORES DE PLANTILLAS TIPO 1 (Recuadro Cuadrado - 144px gap)
 # ==============================================================================
 
 def generar_tipo_1(datos):
@@ -1002,7 +1001,7 @@ def generar_tipo_2_v4(datos):
         size_h = 68
     f_hora = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    total_h_date_block = h_caja + 144 # Matematica original
+    total_h_date_block = h_caja + 144
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
     # 3. Firma y Desc2 (Derecha)
@@ -1080,7 +1079,7 @@ def generar_tipo_2_v4(datos):
     return img.convert("RGB")
 
 # ==============================================================================
-# 5. GENERADORES DE PLANTILLAS TIPO 3 (Recuadro Largo)
+# 5. GENERADORES DE PLANTILLAS TIPO 3 (Recuadro Largo CORREGIDO - 72px gap)
 # ==============================================================================
 
 def generar_tipo_3_v1(datos):
@@ -1104,8 +1103,8 @@ def generar_tipo_3_v1(datos):
         draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
-    f_dias_largo = get_font("Canaro-Black.ttf", 150) # Fuente un poco mas grande
-    f_mes_largo = get_font("Canaro-Black.ttf", 120)  # Fuente un poco mas grande
+    f_dias_largo = get_font("Canaro-Black.ttf", 150)
+    f_mes_largo = get_font("Canaro-Black.ttf", 120)
 
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
@@ -1128,9 +1127,9 @@ def generar_tipo_3_v1(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Caja Larga Fecha (Izquierda, Ajustada a nuevo tamaño)
-    h_caja = 360 # Nuevo alto ajustado
-    w_caja = 800 # Nuevo ancho ajustado
+    # 2. Caja Larga Fecha (Izquierda, Ajustada)
+    h_caja = 360
+    w_caja = 800
     x_box = SIDE_MARGIN
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -1140,9 +1139,8 @@ def generar_tipo_3_v1(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Hereda la distancia exacta del cuadro cuadrado (h_caja original + 144)
-    # Como queremos la MISMA distancia visual al bottom, usamos la formula equivalente:
-    y_box_top = Y_BOTTOM_BASELINE - 144 - h_caja 
+    # REGLA DE DISTANCIA EXACTA PARA QUE SE ASIENTE IGUAL QUE EL CUADRADO
+    y_box_top = Y_BOTTOM_BASELINE - 72 - h_caja 
 
     # Titulo Centro
     y_titulo = 850
@@ -1180,7 +1178,7 @@ def generar_tipo_3_v1(datos):
     draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
 
-    y_hora = y_box_top + h_caja + 72 # Misma distancia a la hora
+    y_hora = y_box_top + h_caja + 72
     dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
 
     # Dibujar Ubicacion Derecha
@@ -1251,8 +1249,8 @@ def generar_tipo_3_v2(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Heredando matemática de distancia del cuadrado (144px del texto inferior)
-    total_h_date_block = h_caja + 144
+    # DISTANCIA EXACTA APILADA
+    total_h_date_block = h_caja + 72
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
     # Titulo Centro
@@ -1356,8 +1354,8 @@ def generar_tipo_3_v3(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Matematica de distancia exacta
-    y_box_top = Y_BOTTOM_BASELINE - 144 - h_caja
+    # DISTANCIA EXACTA BASE
+    y_box_top = Y_BOTTOM_BASELINE - 72 - h_caja
 
     # Titulo (Izquierda)
     y_titulo = 850 
@@ -1464,8 +1462,8 @@ def generar_tipo_3_v4(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Matematica de distancia exacta
-    total_h_date_block = h_caja + 144
+    # DISTANCIA EXACTA APILADA
+    total_h_date_block = h_caja + 72
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
     # Titulo (Izquierda)
@@ -1570,8 +1568,8 @@ def generar_tipo_4_v1(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Hereda distancia exacta
-    y_box_top = Y_BOTTOM_BASELINE - 144 - h_caja
+    # Hereda distancia exacta (misma base que el cuadrado)
+    y_box_top = Y_BOTTOM_BASELINE - 72 - h_caja
 
     # Descripcion 2 (Izquierda, arriba de Caja)
     desc2 = datos.get('desc2', "")
@@ -1688,8 +1686,8 @@ def generar_tipo_4_v2(datos):
         size_h = 68
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Hereda la distancia exacta del cuadrado
-    total_h_date_block = h_caja + 144
+    # Hereda la distancia exacta (solo sumamos 72 para la hora debajo del recuadro largo)
+    total_h_date_block = h_caja + 72
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
     # Firma y Desc2 (Derecha)
@@ -1817,7 +1815,7 @@ def generar_tipo_4_v3(datos):
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
     # Hereda distancia
-    y_box_top = Y_BOTTOM_BASELINE - 144 - h_caja
+    y_box_top = Y_BOTTOM_BASELINE - 72 - h_caja
 
     # Descripcion 2 (Izquierda, arriba caja)
     desc2 = datos.get('desc2', "")
@@ -1941,7 +1939,7 @@ def generar_tipo_4_v4(datos):
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
     # Hereda distancia del cuadrado
-    total_h_date_block = h_caja + 144
+    total_h_date_block = h_caja + 72
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
     # Firma (Derecha)
@@ -2075,6 +2073,7 @@ def generar_tipo_5_v1(datos):
         size_h = 68 
     f_hora = get_font("Canaro-ExtraBold.ttf", size_h)
 
+    # Matematicas del recuadro cuadrado: + 144 por el texto de hora y dia
     total_h_date_block = h_caja + 144
     y_box_top = y_logo_collab_top - GAP_COLLAB_BOX - total_h_date_block
 
@@ -2082,7 +2081,7 @@ def generar_tipo_5_v1(datos):
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
     
-    # 3. Descripcion 1 Centro (LOGICA ORIGINAL)
+    # 3. Descripcion 1 Centro
     chars_desc = len(datos['desc1'])
     if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
     elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
@@ -2331,7 +2330,7 @@ def generar_tipo_5_v3(datos):
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 900px)
+    # 3. Descripcion 1 (DINAMICA, Izquierda)
     limit_y = min(y_box_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -2584,7 +2583,7 @@ def generar_tipo_6_v1(datos):
     total_h_d2 = len(lines_d2) * int(s_desc2 * 1.1)
     y_desc2_top = y_box_top - 34 - total_h_d2
 
-    # Titulo (Centro) - Ajustado a 790
+    # Titulo (Centro)
     y_titulo = 790 
     dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
     
@@ -3085,9 +3084,8 @@ def generar_tipo_6_v4(datos):
 
     return img.convert("RGB")
 
-
 # ==============================================================================
-# 9. GENERADORES DE PLANTILLAS TIPO 7 (1 Logo Collab, 2 Fechas, Sin Desc 2)
+# 9. GENERADORES DE PLANTILLAS TIPO 7 (Recuadro Largo Corregido - 72px gap)
 # ==============================================================================
 
 def generar_tipo_7_v1(datos):
@@ -3157,8 +3155,8 @@ def generar_tipo_7_v1(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Heredando distancias
-    h_caja_block = h_caja + 144
+    # Corrección de distancia para heredar el mismo baseline
+    h_caja_block = h_caja + 72
     y_box_top = y_logo_collab_top - GAP_COLLAB_BOX - h_caja_block
 
     # Titulo Centro
@@ -3269,7 +3267,8 @@ def generar_tipo_7_v2(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    total_h_date_block = h_caja + 144
+    # Correccion de distancia
+    total_h_date_block = h_caja + 72
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
     # Firma (Derecha)
@@ -3399,8 +3398,9 @@ def generar_tipo_7_v3(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    total_h_date_block = h_caja + 144
-    y_box_top = y_logo_collab_top - GAP_COLLAB_BOX - total_h_date_block
+    # Corrección de distancia
+    h_caja_block = h_caja + 72
+    y_box_top = y_logo_collab_top - GAP_COLLAB_BOX - h_caja_block
 
     # Titulo (Izquierda)
     y_titulo = 780 
@@ -3516,7 +3516,8 @@ def generar_tipo_7_v4(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    total_h_date_block = h_caja + 144
+    # Corrección de distancia
+    total_h_date_block = h_caja + 72
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
     # Firma (Derecha)
@@ -3726,6 +3727,9 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                 generated = {}
                 num_lg = len(rutas_logos)
                 
+                # ==========================================
+                # ENRUTAMIENTO INTELIGENTE ACTUALIZADO
+                # ==========================================
                 if num_lg >= 1 and fecha2 and not desc2:
                     generated = {'t7_v1': generar_tipo_7_v1(datos), 't7_v2': generar_tipo_7_v2(datos), 't7_v3': generar_tipo_7_v3(datos), 't7_v4': generar_tipo_7_v4(datos)}
                     tid = 7

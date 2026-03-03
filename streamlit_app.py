@@ -28,6 +28,7 @@ def set_design():
         font_b64 = get_base64_of_bin_file("Canaro-Black.ttf")
         font_css += "@font-face { font-family: 'Canaro'; src: url('data:font/ttf;base64," + font_b64 + "') format('truetype'); }\n"
 
+    # CSS Limpio
     css_str = (
         "<style>\n"
         + ".stApp { " + bg_style + " }\n"
@@ -127,7 +128,7 @@ def calcular_fuente_dinamica(texto, font_file, size_start, max_w, max_h):
     return f_desc, wrap_text_pixel(texto, f_desc, max_w), 40
 
 # ==============================================================================
-# 3. GENERADORES DE PLANTILLAS TIPO 1 (Recuadro Cuadrado - 144px gap)
+# 3. GENERADORES DE PLANTILLAS TIPO 1 
 # ==============================================================================
 
 def generar_tipo_1(datos):
@@ -500,7 +501,7 @@ def generar_tipo_1_v4(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Calculo Caja (Apilada EXACTAMENTE a 100px)
+    # 2. Calculo Caja (Apilada)
     GAP_LOC_BOX = 100
     h_caja = 548
     w_caja = 548
@@ -566,7 +567,7 @@ def generar_tipo_1_v4(datos):
 
     return img.convert("RGB")
 # ==============================================================================
-# 4. GENERADORES DE PLANTILLAS TIPO 2
+# 4. GENERADORES DE PLANTILLAS TIPO 2 (Recuadro Cuadrado)
 # ==============================================================================
 
 def generar_tipo_2_v1(datos):
@@ -1079,7 +1080,7 @@ def generar_tipo_2_v4(datos):
     return img.convert("RGB")
 
 # ==============================================================================
-# 5. GENERADORES DE PLANTILLAS TIPO 3 (Recuadro Largo CORREGIDO - 72px gap)
+# 5. GENERADORES DE PLANTILLAS TIPO 3 (Recuadro Largo Dinámico con Gap Corregido)
 # ==============================================================================
 
 def generar_tipo_3_v1(datos):
@@ -1103,8 +1104,8 @@ def generar_tipo_3_v1(datos):
         draw = ImageDraw.Draw(img)
 
     f_invita = get_font("Canaro-Bold.ttf", 220) 
-    f_dias_largo = get_font("Canaro-Black.ttf", 150)
-    f_mes_largo = get_font("Canaro-Black.ttf", 120)
+    f_dias_largo = get_font("Canaro-Black.ttf", 150) 
+    f_mes_largo = get_font("Canaro-Black.ttf", 120)  
 
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
@@ -1127,9 +1128,17 @@ def generar_tipo_3_v1(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Caja Larga Fecha (Izquierda, Ajustada)
-    h_caja = 360
-    w_caja = 800
+    # 2. Caja Larga Fecha (Izquierda, Ancho Dinámico)
+    dia1 = datos['fecha1'].day
+    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
+    texto_dias = f"{dia1} al {dia2}"
+
+    w_txt_dias = get_text_width(f_dias_largo, texto_dias)
+    w_txt_mes = get_text_width(f_mes_largo, mes_nombre)
+    
+    w_caja = max(600, int(max(w_txt_dias, w_txt_mes) + 200)) # Ancho dinamico con padding
+    h_caja = 360 
     x_box = SIDE_MARGIN
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -1139,7 +1148,7 @@ def generar_tipo_3_v1(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # REGLA DE DISTANCIA EXACTA PARA QUE SE ASIENTE IGUAL QUE EL CUADRADO
+    # HEREDANDO DISTANCIA BASE EXACTA DEL CUADRADO (- 72 - hcaja)
     y_box_top = Y_BOTTOM_BASELINE - 72 - h_caja 
 
     # Titulo Centro
@@ -1159,9 +1168,10 @@ def generar_tipo_3_v1(datos):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
         y_desc += int(size_desc_val * 1.1)
 
-    # Dibujar Caja Larga
+    # Dibujar Caja Larga (Estirada dinámicamente)
     if os.path.exists("flyer_caja_fecha_larga.png"):
-        caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
+        caja_orig = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+        caja = caja_orig.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box_top)), caja)
         color_fecha = "white"
     else:
@@ -1170,15 +1180,11 @@ def generar_tipo_3_v1(datos):
 
     cx = x_box + (w_caja / 2)
     cy = y_box_top + (h_caja / 2)
-    dia1 = datos['fecha1'].day
-    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    texto_dias = f"{dia1} al {dia2}"
     
     draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
 
-    y_hora = y_box_top + h_caja + 72
+    y_hora = y_box_top + h_caja + 72 
     dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
 
     # Dibujar Ubicacion Derecha
@@ -1236,10 +1242,17 @@ def generar_tipo_3_v2(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Caja Larga Fecha (Izquierda, Apilada 100px)
-    GAP_LOC_BOX = 100
+    # 2. Caja Larga Fecha (Izquierda, Ancho Dinámico, Apilada 100px)
+    dia1 = datos['fecha1'].day
+    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
+    texto_dias = f"{dia1} al {dia2}"
+
+    w_txt_dias = get_text_width(f_dias_largo, texto_dias)
+    w_txt_mes = get_text_width(f_mes_largo, mes_nombre)
+    
+    w_caja = max(600, int(max(w_txt_dias, w_txt_mes) + 200))
     h_caja = 360
-    w_caja = 800
     x_box = SIDE_MARGIN
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -1250,6 +1263,7 @@ def generar_tipo_3_v2(datos):
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
     # DISTANCIA EXACTA APILADA
+    GAP_LOC_BOX = 100
     total_h_date_block = h_caja + 72
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
@@ -1282,9 +1296,10 @@ def generar_tipo_3_v2(datos):
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y_loc, f_lugar, anchor="ls", offset=(3,3))
         curr_y_loc += int(s_lug * 1.1)
 
-    # Dibujar Caja Larga
+    # Dibujar Caja Larga (Estirada dinámicamente)
     if os.path.exists("flyer_caja_fecha_larga.png"):
-        caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
+        caja_orig = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+        caja = caja_orig.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box_top)), caja)
         color_fecha = "white"
     else:
@@ -1293,15 +1308,11 @@ def generar_tipo_3_v2(datos):
 
     cx = x_box + (w_caja / 2)
     cy = y_box_top + (h_caja / 2)
-    dia1 = datos['fecha1'].day
-    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    texto_dias = f"{dia1} al {dia2}"
     
     draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
 
-    y_hora = y_box_top + h_caja + 72
+    y_hora = y_box_top + h_caja + 72 
     dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
 
     return img.convert("RGB")
@@ -1342,9 +1353,17 @@ def generar_tipo_3_v3(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha Larga (Izquierda Fija)
+    # Caja Fecha Larga (Izquierda Fija, Ancho Dinámico)
+    dia1 = datos['fecha1'].day
+    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
+    texto_dias = f"{dia1} al {dia2}"
+
+    w_txt_dias = get_text_width(f_dias_largo, texto_dias)
+    w_txt_mes = get_text_width(f_mes_largo, mes_nombre)
+    
+    w_caja = max(600, int(max(w_txt_dias, w_txt_mes) + 200))
     h_caja = 360
-    w_caja = 800
     x_box = SIDE_MARGIN
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -1374,7 +1393,8 @@ def generar_tipo_3_v3(datos):
 
     # Dibujar Caja
     if os.path.exists("flyer_caja_fecha_larga.png"):
-        caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
+        caja_orig = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+        caja = caja_orig.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box_top)), caja)
         color_fecha = "white"
     else:
@@ -1383,10 +1403,6 @@ def generar_tipo_3_v3(datos):
 
     cx = x_box + (w_caja / 2)
     cy = y_box_top + (h_caja / 2)
-    dia1 = datos['fecha1'].day
-    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    texto_dias = f"{dia1} al {dia2}"
     
     draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
@@ -1449,10 +1465,17 @@ def generar_tipo_3_v4(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Caja Larga Fecha (Izquierda, Apilada 100px)
-    GAP_LOC_BOX = 100
+    # 2. Caja Larga Fecha (Izquierda, Ancho Dinámico, Apilada 100px)
+    dia1 = datos['fecha1'].day
+    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
+    texto_dias = f"{dia1} al {dia2}"
+
+    w_txt_dias = get_text_width(f_dias_largo, texto_dias)
+    w_txt_mes = get_text_width(f_mes_largo, mes_nombre)
+    
+    w_caja = max(600, int(max(w_txt_dias, w_txt_mes) + 200))
     h_caja = 360
-    w_caja = 800
     x_box = SIDE_MARGIN
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -1463,6 +1486,7 @@ def generar_tipo_3_v4(datos):
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
     # DISTANCIA EXACTA APILADA
+    GAP_LOC_BOX = 100
     total_h_date_block = h_caja + 72
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
@@ -1495,7 +1519,8 @@ def generar_tipo_3_v4(datos):
 
     # Dibujar Caja
     if os.path.exists("flyer_caja_fecha_larga.png"):
-        caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
+        caja_orig = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+        caja = caja_orig.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box_top)), caja)
         color_fecha = "white"
     else:
@@ -1504,10 +1529,6 @@ def generar_tipo_3_v4(datos):
 
     cx = x_box + (w_caja / 2)
     cy = y_box_top + (h_caja / 2)
-    dia1 = datos['fecha1'].day
-    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    texto_dias = f"{dia1} al {dia2}"
     
     draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
@@ -1556,9 +1577,17 @@ def generar_tipo_4_v1(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha Larga (Izquierda Fija)
-    h_caja = 360
-    w_caja = 800 
+    # 2. Caja Fecha Larga (Izquierda Fija, Ancho Dinámico)
+    dia1 = datos['fecha1'].day
+    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
+    texto_dias = f"{dia1} al {dia2}"
+
+    w_txt_dias = get_text_width(f_dias_largo, texto_dias)
+    w_txt_mes = get_text_width(f_mes_largo, mes_nombre)
+    
+    w_caja = max(600, int(max(w_txt_dias, w_txt_mes) + 200))
+    h_caja = 360 
     x_box = SIDE_MARGIN
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -1568,7 +1597,7 @@ def generar_tipo_4_v1(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Hereda distancia exacta (misma base que el cuadrado)
+    # Hereda distancia exacta
     y_box_top = Y_BOTTOM_BASELINE - 72 - h_caja
 
     # Descripcion 2 (Izquierda, arriba de Caja)
@@ -1605,7 +1634,8 @@ def generar_tipo_4_v1(datos):
 
     # Dibujar Caja
     if os.path.exists("flyer_caja_fecha_larga.png"):
-        caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
+        caja_orig = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+        caja = caja_orig.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box_top)), caja)
         color_fecha = "white"
     else:
@@ -1614,10 +1644,6 @@ def generar_tipo_4_v1(datos):
 
     cx = x_box + (w_caja / 2)
     cy = y_box_top + (h_caja / 2)
-    dia1 = datos['fecha1'].day
-    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    texto_dias = f"{dia1} al {dia2}"
     
     draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
@@ -1673,10 +1699,17 @@ def generar_tipo_4_v2(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Caja Fecha Larga (Izquierda, Apilada 100px)
-    GAP_LOC_BOX = 100
+    # 2. Caja Larga Fecha (Izquierda, Ancho Dinámico, Apilada 100px)
+    dia1 = datos['fecha1'].day
+    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
+    texto_dias = f"{dia1} al {dia2}"
+
+    w_txt_dias = get_text_width(f_dias_largo, texto_dias)
+    w_txt_mes = get_text_width(f_mes_largo, mes_nombre)
+    
+    w_caja = max(600, int(max(w_txt_dias, w_txt_mes) + 200))
     h_caja = 360
-    w_caja = 800
     x_box = SIDE_MARGIN
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -1686,7 +1719,8 @@ def generar_tipo_4_v2(datos):
         size_h = 68
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Hereda la distancia exacta (solo sumamos 72 para la hora debajo del recuadro largo)
+    # Hereda la distancia exacta 
+    GAP_LOC_BOX = 100
     total_h_date_block = h_caja + 72
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
@@ -1744,7 +1778,8 @@ def generar_tipo_4_v2(datos):
 
     # Dibujar Caja
     if os.path.exists("flyer_caja_fecha_larga.png"):
-        caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
+        caja_orig = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+        caja = caja_orig.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box_top)), caja)
         color_fecha = "white"
     else:
@@ -1753,10 +1788,6 @@ def generar_tipo_4_v2(datos):
 
     cx = x_box + (w_caja / 2)
     cy = y_box_top + (h_caja / 2)
-    dia1 = datos['fecha1'].day
-    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    texto_dias = f"{dia1} al {dia2}"
     
     draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
@@ -1802,9 +1833,17 @@ def generar_tipo_4_v3(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Caja Fecha Larga (Izquierda Fija)
+    # 2. Caja Fecha Larga (Izquierda Fija, Ancho Dinámico)
+    dia1 = datos['fecha1'].day
+    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
+    texto_dias = f"{dia1} al {dia2}"
+
+    w_txt_dias = get_text_width(f_dias_largo, texto_dias)
+    w_txt_mes = get_text_width(f_mes_largo, mes_nombre)
+    
+    w_caja = max(600, int(max(w_txt_dias, w_txt_mes) + 200))
     h_caja = 360
-    w_caja = 800
     x_box = SIDE_MARGIN
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -1849,7 +1888,8 @@ def generar_tipo_4_v3(datos):
 
     # Dibujar Caja
     if os.path.exists("flyer_caja_fecha_larga.png"):
-        caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
+        caja_orig = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+        caja = caja_orig.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box_top)), caja)
         color_fecha = "white"
     else:
@@ -1858,10 +1898,6 @@ def generar_tipo_4_v3(datos):
 
     cx = x_box + (w_caja / 2)
     cy = y_box_top + (h_caja / 2)
-    dia1 = datos['fecha1'].day
-    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    texto_dias = f"{dia1} al {dia2}"
     
     draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
@@ -1925,10 +1961,17 @@ def generar_tipo_4_v4(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Caja Larga Fecha (Izquierda, Apilada 100px)
-    GAP_LOC_BOX = 100
+    # 2. Caja Larga Fecha (Izquierda, Ancho Dinámico, Apilada 100px)
+    dia1 = datos['fecha1'].day
+    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
+    texto_dias = f"{dia1} al {dia2}"
+
+    w_txt_dias = get_text_width(f_dias_largo, texto_dias)
+    w_txt_mes = get_text_width(f_mes_largo, mes_nombre)
+    
+    w_caja = max(600, int(max(w_txt_dias, w_txt_mes) + 200))
     h_caja = 360
-    w_caja = 800
     x_box = SIDE_MARGIN
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
@@ -1939,6 +1982,7 @@ def generar_tipo_4_v4(datos):
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
     # Hereda distancia del cuadrado
+    GAP_LOC_BOX = 100
     total_h_date_block = h_caja + 72
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
@@ -1978,7 +2022,8 @@ def generar_tipo_4_v4(datos):
 
     # Dibujar Caja
     if os.path.exists("flyer_caja_fecha_larga.png"):
-        caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
+        caja_orig = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+        caja = caja_orig.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box_top)), caja)
         color_fecha = "white"
     else:
@@ -1987,10 +2032,6 @@ def generar_tipo_4_v4(datos):
 
     cx = x_box + (w_caja / 2)
     cy = y_box_top + (h_caja / 2)
-    dia1 = datos['fecha1'].day
-    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    texto_dias = f"{dia1} al {dia2}"
     
     draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
     draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
@@ -2073,7 +2114,6 @@ def generar_tipo_5_v1(datos):
         size_h = 68 
     f_hora = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Matematicas del recuadro cuadrado: + 144 por el texto de hora y dia
     total_h_date_block = h_caja + 144
     y_box_top = y_logo_collab_top - GAP_COLLAB_BOX - total_h_date_block
 
@@ -2081,7 +2121,7 @@ def generar_tipo_5_v1(datos):
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
     
-    # 3. Descripcion 1 Centro
+    # 3. Descripcion 1 Centro (LOGICA ORIGINAL)
     chars_desc = len(datos['desc1'])
     if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
     elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
@@ -2330,7 +2370,7 @@ def generar_tipo_5_v3(datos):
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 900px)
     limit_y = min(y_box_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -2444,7 +2484,7 @@ def generar_tipo_5_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda)
+    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 900)
     limit_y = min(y_box_top, y_firma_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -2691,7 +2731,7 @@ def generar_tipo_6_v2(datos):
             img.paste(collab_img, (int(x_collab), int(y_collab)), collab_img)
         except Exception as e: pass
 
-    # 2. Calculo Exacto Ubicacion (Izquierda Abajo)
+    # 2. Calculo Exacto Ubicacion (Izquierda)
     lugar = datos['lugar']
     s_lug = 61 if len(lugar) < 45 else 51
     f_lugar = get_font("Canaro-Medium.ttf", s_lug)
@@ -2703,7 +2743,7 @@ def generar_tipo_6_v2(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 3. Calculo Caja (Apilada a 100px sobre ubicacion)
+    # 3. Calculo Caja (Apilada a 100px)
     GAP_LOC_BOX = 100
     h_caja = 548
     w_caja = 548
@@ -2743,7 +2783,7 @@ def generar_tipo_6_v2(datos):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
         y_desc += int(size_desc_val * 1.1)
 
-    # Dibujar Desc2 (Sobre la firma)
+    # Dibujar Desc2
     if desc2 and firma:
         cx_firma = W - SIDE_MARGIN - (firma.width // 2) - 60
         y_cursor_d2 = y_desc2_top + int(s_desc2 * 1.1) / 2
@@ -2763,7 +2803,7 @@ def generar_tipo_6_v2(datos):
         dibujar_texto_sombra(draw, l, x_txt_start, curr_y, f_lugar, anchor="ls", offset=(3,3))
         curr_y += int(s_lug * 1.1)
 
-    # Dibujar Caja 
+    # Dibujar Caja
     if os.path.exists("flyer_caja_fecha.png"):
         caja = resize_por_alto(Image.open("flyer_caja_fecha.png").convert("RGBA"), h_caja)
         img.paste(caja, (x_box, int(y_box_top)), caja)
@@ -2994,7 +3034,7 @@ def generar_tipo_6_v4(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 3. Calculo Caja Fecha (Apilada a 100px)
+    # 3. Calculo Caja Fecha (Apilada)
     GAP_LOC_BOX = 100
     h_caja = 548
     w_caja = 548
@@ -3010,7 +3050,7 @@ def generar_tipo_6_v4(datos):
     total_h_date_block = h_caja + 144
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
-    # 4. Firma y Desc2 (Derecha flotando arriba)
+    # 4. Firma y Desc2 (Derecha)
     y_firma_top = Y_BOTTOM_BASELINE
     firma = None
     if os.path.exists("flyer_firma.png"):
@@ -3085,7 +3125,7 @@ def generar_tipo_6_v4(datos):
     return img.convert("RGB")
 
 # ==============================================================================
-# 9. GENERADORES DE PLANTILLAS TIPO 7 (Recuadro Largo Corregido - 72px gap)
+# NUEVO: 9. GENERADORES DE PLANTILLAS TIPO 7 (Caja Larga Dinámica y Logo Centrado)
 # ==============================================================================
 
 def generar_tipo_7_v1(datos):
@@ -3132,21 +3172,18 @@ def generar_tipo_7_v1(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Logo Colaborador (Abajo a la Izquierda)
-    collab_img = None
-    y_logo_collab_top = Y_BOTTOM_BASELINE
-    if datos.get('logos') and len(datos['logos']) > 0:
-        try:
-            collab_img = redimensionar_logo_colaborador(Image.open(datos['logos'][0]).convert("RGBA"))
-            y_logo_collab_top = Y_BOTTOM_BASELINE - collab_img.height
-            img.paste(collab_img, (SIDE_MARGIN, int(y_logo_collab_top)), collab_img)
-        except Exception as e: pass
+    # 2. Caja Fecha Larga (Izquierda, Ancho Dinamico)
+    dia1 = datos['fecha1'].day
+    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
+    texto_dias = f"{dia1} al {dia2}"
 
-    # 2. Caja Fecha Larga (Izquierda, Apilada sobre el logo colaborador)
-    GAP_COLLAB_BOX = 100
+    w_txt_dias = get_text_width(f_dias_largo, texto_dias)
+    w_txt_mes = get_text_width(f_mes_largo, mes_nombre)
+    w_caja = max(600, int(max(w_txt_dias, w_txt_mes) + 200))
     h_caja = 360
-    w_caja = 800
     x_box = SIDE_MARGIN
+    cx_box = x_box + (w_caja / 2) # Centro exacto de la caja
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
     size_h = 93 
@@ -3155,7 +3192,19 @@ def generar_tipo_7_v1(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Corrección de distancia para heredar el mismo baseline
+    # 3. Logo Colaborador (Abajo a la Izquierda, CENTRADO a la caja)
+    collab_img = None
+    y_logo_collab_top = Y_BOTTOM_BASELINE
+    if datos.get('logos') and len(datos['logos']) > 0:
+        try:
+            collab_img = redimensionar_logo_colaborador(Image.open(datos['logos'][0]).convert("RGBA"))
+            y_logo_collab_top = Y_BOTTOM_BASELINE - collab_img.height
+            x_collab = int(cx_box - (collab_img.width / 2)) # Alineado al centro de la caja
+            img.paste(collab_img, (x_collab, int(y_logo_collab_top)), collab_img)
+        except Exception as e: pass
+
+    # Altura apilada heredando matematica original
+    GAP_COLLAB_BOX = 100
     h_caja_block = h_caja + 72
     y_box_top = y_logo_collab_top - GAP_COLLAB_BOX - h_caja_block
 
@@ -3163,7 +3212,7 @@ def generar_tipo_7_v1(datos):
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
     
-    # 3. Descripcion 1 Centro
+    # Descripcion 1 Centro
     chars_desc = len(datos['desc1'])
     if chars_desc <= 75: size_desc_val = 110; wrap_width = 35
     elif chars_desc <= 120: size_desc_val = 90; wrap_width = 45
@@ -3176,27 +3225,22 @@ def generar_tipo_7_v1(datos):
         dibujar_texto_sombra(draw, line, W/2, y_desc, f_desc, offset=(8,8))
         y_desc += int(size_desc_val * 1.1)
 
-    # Dibujar Caja Larga
+    # Dibujar Caja Larga Dinamica
     if os.path.exists("flyer_caja_fecha_larga.png"):
-        caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
+        caja_orig = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+        caja = caja_orig.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box_top)), caja)
         color_fecha = "white"
     else:
         draw.rectangle([x_box, y_box_top, x_box+w_caja, y_box_top+h_caja], fill="white")
         color_fecha = "black"
 
-    cx = x_box + (w_caja / 2)
     cy = y_box_top + (h_caja / 2)
-    dia1 = datos['fecha1'].day
-    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    texto_dias = f"{dia1} al {dia2}"
-    
-    draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
-    draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
+    draw.text((cx_box, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
+    draw.text((cx_box, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
 
     y_hora = y_box_top + h_caja + 72
-    dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx_box, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
 
     # Dibujar Ubicacion
     x_txt_anchor = W - SIDE_MARGIN
@@ -3234,6 +3278,7 @@ def generar_tipo_7_v2(datos):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
         img.paste(logo, (margin_logos_top, 150), logo)
 
+    # En V2 el logo de colaborador va arriba a la derecha (no afecta la caja de fecha abajo)
     if datos.get('logos') and len(datos['logos']) > 0:
         try:
             collab_img = redimensionar_logo_colaborador(Image.open(datos['logos'][0]).convert("RGBA"))
@@ -3254,11 +3299,18 @@ def generar_tipo_7_v2(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Caja Fecha Larga (Apilada 100px arriba de Ubicacion)
-    GAP_LOC_BOX = 100
+    # 2. Caja Fecha Larga (Ancho Dinamico, Apilada sobre Ubicacion)
+    dia1 = datos['fecha1'].day
+    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
+    texto_dias = f"{dia1} al {dia2}"
+
+    w_txt_dias = get_text_width(f_dias_largo, texto_dias)
+    w_txt_mes = get_text_width(f_mes_largo, mes_nombre)
+    w_caja = max(600, int(max(w_txt_dias, w_txt_mes) + 200))
     h_caja = 360
-    w_caja = 800
     x_box = SIDE_MARGIN
+    cx_box = x_box + (w_caja / 2)
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
     size_h = 93 
@@ -3267,7 +3319,7 @@ def generar_tipo_7_v2(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Correccion de distancia
+    GAP_LOC_BOX = 100
     total_h_date_block = h_caja + 72
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
@@ -3309,25 +3361,20 @@ def generar_tipo_7_v2(datos):
 
     # Dibujar Caja
     if os.path.exists("flyer_caja_fecha_larga.png"):
-        caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
+        caja_orig = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+        caja = caja_orig.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box_top)), caja)
         color_fecha = "white"
     else:
         draw.rectangle([x_box, y_box_top, x_box+w_caja, y_box_top+h_caja], fill="white")
         color_fecha = "black"
 
-    cx = x_box + (w_caja / 2)
     cy = y_box_top + (h_caja / 2)
-    dia1 = datos['fecha1'].day
-    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    texto_dias = f"{dia1} al {dia2}"
-    
-    draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
-    draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
+    draw.text((cx_box, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
+    draw.text((cx_box, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
 
     y_hora = y_box_top + h_caja + 72
-    dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx_box, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
 
     return img.convert("RGB")
 
@@ -3375,21 +3422,18 @@ def generar_tipo_7_v3(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # Logo Colaborador (Abajo Izquierda)
-    collab_img = None
-    y_logo_collab_top = Y_BOTTOM_BASELINE
-    if datos.get('logos') and len(datos['logos']) > 0:
-        try:
-            collab_img = redimensionar_logo_colaborador(Image.open(datos['logos'][0]).convert("RGBA"))
-            y_logo_collab_top = Y_BOTTOM_BASELINE - collab_img.height
-            img.paste(collab_img, (SIDE_MARGIN, int(y_logo_collab_top)), collab_img)
-        except Exception as e: pass
+    # 2. Caja Fecha Larga (Ancho Dinamico)
+    dia1 = datos['fecha1'].day
+    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
+    texto_dias = f"{dia1} al {dia2}"
 
-    # Caja Fecha (Izquierda, Apilada 100px sobre el logo colaborador)
-    GAP_COLLAB_BOX = 100
+    w_txt_dias = get_text_width(f_dias_largo, texto_dias)
+    w_txt_mes = get_text_width(f_mes_largo, mes_nombre)
+    w_caja = max(600, int(max(w_txt_dias, w_txt_mes) + 200))
     h_caja = 360
-    w_caja = 800
     x_box = SIDE_MARGIN
+    cx_box = x_box + (w_caja / 2)
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
     size_h = 93 
@@ -3398,7 +3442,18 @@ def generar_tipo_7_v3(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Corrección de distancia
+    # Logo Colaborador (Abajo Izquierda, CENTRADO)
+    collab_img = None
+    y_logo_collab_top = Y_BOTTOM_BASELINE
+    if datos.get('logos') and len(datos['logos']) > 0:
+        try:
+            collab_img = redimensionar_logo_colaborador(Image.open(datos['logos'][0]).convert("RGBA"))
+            y_logo_collab_top = Y_BOTTOM_BASELINE - collab_img.height
+            x_collab = int(cx_box - (collab_img.width / 2)) # Centrado a la caja
+            img.paste(collab_img, (x_collab, int(y_logo_collab_top)), collab_img)
+        except Exception as e: pass
+
+    GAP_COLLAB_BOX = 100
     h_caja_block = h_caja + 72
     y_box_top = y_logo_collab_top - GAP_COLLAB_BOX - h_caja_block
 
@@ -3406,7 +3461,7 @@ def generar_tipo_7_v3(datos):
     y_titulo = 780 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 900px)
+    # 3. Descripcion 1 
     limit_y = min(y_box_top, y_loc_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -3419,25 +3474,20 @@ def generar_tipo_7_v3(datos):
 
     # Dibujar Caja
     if os.path.exists("flyer_caja_fecha_larga.png"):
-        caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
+        caja_orig = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+        caja = caja_orig.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box_top)), caja)
         color_fecha = "white"
     else:
         draw.rectangle([x_box, y_box_top, x_box+w_caja, y_box_top+h_caja], fill="white")
         color_fecha = "black"
 
-    cx = x_box + (w_caja / 2)
     cy = y_box_top + (h_caja / 2)
-    dia1 = datos['fecha1'].day
-    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    texto_dias = f"{dia1} al {dia2}"
-    
-    draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
-    draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
+    draw.text((cx_box, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
+    draw.text((cx_box, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
 
     y_hora = y_box_top + h_caja + 72
-    dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx_box, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
 
     # Dibujar Ubicacion
     x_txt_anchor = W - SIDE_MARGIN
@@ -3503,11 +3553,18 @@ def generar_tipo_7_v4(datos):
     y_loc_icon_top = Y_BOTTOM_BASELINE - (total_h_loc/2) - (h_icon/2)
     y_loc_top = min(y_loc_text_top, y_loc_icon_top)
 
-    # 2. Caja Fecha (Apilada 100px arriba)
-    GAP_LOC_BOX = 100
+    # 2. Caja Fecha Larga (Ancho Dinamico, Apilada arriba Ubicacion)
+    dia1 = datos['fecha1'].day
+    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
+    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
+    texto_dias = f"{dia1} al {dia2}"
+
+    w_txt_dias = get_text_width(f_dias_largo, texto_dias)
+    w_txt_mes = get_text_width(f_mes_largo, mes_nombre)
+    w_caja = max(600, int(max(w_txt_dias, w_txt_mes) + 200))
     h_caja = 360
-    w_caja = 800
     x_box = SIDE_MARGIN
+    cx_box = x_box + (w_caja / 2)
     
     str_hora = datos['hora1'].strftime('%H:%M %p')
     size_h = 93 
@@ -3516,7 +3573,7 @@ def generar_tipo_7_v4(datos):
         size_h = 68 
     f_hora_dyn = get_font("Canaro-ExtraBold.ttf", size_h)
 
-    # Corrección de distancia
+    GAP_LOC_BOX = 100
     total_h_date_block = h_caja + 72
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
@@ -3531,7 +3588,7 @@ def generar_tipo_7_v4(datos):
     y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
     
-    # 3. Descripcion 1 (DINAMICA, Izquierda, Max Ancho 900)
+    # 3. Descripcion 1 
     limit_y = min(y_box_top, y_firma_top) - 50
     y_start_desc1 = y_titulo + 150
     max_h_desc1 = limit_y - y_start_desc1
@@ -3556,25 +3613,20 @@ def generar_tipo_7_v4(datos):
 
     # Dibujar Caja
     if os.path.exists("flyer_caja_fecha_larga.png"):
-        caja = resize_por_alto(Image.open("flyer_caja_fecha_larga.png").convert("RGBA"), h_caja)
+        caja_orig = Image.open("flyer_caja_fecha_larga.png").convert("RGBA")
+        caja = caja_orig.resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(caja, (x_box, int(y_box_top)), caja)
         color_fecha = "white"
     else:
         draw.rectangle([x_box, y_box_top, x_box+w_caja, y_box_top+h_caja], fill="white")
         color_fecha = "black"
 
-    cx = x_box + (w_caja / 2)
     cy = y_box_top + (h_caja / 2)
-    dia1 = datos['fecha1'].day
-    dia2 = datos['fecha2'].day if datos['fecha2'] else dia1
-    mes_nombre = obtener_mes_nombre(datos['fecha1'].month)
-    texto_dias = f"{dia1} al {dia2}"
-    
-    draw.text((cx, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
-    draw.text((cx, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
+    draw.text((cx_box, cy - 40), texto_dias, font=f_dias_largo, fill=color_fecha, anchor="mm")
+    draw.text((cx_box, cy + 85), mes_nombre, font=f_mes_largo, fill=color_fecha, anchor="mm")
 
     y_hora = y_box_top + h_caja + 72
-    dibujar_texto_sombra(draw, str_hora, cx, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
+    dibujar_texto_sombra(draw, str_hora, cx_box, y_hora, f_hora_dyn, offset=(6,6), anchor="mm")
 
     return img.convert("RGB")
 
@@ -3640,10 +3692,18 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         c_f1, c_f2 = st.columns(2)
         with c_f1:
             st.markdown("<div class='label-negro'>FECHA INICIO</div>", unsafe_allow_html=True)
-            fecha1 = st.date_input("f1", key="f1", label_visibility="collapsed", format="DD/MM/YYYY", value=st.session_state.get('v_f1', None))
+            fecha1 = st.date_input("f1", key="f1", label_visibility="collapsed", format="DD/MM/YYYY", value=st.session_state.get('v_f1', datetime.date.today()))
         with c_f2:
             st.markdown("<div class='label-negro'>FECHA FINAL (OPCIONAL)</div>", unsafe_allow_html=True)
-            fecha2 = st.date_input("f2", key="f2", label_visibility="collapsed", value=st.session_state.get('v_f2', None), format="DD/MM/YYYY")
+            c_f2_input, c_f2_btn = st.columns([4, 1.5])
+            with c_f2_input:
+                fecha2 = st.date_input("f2", key="f2", label_visibility="collapsed", value=st.session_state.get('v_f2', None), min_value=fecha1, format="DD/MM/YYYY")
+            with c_f2_btn:
+                # Boton para borrar la segunda fecha rapidamente
+                if st.button("❌ BORRAR", help="Quita la segunda fecha"):
+                    st.session_state['v_f2'] = None
+                    if 'f2' in st.session_state: del st.session_state['f2']
+                    st.rerun()
         
         c_h1, c_h2 = st.columns(2)
         with c_h1:
@@ -3727,9 +3787,7 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                 generated = {}
                 num_lg = len(rutas_logos)
                 
-                # ==========================================
-                # ENRUTAMIENTO INTELIGENTE ACTUALIZADO
-                # ==========================================
+                # ENRUTAMIENTO INTELIGENTE
                 if num_lg >= 1 and fecha2 and not desc2:
                     generated = {'t7_v1': generar_tipo_7_v1(datos), 't7_v2': generar_tipo_7_v2(datos), 't7_v3': generar_tipo_7_v3(datos), 't7_v4': generar_tipo_7_v4(datos)}
                     tid = 7

@@ -4392,7 +4392,7 @@ def generar_tipo_9_v1(datos):
     if collab2:
         x_cursor -= collab2.width
         img.paste(collab2, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab2.height + 20)), collab2)
-        x_cursor -= 65 # NUEVO: Separación de 15px extra
+        x_cursor -= 65 # SEPARACION EXTRA DE 15PX (Total 65px)
     if collab1:
         x_cursor -= collab1.width
         img.paste(collab1, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab1.height + 20)), collab1)
@@ -4472,7 +4472,7 @@ def generar_tipo_9_v2(datos):
     f_mes_box = get_font("Canaro-Black.ttf", 170)
     f_dia_semana = get_font("Canaro-ExtraBold.ttf", 93)
 
-    # 1. LOGOS ARRIBA: Collab1 - Prefectura - Collab2 
+    # 1. LOGOS ARRIBA: Collab1 - Prefectura - Collab2 (Regla max 300h o 600w)
     c1_img = c2_img = pref_img = None
     logos_list = datos.get('logos', [])
     if len(logos_list) > 0:
@@ -4528,8 +4528,8 @@ def generar_tipo_9_v2(datos):
     total_h_date_block = h_caja + 144
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
-    # NUEVO: Ajuste de y_titulo para 3 logos (heredando distancia tipo 6 v3)
-    y_titulo = 690 # En lugar de 850
+    # CORRECCIÓN DE DISTANCIA APLICADA AQUÍ (Heredada del Tipo 6v3)
+    y_titulo = 690 
     dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
 
     # 5. Descripcion 1 Centro
@@ -4613,7 +4613,7 @@ def generar_tipo_9_v3(datos):
     f_mes_box = get_font("Canaro-Black.ttf", 170) 
     f_dia_semana = get_font("Canaro-ExtraBold.ttf", 93) 
 
-    # Logos Superiores (Prefectura Izquierda, Firma Derecha)
+    # Logos Superiores 
     margin_logos = 200
     if os.path.exists("flyer_logo.png"):
         logo = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378)
@@ -4670,7 +4670,7 @@ def generar_tipo_9_v3(datos):
         x_cursor -= collab2.width
         img.paste(collab2, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab2.height + 20)), collab2)
         y_logo_collab_top = min(y_logo_collab_top, Y_BOTTOM_BASELINE - collab2.height + 20)
-        x_cursor -= 65 # NUEVO: Separación de 15px extra
+        x_cursor -= 65 # SEPARACION EXTRA DE 15PX
     if collab1:
         x_cursor -= collab1.width
         img.paste(collab1, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab1.height + 20)), collab1)
@@ -4805,8 +4805,8 @@ def generar_tipo_9_v4(datos):
     total_h_date_block = h_caja + 144
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
-    # Titulo (Izquierda) 
-    y_titulo = 850
+    # CORRECCIÓN DE DISTANCIA APLICADA AQUÍ (Heredada del Tipo 6v3)
+    y_titulo = 690 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
 
     # 5. Descripcion 1 (Izquierda)
@@ -4947,7 +4947,7 @@ def generar_tipo_10_v1(datos):
     if collab2:
         x_cursor -= collab2.width
         img.paste(collab2, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab2.height + 20)), collab2)
-        x_cursor -= 65 # NUEVO: Separación de 15px extra
+        x_cursor -= 65 # SEPARACION EXTRA DE 15PX
     if collab1:
         x_cursor -= collab1.width
         img.paste(collab1, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab1.height + 20)), collab1)
@@ -5106,8 +5106,8 @@ def generar_tipo_10_v2(datos):
     total_h_d2 = len(lines_d2) * int(s_desc2 * 1.1)
     y_desc2_top = y_box_top - 42 - total_h_d2
 
-    # NUEVO: Ajuste de y_titulo para 3 logos (heredando distancia tipo 6 v3)
-    y_titulo = 690 # En lugar de 850
+    # CORRECCIÓN DE DISTANCIA APLICADA AQUÍ (Heredada del Tipo 6v3)
+    y_titulo = 690 
     dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
 
     # Descripcion 1 Centro
@@ -5255,7 +5255,7 @@ def generar_tipo_10_v3(datos):
         x_cursor -= collab2.width
         img.paste(collab2, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab2.height + 20)), collab2)
         y_logo_collab_top = min(y_logo_collab_top, Y_BOTTOM_BASELINE - collab2.height + 20)
-        x_cursor -= 65 # NUEVO: Separación de 15px extra
+        x_cursor -= 65 # SEPARACION EXTRA DE 15PX
     if collab1:
         x_cursor -= collab1.width
         img.paste(collab1, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab1.height + 20)), collab1)
@@ -5413,8 +5413,8 @@ def generar_tipo_10_v4(datos):
     total_h_d2 = len(lines_d2) * int(s_desc2 * 1.1)
     y_desc2_top = y_box_top - 42 - total_h_d2
 
-    # Titulo (Izquierda) 
-    y_titulo = 800 
+    # CORRECCIÓN DE DISTANCIA APLICADA AQUÍ (Heredada del Tipo 6v3)
+    y_titulo = 690 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
 
     # 6. Descripcion 1 (Izquierda)
@@ -5650,7 +5650,6 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                 generated = {}
                 num_lg = len(rutas_logos)
                 
-                # ENRUTAMIENTO INTELIGENTE DEFINITIVO
                 if num_lg == 2 and not fecha2 and desc2:
                     generated = {'t10_v1': generar_tipo_10_v1(datos), 't10_v2': generar_tipo_10_v2(datos), 't10_v3': generar_tipo_10_v3(datos), 't10_v4': generar_tipo_10_v4(datos)}
                     tid = 10
@@ -5767,4 +5766,5 @@ elif area_seleccionada == "Final":
                 if item.startswith("temp_") and item.endswith(".png"): 
                     os.remove(item)
             st.rerun()
+
 

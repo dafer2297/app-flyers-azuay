@@ -49,7 +49,7 @@ def set_design():
 set_design()
 
 # ==============================================================================
-# 2. MOTOR MATEMÁTICO Y AYUDANTES
+# 2. MOTOR MATEMÁTICO Y AYUDANTES COMPLETOS
 # ==============================================================================
 
 def dibujar_texto_sombra(draw, texto, x, y, fuente, color="white", sombra="black", offset=(12,12), anchor="mm"):
@@ -74,6 +74,62 @@ def obtener_mes_nombre(numero_mes):
 def obtener_dia_semana(fecha):
     dias = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]
     return dias[fecha.weekday()]
+
+def resize_por_alto(img, alto_objetivo):
+    ratio = alto_objetivo / img.height
+    ancho_nuevo = int(img.width * ratio)
+    return img.resize((ancho_nuevo, alto_objetivo), Image.Resampling.LANCZOS)
+
+def resize_por_ancho(img, ancho_objetivo):
+    ratio = ancho_objetivo / img.width
+    alto_nuevo = int(img.height * ratio)
+    return img.resize((ancho_objetivo, alto_nuevo), Image.Resampling.LANCZOS)
+
+def redimensionar_logo_colaborador(img):
+    w, h = img.size
+    if w == h: return resize_por_alto(img, 400)
+    ratio = 400 / h
+    new_w = int(w * ratio)
+    if new_w <= 700: return img.resize((new_w, 400), Image.Resampling.LANCZOS)
+    else:
+        ratio = 700 / w
+        new_h = int(h * ratio)
+        return img.resize((700, new_h), Image.Resampling.LANCZOS)
+
+def redimensionar_logo_colaborador_top(img):
+    w, h = img.size
+    ratio = 300 / h
+    new_w = int(w * ratio)
+    if new_w <= 600: return img.resize((new_w, 300), Image.Resampling.LANCZOS)
+    else:
+        ratio = 600 / w
+        new_h = int(h * ratio)
+        return img.resize((600, new_h), Image.Resampling.LANCZOS)
+
+def redimensionar_logo_colaborador_tipo9(img):
+    w, h = img.size
+    ratio = 300 / h
+    new_w = int(w * ratio)
+    if new_w <= 600:
+        return img.resize((new_w, 300), Image.Resampling.LANCZOS)
+    else:
+        ratio = 600 / w
+        new_h = int(h * ratio)
+        return img.resize((600, new_h), Image.Resampling.LANCZOS)
+
+def redimensionar_logo_interno(img, tipo_logo):
+    if tipo_logo == "movida":
+        return resize_por_ancho(img, 600)
+    elif tipo_logo == "orquesta":
+        return resize_por_alto(img, 375)
+    return img
+
+def redimensionar_logo_interno_compartido(img, tipo_logo):
+    if tipo_logo == "movida":
+        return resize_por_ancho(img, 500)
+    elif tipo_logo == "orquesta":
+        return resize_por_alto(img, 325)
+    return img
 
 def get_text_width(font, text):
     if hasattr(font, 'getbbox'): return font.getbbox(text)[2] - font.getbbox(text)[0]
@@ -102,21 +158,6 @@ def calcular_fuente_dinamica(texto, font_file, size_start, max_w, max_h):
         s_desc -= 5
     f_desc = get_font(font_file, 40)
     return f_desc, wrap_text_pixel(texto, f_desc, max_w), 40
-# ==============================================================================
-# 2.1 REDIMENSIONADORES DE LOGOS INTERNOS (CULTURAS)
-# ==============================================================================
-
-def redimensionar_logo_interno(img, tipo_logo):
-    """
-    tipo_logo: "movida" o "orquesta"
-    La movida = ancho 600
-    La orquesta = alto 375
-    """
-    if tipo_logo == "movida":
-        return resize_por_ancho(img, 600)
-    elif tipo_logo == "orquesta":
-        return resize_por_alto(img, 375)
-    return img
 
 # ==============================================================================
 # 3. GENERADORES DE PLANTILLAS TIPO 1 (1 Desc, 1 Fecha, 0 Collab)

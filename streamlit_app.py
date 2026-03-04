@@ -4392,7 +4392,7 @@ def generar_tipo_9_v1(datos):
     if collab2:
         x_cursor -= collab2.width
         img.paste(collab2, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab2.height + 20)), collab2)
-        x_cursor -= 50 
+        x_cursor -= 65 # NUEVO: Separación de 15px extra
     if collab1:
         x_cursor -= collab1.width
         img.paste(collab1, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab1.height + 20)), collab1)
@@ -4528,8 +4528,8 @@ def generar_tipo_9_v2(datos):
     total_h_date_block = h_caja + 144
     y_box_top = y_loc_top - GAP_LOC_BOX - total_h_date_block
 
-    # Titulo (Centro) 
-    y_titulo = 850
+    # NUEVO: Ajuste de y_titulo para 3 logos (heredando distancia tipo 6 v3)
+    y_titulo = 690 # En lugar de 850
     dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
 
     # 5. Descripcion 1 Centro
@@ -4670,7 +4670,7 @@ def generar_tipo_9_v3(datos):
         x_cursor -= collab2.width
         img.paste(collab2, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab2.height + 20)), collab2)
         y_logo_collab_top = min(y_logo_collab_top, Y_BOTTOM_BASELINE - collab2.height + 20)
-        x_cursor -= 50 
+        x_cursor -= 65 # NUEVO: Separación de 15px extra
     if collab1:
         x_cursor -= collab1.width
         img.paste(collab1, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab1.height + 20)), collab1)
@@ -4947,7 +4947,7 @@ def generar_tipo_10_v1(datos):
     if collab2:
         x_cursor -= collab2.width
         img.paste(collab2, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab2.height + 20)), collab2)
-        x_cursor -= 50 
+        x_cursor -= 65 # NUEVO: Separación de 15px extra
     if collab1:
         x_cursor -= collab1.width
         img.paste(collab1, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab1.height + 20)), collab1)
@@ -5106,8 +5106,8 @@ def generar_tipo_10_v2(datos):
     total_h_d2 = len(lines_d2) * int(s_desc2 * 1.1)
     y_desc2_top = y_box_top - 42 - total_h_d2
 
-    # Titulo (Centro) 
-    y_titulo = 850
+    # NUEVO: Ajuste de y_titulo para 3 logos (heredando distancia tipo 6 v3)
+    y_titulo = 690 # En lugar de 850
     dibujar_texto_sombra(draw, "INVITAN", W/2, y_titulo, f_invita, offset=(10,10))
 
     # Descripcion 1 Centro
@@ -5255,7 +5255,7 @@ def generar_tipo_10_v3(datos):
         x_cursor -= collab2.width
         img.paste(collab2, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab2.height + 20)), collab2)
         y_logo_collab_top = min(y_logo_collab_top, Y_BOTTOM_BASELINE - collab2.height + 20)
-        x_cursor -= 50 
+        x_cursor -= 65 # NUEVO: Separación de 15px extra
     if collab1:
         x_cursor -= collab1.width
         img.paste(collab1, (int(x_cursor), int(Y_BOTTOM_BASELINE - collab1.height + 20)), collab1)
@@ -5414,7 +5414,7 @@ def generar_tipo_10_v4(datos):
     y_desc2_top = y_box_top - 42 - total_h_d2
 
     # Titulo (Izquierda) 
-    y_titulo = 850
+    y_titulo = 800 
     dibujar_texto_sombra(draw, "INVITAN", SIDE_MARGIN, y_titulo, f_invita, offset=(10,10), anchor="lm")
 
     # 6. Descripcion 1 (Izquierda)
@@ -5602,7 +5602,7 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
             st.write("✅ Nueva imagen lista.")
 
         st.write("")
-        if st.button("✨ GENERAR FLYERS ✨", type="primary", use_container_width=True):
+        if st.button("GENERAR FLYERS AZUAY", type="primary", use_container_width=True):
             errores = []
             if not desc1: errores.append("Falta Descripcion 1")
             if not fecha1: errores.append("Falta Fecha Inicio")
@@ -5742,7 +5742,7 @@ elif area_seleccionada == "Final":
                     )
                     st.markdown(html_btn, unsafe_allow_html=True)
                 else:
-                    st.download_button("⬇️ DESCARGAR", buf.getvalue(), f"flyer_azuay_{sel}.png", "image/png", use_container_width=True)
+                    st.download_button("⬆️ DESCARGAR", buf.getvalue(), f"flyer_azuay_{sel}.png", "image/png", use_container_width=True)
 
             with c_n:
                 if len(vars_list) > 1:
@@ -5767,3 +5767,4 @@ elif area_seleccionada == "Final":
                 if item.startswith("temp_") and item.endswith(".png"): 
                     os.remove(item)
             st.rerun()
+

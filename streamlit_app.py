@@ -214,7 +214,7 @@ def draw_caja_larga(img, draw, f1, f2, h1, h2, lugar, y_loc_top, is_right):
         w_caja = max(600, int(max(get_text_width(get_font("Canaro-Black.ttf", 150), txt_d), get_text_width(get_font("Canaro-Black.ttf", 120), txt_m)) + 200))
     
     offset_y = 90 if h1 else 40
-    if is_dual_month and h1: offset_y = 45 # Reducción a la mitad del espacio si es doble
+    if is_dual_month and h1: offset_y = 45 
 
     y_box = y_base - offset_y - h_caja
     
@@ -250,21 +250,28 @@ def draw_textos(draw, is_center, is_plural, d1, d2, y_box, three_logos_top=False
     if three_logos_top: y_tit -= 80 
     
     if is_center:
+        max_w_d1 = W - 440 
         if mostrar_titulo:
             dibujar_texto_sombra(draw, tit, W/2, y_tit, get_font("Canaro-Bold.ttf", S_INVITA_CENTER), offset=(6,6))
-            s_d1, w_d1 = (110, 40) if len(d1)<=75 else (90, 50) if len(d1)<=120 else (75, 60)
+            s_d1 = 110 if len(d1)<=75 else 90 if len(d1)<=120 else 75
             y_d = y_tit + 150
         else:
             y_d = y_tit
-            s_d1, w_d1 = (130, 35) if len(d1)<=75 else (110, 45) if len(d1)<=120 else (90, 55)
+            s_d1 = 130 if len(d1)<=75 else 110 if len(d1)<=120 else 90
 
         f_d1 = get_font("Canaro-SemiBold.ttf", s_d1)
-        for l in textwrap.wrap(d1, width=w_d1): dibujar_texto_sombra(draw, l, W/2, y_d, f_d1, offset=(4,4)); y_d += int(s_d1*1.1)
+        lines_d1 = wrap_text_pixel(d1, f_d1, max_w_d1)
+        for l in lines_d1: 
+            dibujar_texto_sombra(draw, l, W/2, y_d, f_d1, offset=(4,4))
+            y_d += int(s_d1*1.1)
+            
         if d2:
             s_d2, f_d2 = 85, get_font("Canaro-SemiBold.ttf", 85)
             lines_d2 = wrap_text_pixel(d2, f_d2, int(W*0.6*0.75))
             y_d2 = y_box - 42 - len(lines_d2)*int(s_d2*1.15) + int(s_d2*1.15)
-            for l in lines_d2: dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_d2, f_d2, anchor="ls", offset=(3,3)); y_d2 += int(s_d2*1.15)
+            for l in lines_d2: 
+                dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_d2, f_d2, anchor="ls", offset=(3,3))
+                y_d2 += int(s_d2*1.15)
     else:
         if mostrar_titulo:
             dibujar_texto_sombra(draw, tit, SIDE_MARGIN, y_tit, get_font("Canaro-Bold.ttf", S_INVITA_LEFT), offset=(5,5), anchor="lm")
@@ -498,20 +505,9 @@ def generar_tipo_11_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = dr
 def generar_tipo_12_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250, d.get('icono_contacto','lugar')); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True, d.get('mostrar_titulo',True)); return img.convert("RGB")
 def generar_tipo_12_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250, d.get('icono_contacto','lugar')); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True, d.get('mostrar_titulo',True)); return img.convert("RGB")
 
-
 # ==============================================================================
 # 5. INTERFAZ DE USUARIO Y ENRUTADOR PRINCIPAL
 # ==============================================================================
-
-if 'v_d1' not in st.session_state: st.session_state.v_d1 = ""
-if 'v_d2' not in st.session_state: st.session_state.v_d2 = ""
-if 'v_dir' not in st.session_state: st.session_state.v_dir = ""
-if 'v_tel1' not in st.session_state: st.session_state.v_tel1 = ""
-if 'v_tel2' not in st.session_state: st.session_state.v_tel2 = ""
-if 'v_f1' not in st.session_state: st.session_state.v_f1 = None
-if 'v_f2' not in st.session_state: st.session_state.v_f2 = None
-if 'v_h1' not in st.session_state: st.session_state.v_h1 = None
-if 'v_h2' not in st.session_state: st.session_state.v_h2 = None
 
 if os.path.exists("logo_superior.png"):
     c1, c2, c3 = st.columns([1, 2, 1])
@@ -556,13 +552,13 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=200)
 
     with col_der:
-        mostrar_titulo = st.checkbox("Mostrar título (INVITA / INVITAN)", value=st.session_state.get('chk_titulo', True), key="chk_titulo")
+        mostrar_titulo = st.checkbox("Mostrar título (INVITA / INVITAN)", value=st.session_state.get('saved_mostrar_titulo', True), key="w_titulo")
 
         st.markdown("<div class='label-negro'>DESCRIPCIÓN 1</div>", unsafe_allow_html=True)
-        desc1 = st.text_area("d1", key="v_d1", label_visibility="collapsed", placeholder="Escribe aqui...", height=150, max_chars=175)
+        desc1 = st.text_area("d1", key="w_d1", label_visibility="collapsed", placeholder="Escribe aqui...", height=150, max_chars=175, value=st.session_state.get('saved_d1', ""))
         
         st.markdown("<div class='label-negro'>DESCRIPCIÓN 2 (OPCIONAL)</div>", unsafe_allow_html=True)
-        desc2 = st.text_area("d2", key="v_d2", label_visibility="collapsed", placeholder="", height=100, max_chars=175)
+        desc2 = st.text_area("d2", key="w_d2", label_visibility="collapsed", placeholder="", height=100, max_chars=175, value=st.session_state.get('saved_d2', ""))
         
         total_chars = len(desc1) + len(desc2)
         color_c = "red" if total_chars > 175 else "black"
@@ -571,31 +567,31 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         c_f1, c_f2 = st.columns(2)
         with c_f1:
             st.markdown("<div class='label-negro'>FECHA INICIO (OPCIONAL)</div>", unsafe_allow_html=True)
-            fecha1 = st.date_input("f1", key="v_f1", label_visibility="collapsed", format="DD/MM/YYYY")
+            fecha1 = st.date_input("f1", key="w_f1", label_visibility="collapsed", format="DD/MM/YYYY", value=st.session_state.get('saved_f1', None))
         with c_f2:
             st.markdown("<div class='label-negro'>FECHA FINAL (OPCIONAL)</div>", unsafe_allow_html=True)
-            fecha2 = st.date_input("f2", key="v_f2", label_visibility="collapsed", format="DD/MM/YYYY")
+            fecha2 = st.date_input("f2", key="w_f2", label_visibility="collapsed", format="DD/MM/YYYY", value=st.session_state.get('saved_f2', None))
         
         c_h1, c_h2 = st.columns(2)
         with c_h1:
             st.markdown("<div class='label-negro'>HORARIO INICIO (OPCIONAL)</div>", unsafe_allow_html=True)
-            hora1 = st.time_input("h1", key="v_h1", label_visibility="collapsed")
+            hora1 = st.time_input("h1", key="w_h1", label_visibility="collapsed", value=st.session_state.get('saved_h1', None))
         with c_h2:
             st.markdown("<div class='label-negro'>HORARIO FINAL (OPCIONAL)</div>", unsafe_allow_html=True)
-            hora2 = st.time_input("h2", key="v_h2", label_visibility="collapsed")
+            hora2 = st.time_input("h2", key="w_h2", label_visibility="collapsed", value=st.session_state.get('saved_h2', None))
         
         st.write("")
-        tipo_contacto = st.radio("SELECCIONA TIPO DE CONTACTO:", ["Ubicación", "Celular"], horizontal=True, key="rad_contacto")
+        tipo_contacto = st.radio("SELECCIONA TIPO DE CONTACTO:", ["Ubicación", "Celular"], horizontal=True, key="w_rad", index=0 if st.session_state.get('saved_rad', 'Ubicación') == 'Ubicación' else 1)
         
         if tipo_contacto == "Ubicación":
             st.markdown("<div class='label-negro'>DIRECCIÓN</div>", unsafe_allow_html=True)
-            dir_texto = st.text_input("dir", key="v_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80)
+            dir_texto = st.text_input("dir", key="w_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80, value=st.session_state.get('saved_dir', ""))
             icono_contacto = "lugar"
         else:
             st.markdown("<div class='label-negro'>NÚMEROS DE CELULAR</div>", unsafe_allow_html=True)
             col_t1, col_t2 = st.columns(2)
-            with col_t1: tel1 = st.text_input("tel1", key="v_tel1", label_visibility="collapsed", placeholder="Celular 1")
-            with col_t2: tel2 = st.text_input("tel2", key="v_tel2", label_visibility="collapsed", placeholder="Celular 2")
+            with col_t1: tel1 = st.text_input("tel1", key="w_tel1", label_visibility="collapsed", placeholder="Celular 1", value=st.session_state.get('saved_tel1', ""))
+            with col_t2: tel2 = st.text_input("tel2", key="w_tel2", label_visibility="collapsed", placeholder="Celular 2", value=st.session_state.get('saved_tel2', ""))
             celulares = []
             if tel1: celulares.append(tel1)
             if tel2: celulares.append(tel2)
@@ -605,10 +601,10 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         usar_movida = False
         usar_orquesta = False
         if area_seleccionada == "Culturas":
-            st.markdown("<div class='label-negro' style='margin-top: 15px;'>LOGOS INTERNOS DEL DEPARTAMENTO</div>", unsafe_allow_html=True)
+            st.markdown("<div class='label-negro' style='margin-top: 5px;'>LOGOS INTERNOS DEL DEPARTAMENTO</div>", unsafe_allow_html=True)
             col_chk1, col_chk2 = st.columns(2)
-            with col_chk1: usar_movida = st.checkbox("Usar logo de La Movida", key="chk_movida")
-            with col_chk2: usar_orquesta = st.checkbox("Usar logo de La Orquesta", key="chk_orquesta")
+            with col_chk1: usar_movida = st.checkbox("Usar logo de La Movida", key="w_movida", value=st.session_state.get('saved_movida', False))
+            with col_chk2: usar_orquesta = st.checkbox("Usar logo de La Orquesta", key="w_orquesta", value=st.session_state.get('saved_orquesta', False))
 
         st.markdown("<div class='label-negro' style='margin-top: 15px;'>LOGOS COLABORADORES EXTERNOS</div>", unsafe_allow_html=True)
         col_logo1, col_logo2 = st.columns(2)
@@ -659,14 +655,31 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                     with open("temp_logo2.png", "wb") as f: f.write(logo2.getvalue())
                     st.session_state['ruta_logo2'] = "temp_logo2.png"
 
+                # Guardar Estados
+                st.session_state['saved_d1'] = desc1
+                st.session_state['saved_d2'] = desc2
+                st.session_state['saved_f1'] = fecha1
+                st.session_state['saved_f2'] = fecha2
+                st.session_state['saved_h1'] = hora1
+                st.session_state['saved_h2'] = hora2
+                st.session_state['saved_rad'] = tipo_contacto
+                st.session_state['saved_mostrar_titulo'] = mostrar_titulo
+                if tipo_contacto == "Ubicación": st.session_state['saved_dir'] = dir_texto
+                else:
+                    st.session_state['saved_tel1'] = tel1
+                    st.session_state['saved_tel2'] = tel2
+                if area_seleccionada == "Culturas":
+                    st.session_state['saved_movida'] = usar_movida
+                    st.session_state['saved_orquesta'] = usar_orquesta
+
                 rutas_externos = []
                 if st.session_state.get('ruta_logo1') and os.path.exists(st.session_state['ruta_logo1']): rutas_externos.append(st.session_state['ruta_logo1'])
                 if st.session_state.get('ruta_logo2') and os.path.exists(st.session_state['ruta_logo2']): rutas_externos.append(st.session_state['ruta_logo2'])
                 
                 internos_paths = []
                 if area_seleccionada == "Culturas":
-                    if st.session_state.get('chk_movida') and os.path.exists("logo.movida.png"): internos_paths.append("logo.movida.png")
-                    if st.session_state.get('chk_orquesta') and os.path.exists("logo.orquesta.png"): internos_paths.append("logo.orquesta.png")
+                    if usar_movida and os.path.exists("logo.movida.png"): internos_paths.append("logo.movida.png")
+                    if usar_orquesta and os.path.exists("logo.orquesta.png"): internos_paths.append("logo.orquesta.png")
                 elif area_seleccionada == "Recreación":
                     if os.path.exists("logo.extremo.png"): internos_paths.append("logo.extremo.png")
 

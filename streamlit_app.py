@@ -41,9 +41,9 @@ def set_bg():
     st.markdown(f"<style>.stApp {{ {bg_style} }}</style>", unsafe_allow_html=True)
 set_bg()
 
-# PARÁMETROS GLOBALES
+# PARÁMETROS GLOBALES - MÁRGENES AUMENTADOS A 105px
 W, H = 2400, 3000
-SIDE_MARGIN = 90
+SIDE_MARGIN = 105
 Y_BOTTOM_BASELINE = H - 150
 S_INVITA_CENTER = 147
 S_INVITA_LEFT = 110
@@ -189,16 +189,34 @@ def draw_caja_cuadrada(img, draw, f1, h1, h2, y_loc_top, is_right):
 def draw_caja_larga(img, draw, f1, f2, h1, h2, y_loc_top, is_right):
     h_caja = 360
     y_box = (Y_BOTTOM_BASELINE - 72 - h_caja) if is_right else (y_loc_top - 100 - h_caja - 72)
-    txt_d = f"{f1.day} al {f2.day}" if f2 else str(f1.day)
-    txt_m = obtener_mes_nombre(f1.month)
-    w_caja = max(600, int(max(get_text_width(get_font("Canaro-Black.ttf", 150), txt_d), get_text_width(get_font("Canaro-Black.ttf", 120), txt_m)) + 200))
+    is_dual_month = f2 and (f1.month != f2.month)
+    
+    if is_dual_month:
+        w_caja = 850
+    else:
+        txt_d = f"{f1.day} al {f2.day}" if f2 else str(f1.day)
+        txt_m = obtener_mes_nombre(f1.month)
+        w_caja = max(600, int(max(get_text_width(get_font("Canaro-Black.ttf", 150), txt_d), get_text_width(get_font("Canaro-Black.ttf", 120), txt_m)) + 200))
+    
     if os.path.exists("flyer_caja_fecha_larga.png"):
         c = Image.open("flyer_caja_fecha_larga.png").convert("RGBA").resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(c, (SIDE_MARGIN, int(y_box)), c); c_f = "white"
-    else: draw.rectangle([SIDE_MARGIN, y_box, SIDE_MARGIN+w_caja, y_box+h_caja], fill="white"); c_f = "black"
+    else: 
+        draw.rectangle([SIDE_MARGIN, y_box, SIDE_MARGIN+w_caja, y_box+h_caja], fill="white"); c_f = "black"
+        
     cx, cy = SIDE_MARGIN + w_caja/2, y_box + h_caja/2
-    draw.text((cx, cy - 40), txt_d, font=get_font("Canaro-Black.ttf", 150), fill=c_f, anchor="mm")
-    draw.text((cx, cy + 85), txt_m, font=get_font("Canaro-Black.ttf", 120), fill=c_f, anchor="mm")
+    
+    if is_dual_month:
+        cxl, cxr = SIDE_MARGIN + w_caja * 0.28, SIDE_MARGIN + w_caja * 0.72
+        draw.text((cxl, cy - 40), str(f1.day), font=get_font("Canaro-Black.ttf", 150), fill=c_f, anchor="mm")
+        draw.text((cxl, cy + 85), obtener_mes_abbr(f1.month), font=get_font("Canaro-Black.ttf", 100), fill=c_f, anchor="mm")
+        draw.text((cx, cy + 20), "AL", font=get_font("Canaro-Black.ttf", 110), fill=c_f, anchor="mm")
+        draw.text((cxr, cy - 40), str(f2.day), font=get_font("Canaro-Black.ttf", 150), fill=c_f, anchor="mm")
+        draw.text((cxr, cy + 85), obtener_mes_abbr(f2.month), font=get_font("Canaro-Black.ttf", 100), fill=c_f, anchor="mm")
+    else:
+        draw.text((cx, cy - 40), txt_d, font=get_font("Canaro-Black.ttf", 150), fill=c_f, anchor="mm")
+        draw.text((cx, cy + 85), txt_m, font=get_font("Canaro-Black.ttf", 120), fill=c_f, anchor="mm")
+    
     s_h = 54 if h2 else 74
     str_h = h1.strftime('%H:%M %p') + (f" a {h2.strftime('%H:%M %p')}" if h2 else "")
     dibujar_texto_sombra(draw, str_h, cx, y_box + h_caja + 72, get_font("Canaro-ExtraBold.ttf", s_h), offset=(3,3), anchor="mm")
@@ -222,7 +240,7 @@ def draw_textos(draw, is_center, is_plural, d1, d2, y_box, three_logos_top=False
             for l in lines_d2: dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_d2, f_d2, anchor="ls", offset=(3,3)); y_d2 += int(s_d2*1.15)
     else:
         dibujar_texto_sombra(draw, tit, SIDE_MARGIN, y_tit, get_font("Canaro-Bold.ttf", S_INVITA_LEFT), offset=(5,5), anchor="lm")
-        y_start_d1 = y_tit + 160
+        y_start_d1 = y_tit + 160 
         if d2:
             s_d2, f_d2 = 75, get_font("Canaro-SemiBold.ttf", 75)
             lines_d2 = wrap_text_pixel(d2, f_d2, int(W*0.4*0.75))
@@ -591,7 +609,6 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                 num_int = len(internos_paths)
 
                 st.session_state.update({'v_d1': desc1, 'v_d2': desc2, 'v_f1': fecha1, 'v_f2': fecha2, 'v_h1': hora1, 'v_h2': hora2, 'v_dir': dir_texto})
-
                 datos = {'fondo': st.session_state.v_fondo, 'desc1': desc1, 'desc2': desc2, 'fecha1': fecha1, 'fecha2': fecha2, 'hora1': hora1, 'hora2': hora2, 'lugar': dir_texto}
                 generated = {}
                 tid = "N/A"

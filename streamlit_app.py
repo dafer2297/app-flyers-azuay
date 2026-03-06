@@ -8,10 +8,19 @@ import base64
 import datetime
 
 # ==============================================================================
-# 1. CONFIGURACIÓN GLOBAL Y ESTILOS
+# 1. INICIALIZACIÓN DE ESTADOS Y CONFIGURACIÓN GLOBAL
 # ==============================================================================
 
 st.set_page_config(layout="wide", page_title="Generador Azuay")
+
+default_keys = {
+    'w_d1': "", 'w_d2': "", 'w_dir': "", 'w_tel1': "", 'w_tel2': "",
+    'w_f1': None, 'w_f2': None, 'w_h1': None, 'w_h2': None,
+    'w_rad': "Ubicación", 'w_titulo': True, 'w_formato': "Publicación",
+    'w_movida': False, 'w_orquesta': False, 'ruta_logo1': None, 'ruta_logo2': None
+}
+for k, v in default_keys.items():
+    if k not in st.session_state: st.session_state[k] = v
 
 hide_st_style = """
             <style>
@@ -41,8 +50,14 @@ def set_bg():
     st.markdown(f"<style>.stApp {{ {bg_style} }}</style>", unsafe_allow_html=True)
 set_bg()
 
-# PARÁMETROS GLOBALES - MÁRGENES AUMENTADOS A 105px
-W, H = 2400, 3000
+# PARÁMETROS DINÁMICOS Y MÁRGENES (105px)
+if st.session_state.w_formato == "Historia":
+    W, H = 2400, 4267
+    CROP_RATIO = (9, 16)
+else:
+    W, H = 2400, 3000
+    CROP_RATIO = (4, 5)
+
 SIDE_MARGIN = 105
 Y_BOTTOM_BASELINE = H - 150
 S_INVITA_CENTER = 147
@@ -250,7 +265,7 @@ def draw_textos(draw, is_center, is_plural, d1, d2, y_box, three_logos_top=False
     if three_logos_top: y_tit -= 80 
     
     if is_center:
-        max_w_d1 = W - 440 
+        max_w_d1 = W - (220 * 2) 
         if mostrar_titulo:
             dibujar_texto_sombra(draw, tit, W/2, y_tit, get_font("Canaro-Bold.ttf", S_INVITA_CENTER), offset=(6,6))
             s_d1 = 110 if len(d1)<=75 else 90 if len(d1)<=120 else 75
@@ -418,10 +433,10 @@ def generar_tipo_1_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logo
 def generar_tipo_1_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, True); y_loc = draw_ubicacion(img, draw, d['lugar'], True, min_x, 600, d.get('icono_contacto','lugar')); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], d['lugar'], y_loc, True); draw_textos(draw, False, False, d['desc1'], d.get('desc2',''), y_box, False, d.get('mostrar_titulo',True)); return img.convert("RGB")
 def generar_tipo_1_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, False); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600, d.get('icono_contacto','lugar')); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, False, False, d['desc1'], d.get('desc2',''), y_box, False, d.get('mostrar_titulo',True)); return img.convert("RGB")
 
-def generar_tipo_2_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, True); y_loc = draw_ubicacion(img, draw, d['lugar'], True, min_x, 600, d.get('icono_contacto','lugar')); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], d['lugar'], y_loc, True); draw_textos(draw, True, False, d['desc1'], d.get('desc2',''), y_box, False, d.get('mostrar_titulo',True)); return img.convert("RGB")
-def generar_tipo_2_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, False); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600, d.get('icono_contacto','lugar')); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, True, False, d['desc1'], d.get('desc2',''), y_box, False, d.get('mostrar_titulo',True)); return img.convert("RGB")
-def generar_tipo_2_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, True); y_loc = draw_ubicacion(img, draw, d['lugar'], True, min_x, 600, d.get('icono_contacto','lugar')); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], d['lugar'], y_loc, True); draw_textos(draw, False, False, d['desc1'], d.get('desc2',''), y_box, False, d.get('mostrar_titulo',True)); return img.convert("RGB")
-def generar_tipo_2_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, False); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600, d.get('icono_contacto','lugar')); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, False, False, d['desc1'], d.get('desc2',''), y_box, False, d.get('mostrar_titulo',True)); return img.convert("RGB")
+def generar_tipo_2_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, True); y_loc = draw_ubicacion(img, draw, d['lugar'], True, min_x, 600, d.get('icono_contacto','lugar')); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], d['lugar'], y_loc, True); draw_textos(draw, True, False, d['desc1'], d['desc2'], y_box, False, d.get('mostrar_titulo',True)); return img.convert("RGB")
+def generar_tipo_2_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, False); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600, d.get('icono_contacto','lugar')); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, True, False, d['desc1'], d['desc2'], y_box, False, d.get('mostrar_titulo',True)); return img.convert("RGB")
+def generar_tipo_2_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, True); y_loc = draw_ubicacion(img, draw, d['lugar'], True, min_x, 600, d.get('icono_contacto','lugar')); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], d['lugar'], y_loc, True); draw_textos(draw, False, False, d['desc1'], d['desc2'], y_box, False, d.get('mostrar_titulo',True)); return img.convert("RGB")
+def generar_tipo_2_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, False); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600, d.get('icono_contacto','lugar')); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, False, False, d['desc1'], d['desc2'], y_box, False, d.get('mostrar_titulo',True)); return img.convert("RGB")
 
 def generar_tipo_3_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, True); y_loc = draw_ubicacion(img, draw, d['lugar'], True, min_x, 600, d.get('icono_contacto','lugar')); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], d['lugar'], y_loc, True); draw_textos(draw, True, True, d['desc1'], d.get('desc2',''), y_box, False, d.get('mostrar_titulo',True)); return img.convert("RGB")
 def generar_tipo_3_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, False); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600, d.get('icono_contacto','lugar')); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d.get('desc2',''), y_box, False, d.get('mostrar_titulo',True)); return img.convert("RGB")
@@ -505,6 +520,7 @@ def generar_tipo_11_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = dr
 def generar_tipo_12_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250, d.get('icono_contacto','lugar')); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True, d.get('mostrar_titulo',True)); return img.convert("RGB")
 def generar_tipo_12_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250, d.get('icono_contacto','lugar')); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True, d.get('mostrar_titulo',True)); return img.convert("RGB")
 
+
 # ==============================================================================
 # 5. INTERFAZ DE USUARIO Y ENRUTADOR PRINCIPAL
 # ==============================================================================
@@ -552,13 +568,13 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         if os.path.exists("firma_jota.png"): st.image("firma_jota.png", width=200)
 
     with col_der:
-        mostrar_titulo = st.checkbox("Mostrar título (INVITA / INVITAN)", value=st.session_state.get('saved_mostrar_titulo', True), key="w_titulo")
+        mostrar_titulo = st.checkbox("Mostrar título (INVITA / INVITAN)", value=st.session_state.get('w_titulo', True), key="w_titulo")
 
         st.markdown("<div class='label-negro'>DESCRIPCIÓN 1</div>", unsafe_allow_html=True)
-        desc1 = st.text_area("d1", key="w_d1", label_visibility="collapsed", placeholder="Escribe aqui...", height=150, max_chars=175, value=st.session_state.get('saved_d1', ""))
+        desc1 = st.text_area("d1", key="w_d1", label_visibility="collapsed", placeholder="Escribe aqui...", height=150, max_chars=175)
         
         st.markdown("<div class='label-negro'>DESCRIPCIÓN 2 (OPCIONAL)</div>", unsafe_allow_html=True)
-        desc2 = st.text_area("d2", key="w_d2", label_visibility="collapsed", placeholder="", height=100, max_chars=175, value=st.session_state.get('saved_d2', ""))
+        desc2 = st.text_area("d2", key="w_d2", label_visibility="collapsed", placeholder="", height=100, max_chars=175)
         
         total_chars = len(desc1) + len(desc2)
         color_c = "red" if total_chars > 175 else "black"
@@ -567,31 +583,31 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         c_f1, c_f2 = st.columns(2)
         with c_f1:
             st.markdown("<div class='label-negro'>FECHA INICIO (OPCIONAL)</div>", unsafe_allow_html=True)
-            fecha1 = st.date_input("f1", key="w_f1", label_visibility="collapsed", format="DD/MM/YYYY", value=st.session_state.get('saved_f1', None))
+            fecha1 = st.date_input("f1", key="w_f1", label_visibility="collapsed", format="DD/MM/YYYY")
         with c_f2:
             st.markdown("<div class='label-negro'>FECHA FINAL (OPCIONAL)</div>", unsafe_allow_html=True)
-            fecha2 = st.date_input("f2", key="w_f2", label_visibility="collapsed", format="DD/MM/YYYY", value=st.session_state.get('saved_f2', None))
+            fecha2 = st.date_input("f2", key="w_f2", label_visibility="collapsed", format="DD/MM/YYYY")
         
         c_h1, c_h2 = st.columns(2)
         with c_h1:
             st.markdown("<div class='label-negro'>HORARIO INICIO (OPCIONAL)</div>", unsafe_allow_html=True)
-            hora1 = st.time_input("h1", key="w_h1", label_visibility="collapsed", value=st.session_state.get('saved_h1', None))
+            hora1 = st.time_input("h1", key="w_h1", label_visibility="collapsed")
         with c_h2:
             st.markdown("<div class='label-negro'>HORARIO FINAL (OPCIONAL)</div>", unsafe_allow_html=True)
-            hora2 = st.time_input("h2", key="w_h2", label_visibility="collapsed", value=st.session_state.get('saved_h2', None))
+            hora2 = st.time_input("h2", key="w_h2", label_visibility="collapsed")
         
         st.write("")
-        tipo_contacto = st.radio("SELECCIONA TIPO DE CONTACTO:", ["Ubicación", "Celular"], horizontal=True, key="w_rad", index=0 if st.session_state.get('saved_rad', 'Ubicación') == 'Ubicación' else 1)
+        tipo_contacto = st.radio("SELECCIONA TIPO DE CONTACTO:", ["Ubicación", "Celular"], horizontal=True, key="w_rad")
         
         if tipo_contacto == "Ubicación":
             st.markdown("<div class='label-negro'>DIRECCIÓN</div>", unsafe_allow_html=True)
-            dir_texto = st.text_input("dir", key="w_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80, value=st.session_state.get('saved_dir', ""))
+            dir_texto = st.text_input("dir", key="w_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80)
             icono_contacto = "lugar"
         else:
             st.markdown("<div class='label-negro'>NÚMEROS DE CELULAR</div>", unsafe_allow_html=True)
             col_t1, col_t2 = st.columns(2)
-            with col_t1: tel1 = st.text_input("tel1", key="w_tel1", label_visibility="collapsed", placeholder="Celular 1", value=st.session_state.get('saved_tel1', ""))
-            with col_t2: tel2 = st.text_input("tel2", key="w_tel2", label_visibility="collapsed", placeholder="Celular 2", value=st.session_state.get('saved_tel2', ""))
+            with col_t1: tel1 = st.text_input("tel1", key="w_tel1", label_visibility="collapsed", placeholder="Celular 1")
+            with col_t2: tel2 = st.text_input("tel2", key="w_tel2", label_visibility="collapsed", placeholder="Celular 2")
             celulares = []
             if tel1: celulares.append(tel1)
             if tel2: celulares.append(tel2)
@@ -603,8 +619,10 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         if area_seleccionada == "Culturas":
             st.markdown("<div class='label-negro' style='margin-top: 5px;'>LOGOS INTERNOS DEL DEPARTAMENTO</div>", unsafe_allow_html=True)
             col_chk1, col_chk2 = st.columns(2)
-            with col_chk1: usar_movida = st.checkbox("Usar logo de La Movida", key="w_movida", value=st.session_state.get('saved_movida', False))
-            with col_chk2: usar_orquesta = st.checkbox("Usar logo de La Orquesta", key="w_orquesta", value=st.session_state.get('saved_orquesta', False))
+            with col_chk1: usar_movida = st.checkbox("Usar logo de La Movida", key="w_movida")
+            with col_chk2: usar_orquesta = st.checkbox("Usar logo de La Orquesta", key="w_orquesta")
+        elif area_seleccionada == "Recreación":
+            st.markdown("<div class='label-negro' style='margin-top: 5px; color:transparent;'>Espacio Reservado</div>", unsafe_allow_html=True)
 
         st.markdown("<div class='label-negro' style='margin-top: 15px;'>LOGOS COLABORADORES EXTERNOS</div>", unsafe_allow_html=True)
         col_logo1, col_logo2 = st.columns(2)
@@ -622,15 +640,18 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                 if st.button("❌ QUITAR LOGO 2", key="del_l2", use_container_width=True): st.session_state['ruta_logo2'] = None; st.rerun()
             else: logo2 = st.file_uploader("l2", type=['png', 'jpg', 'jpeg'], key="l2", label_visibility="collapsed")
         
+        st.markdown("<div class='label-negro' style='margin-top: 15px;'>FORMATO DEL FLYER</div>", unsafe_allow_html=True)
+        st.radio("Formato", ["Publicación", "Historia"], key="w_formato", horizontal=True, label_visibility="collapsed")
+
         st.markdown("<div class='label-negro' style='margin-top: 15px;'>SUBIR Y RECORTAR IMAGEN DE FONDO</div>", unsafe_allow_html=True)
-        if 'v_fondo' in st.session_state: st.success("✅ IMAGEN DE FONDO GUARDADA.")
+        if 'v_fondo' in st.session_state: st.success("✅ IMAGEN DE FONDO GUARDADA. Sube otra si deseas cambiarla.")
         
         archivo_subido = st.file_uploader("img", type=['jpg', 'png', 'jpeg'], label_visibility="collapsed")
         if archivo_subido:
             img_orig = Image.open(archivo_subido)
             st.info("Ajusta el recorte y presiona Submit.")
-            img_crop = st_cropper(img_orig, realtime_update=True, aspect_ratio=(4, 5), should_resize_image=False)
-            st.session_state['v_fondo'] = img_crop.resize((2400, 3000), Image.Resampling.LANCZOS)
+            img_crop = st_cropper(img_orig, realtime_update=True, aspect_ratio=CROP_RATIO, should_resize_image=False)
+            st.session_state['v_fondo'] = img_crop.resize((W, H), Image.Resampling.LANCZOS)
             st.write("✅ Nueva imagen lista.")
 
         st.write("")
@@ -654,23 +675,6 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                 if logo2:
                     with open("temp_logo2.png", "wb") as f: f.write(logo2.getvalue())
                     st.session_state['ruta_logo2'] = "temp_logo2.png"
-
-                # Guardar Estados
-                st.session_state['saved_d1'] = desc1
-                st.session_state['saved_d2'] = desc2
-                st.session_state['saved_f1'] = fecha1
-                st.session_state['saved_f2'] = fecha2
-                st.session_state['saved_h1'] = hora1
-                st.session_state['saved_h2'] = hora2
-                st.session_state['saved_rad'] = tipo_contacto
-                st.session_state['saved_mostrar_titulo'] = mostrar_titulo
-                if tipo_contacto == "Ubicación": st.session_state['saved_dir'] = dir_texto
-                else:
-                    st.session_state['saved_tel1'] = tel1
-                    st.session_state['saved_tel2'] = tel2
-                if area_seleccionada == "Culturas":
-                    st.session_state['saved_movida'] = usar_movida
-                    st.session_state['saved_orquesta'] = usar_orquesta
 
                 rutas_externos = []
                 if st.session_state.get('ruta_logo1') and os.path.exists(st.session_state['ruta_logo1']): rutas_externos.append(st.session_state['ruta_logo1'])

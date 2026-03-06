@@ -69,44 +69,42 @@ def obtener_mes_nombre(m): return {1:"ENERO",2:"FEBRERO",3:"MARZO",4:"ABRIL",5:"
 def obtener_mes_abbr(m): return {1:"ENE",2:"FEB",3:"MAR",4:"ABR",5:"MAY",6:"JUN",7:"JUL",8:"AGO",9:"SEP",10:"OCT",11:"NOV",12:"DIC"}.get(m, "")
 def obtener_dia_semana(f): return ["LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO", "DOMINGO"][f.weekday()]
 
-def resize_por_alto(img, alto):
-    if not img: return None
-    w, h = img.size
-    return img.resize((int(w * (alto / h)), alto), Image.Resampling.LANCZOS) if h>0 else img
-def resize_por_ancho(img, ancho):
-    if not img: return None
-    w, h = img.size
-    return img.resize((ancho, int(h * (ancho / w))), Image.Resampling.LANCZOS) if w>0 else img
+def resize_por_alto(img, alto): return img.resize((int(img.width * (alto / img.height)), alto), Image.Resampling.LANCZOS) if img and img.height>0 else img
+def resize_por_ancho(img, ancho): return img.resize((ancho, int(img.height * (ancho / img.width))), Image.Resampling.LANCZOS) if img and img.width>0 else img
 
-def redim_collab(img):
-    w, h = img.size
-    if w == h: return resize_por_alto(img, 400)
-    new_w = int(w * (400 / h))
-    return img.resize((new_w, 400), Image.Resampling.LANCZOS) if new_w <= 700 else img.resize((700, int(h * (700 / w))), Image.Resampling.LANCZOS)
-def redim_collab_top(img):
-    w, h = img.size
-    new_w = int(w * (300 / h))
-    return img.resize((new_w, 300), Image.Resampling.LANCZOS) if new_w <= 600 else img.resize((600, int(h * (600 / w))), Image.Resampling.LANCZOS)
+def get_tipo_logo(p):
+    pl = p.lower()
+    if "movida" in pl: return "movida"
+    if "orquesta" in pl: return "orquesta"
+    if "extremo" in pl: return "extremo"
+    return "collab"
 
-def redim_interno(img, t): return resize_por_ancho(img, 600) if t=="movida" else resize_por_alto(img, 375)
-def redim_interno_comp(img, t): return resize_por_ancho(img, 500) if t=="movida" else resize_por_alto(img, 300)
-def redim_doble_movida(img): return resize_por_ancho(img, 425)
-def redim_doble_orquesta(img): return resize_por_alto(img, 225)
+def redim_interno(img, t): 
+    if t=="movida": return resize_por_ancho(img, 600)
+    elif t=="orquesta": return resize_por_alto(img, 375)
+    elif t=="extremo": return resize_por_alto(img, 350)
+    return img
+
+def redim_interno_comp(img, t, top_count=0):
+    if t=="movida": return resize_por_ancho(img, 500)
+    elif t=="orquesta": return resize_por_alto(img, 300)
+    elif t=="extremo": return resize_por_alto(img, 275) if top_count == 3 else resize_por_alto(img, 350)
+    return img
 
 def load_logo_single_bottom(p):
     try:
-        c = Image.open(p).convert("RGBA")
-        if "logo.movida" in p.lower(): return redim_interno(c, "movida")
-        elif "logo.orquesta" in p.lower(): return redim_interno(c, "orquesta")
-        else: return redim_collab(c)
+        c = Image.open(p).convert("RGBA"); t = get_tipo_logo(p)
+        if t != "collab": return redim_interno(c, t)
+        w, h = c.size; new_w = int(w * (400 / h))
+        return c.resize((new_w, 400), Image.Resampling.LANCZOS) if new_w <= 700 else c.resize((700, int(h * (700 / w))), Image.Resampling.LANCZOS)
     except: return None
 
-def load_logo_shared(p):
+def load_logo_shared(p, top_count=0):
     try:
-        c = Image.open(p).convert("RGBA")
-        if "logo.movida" in p.lower(): return redim_interno_comp(c, "movida")
-        elif "logo.orquesta" in p.lower(): return redim_interno_comp(c, "orquesta")
-        else: return redim_collab_top(c)
+        c = Image.open(p).convert("RGBA"); t = get_tipo_logo(p)
+        if t != "collab": return redim_interno_comp(c, t, top_count)
+        w, h = c.size; new_w = int(w * (300 / h))
+        return c.resize((new_w, 300), Image.Resampling.LANCZOS) if new_w <= 600 else c.resize((600, int(h * (600 / w))), Image.Resampling.LANCZOS)
     except: return None
 
 def wrap_text_pixel(txt, font, max_w):
@@ -161,10 +159,9 @@ def draw_ubicacion(img, draw, lugar, is_right, min_x_logos, gap):
         return y_top
     else:
         x_start = SIDE_MARGIN + (icon.width + 25 if icon else 0)
-        # CALCULO DINÁMICO DE TOLERANCIA
-        if min_x_logos >= W: max_w = W - SIDE_MARGIN - x_start
-        else: max_w = min_x_logos - gap - x_start
-        if max_w < 400: max_w = 400 # Limite de seguridad
+        # CALCULO DINÁMICO DE TOLERANCIA ESTRICTO
+        max_w = (W - SIDE_MARGIN - x_start) if min_x_logos >= W else (min_x_logos - gap - x_start)
+        if max_w < 400: max_w = 400 # Límite seguridad
         
         lines = wrap_text_pixel(lugar, f_lug, max_w)
         h_block = max(len(lines) * int(s_lug * 1.1), h_icon)
@@ -177,16 +174,13 @@ def draw_ubicacion(img, draw, lugar, is_right, min_x_logos, gap):
 def draw_caja_cuadrada(img, draw, f1, h1, h2, y_loc_top, is_right):
     h_caja, w_caja = 438, 438
     y_box = (Y_BOTTOM_BASELINE - 115 - h_caja) if is_right else (y_loc_top - 100 - h_caja - 115)
-    
     if os.path.exists("flyer_caja_fecha.png"):
         c = resize_por_alto(Image.open("flyer_caja_fecha.png").convert("RGBA"), h_caja)
         img.paste(c, (SIDE_MARGIN, int(y_box)), c); c_f = "white"
     else: draw.rectangle([SIDE_MARGIN, y_box, SIDE_MARGIN+w_caja, y_box+h_caja], fill="white"); c_f = "black"
-        
     cx, cy = SIDE_MARGIN + w_caja/2, y_box + h_caja/2
     draw.text((cx, cy - 33), str(f1.day), font=get_font("Canaro-Black.ttf", 237), fill=c_f, anchor="mm")
     draw.text((cx, cy + 115), obtener_mes_abbr(f1.month), font=get_font("Canaro-Black.ttf", 136), fill=c_f, anchor="mm")
-    
     s_h = 54 if h2 else 74
     str_h = h1.strftime('%H:%M %p') + (f" a {h2.strftime('%H:%M %p')}" if h2 else "")
     dibujar_texto_sombra(draw, obtener_dia_semana(f1), cx, y_box + h_caja + 57, get_font("Canaro-ExtraBold.ttf", 74), offset=(3,3), anchor="mm")
@@ -199,24 +193,22 @@ def draw_caja_larga(img, draw, f1, f2, h1, h2, y_loc_top, is_right):
     txt_d = f"{f1.day} al {f2.day}" if f2 else str(f1.day)
     txt_m = obtener_mes_nombre(f1.month)
     w_caja = max(600, int(max(get_text_width(get_font("Canaro-Black.ttf", 150), txt_d), get_text_width(get_font("Canaro-Black.ttf", 120), txt_m)) + 200))
-    
     if os.path.exists("flyer_caja_fecha_larga.png"):
         c = Image.open("flyer_caja_fecha_larga.png").convert("RGBA").resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(c, (SIDE_MARGIN, int(y_box)), c); c_f = "white"
     else: draw.rectangle([SIDE_MARGIN, y_box, SIDE_MARGIN+w_caja, y_box+h_caja], fill="white"); c_f = "black"
-        
     cx, cy = SIDE_MARGIN + w_caja/2, y_box + h_caja/2
     draw.text((cx, cy - 40), txt_d, font=get_font("Canaro-Black.ttf", 150), fill=c_f, anchor="mm")
     draw.text((cx, cy + 85), txt_m, font=get_font("Canaro-Black.ttf", 120), fill=c_f, anchor="mm")
-    
     s_h = 54 if h2 else 74
     str_h = h1.strftime('%H:%M %p') + (f" a {h2.strftime('%H:%M %p')}" if h2 else "")
     dibujar_texto_sombra(draw, str_h, cx, y_box + h_caja + 72, get_font("Canaro-ExtraBold.ttf", s_h), offset=(3,3), anchor="mm")
     return y_box
 
-def draw_textos(draw, is_center, is_plural, d1, d2, y_box):
+def draw_textos(draw, is_center, is_plural, d1, d2, y_box, three_logos_top=False):
     tit = "INVITAN" if is_plural else "INVITA"
     y_tit = 850 if not d2 else 690
+    if three_logos_top: y_tit -= 80 # Subir titulo si hay 3 logos
     
     if is_center:
         dibujar_texto_sombra(draw, tit, W/2, y_tit, get_font("Canaro-Bold.ttf", S_INVITA_CENTER), offset=(6,6))
@@ -231,7 +223,7 @@ def draw_textos(draw, is_center, is_plural, d1, d2, y_box):
             for l in lines_d2: dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_d2, f_d2, anchor="ls", offset=(3,3)); y_d2 += int(s_d2*1.15)
     else:
         dibujar_texto_sombra(draw, tit, SIDE_MARGIN, y_tit, get_font("Canaro-Bold.ttf", S_INVITA_LEFT), offset=(5,5), anchor="lm")
-        y_start_d1 = y_tit + 160 # Separación aumentada a 160px
+        y_start_d1 = y_tit + 160 # Separacion aumentada
         if d2:
             s_d2, f_d2 = 75, get_font("Canaro-SemiBold.ttf", 75)
             lines_d2 = wrap_text_pixel(d2, f_d2, int(W*0.4*0.75))
@@ -263,7 +255,7 @@ def draw_logos_t1t4(img, is_center):
 def draw_logos_t5t8(img, datos, var_type):
     min_x = W
     l_list = datos.get('logos', [])
-    collab_img = load_logo_single_bottom(l_list[0]) if (l_list and var_type in [1, 3]) else load_logo_shared(l_list[0]) if l_list else None
+    collab_img = load_logo_single_bottom(l_list[0]) if (l_list and var_type in [1, 3]) else load_logo_shared(l_list[0], top_count=2) if l_list else None
     
     if var_type in [1, 3]:
         if os.path.exists("flyer_logo.png"): l = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378); img.paste(l, (200, 150), l)
@@ -285,8 +277,8 @@ def draw_logos_t5t8(img, datos, var_type):
 def draw_logos_t9t12(img, datos, var_type):
     min_x = W
     l_list = datos.get('logos', [])
-    c1 = load_logo_shared(l_list[0]) if len(l_list) > 0 else None
-    c2 = load_logo_shared(l_list[1]) if len(l_list) > 1 else None
+    c1 = load_logo_shared(l_list[0], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 0 else None
+    c2 = load_logo_shared(l_list[1], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 1 else None
 
     if var_type in [1, 3]:
         if os.path.exists("flyer_logo.png"): l = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378); img.paste(l, (200, 150), l)
@@ -311,9 +303,9 @@ def draw_logos_t9t12(img, datos, var_type):
 def draw_logos_tc(img, datos, var_type):
     min_x = W
     int_path, t_int, l_list = datos.get('logo_interno'), datos.get('tipo_interno'), datos.get('logos', [])
-    c1 = load_logo_shared(l_list[0]) if len(l_list) > 0 else None
-    c2 = load_logo_shared(l_list[1]) if len(l_list) > 1 else None
-    int_img = (redim_interno_comp(Image.open(int_path).convert("RGBA"), t_int) if t_int in ["movida","orquesta"] else redim_collab_top(Image.open(int_path).convert("RGBA"))) if int_path else None
+    c1 = load_logo_shared(l_list[0], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 0 else None
+    c2 = load_logo_shared(l_list[1], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 1 else None
+    int_img = (redim_interno_comp(Image.open(int_path).convert("RGBA"), t_int, top_count=(3 if var_type in [1,3] else 0)) if t_int in ["movida","orquesta","extremo"] else redim_collab_top(Image.open(int_path).convert("RGBA"))) if int_path else None
     pref_img = resize_por_ancho(Image.open("flyer_logo.png").convert("RGBA"), 775) if os.path.exists("flyer_logo.png") else None
     firma_img = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 265) if os.path.exists("flyer_firma.png") else None
 
@@ -340,8 +332,8 @@ def draw_logos_tc(img, datos, var_type):
 def draw_logos_doble(img, datos, var_type):
     min_x = W
     l_list = datos.get('logos', [])
-    c1 = load_logo_shared(l_list[0]) if len(l_list) > 0 else None
-    c2 = load_logo_shared(l_list[1]) if len(l_list) > 1 else None
+    c1 = load_logo_shared(l_list[0], top_count=3) if len(l_list) > 0 else None
+    c2 = load_logo_shared(l_list[1], top_count=3) if len(l_list) > 1 else None
     pref = resize_por_ancho(Image.open("flyer_logo.png").convert("RGBA"), 775) if os.path.exists("flyer_logo.png") else None
 
     w1, w2, w3 = (c1.width if c1 else 0), (pref.width if pref else 0), (c2.width if c2 else 0)
@@ -405,56 +397,57 @@ def generar_tipo_8_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logo
 def generar_tipo_8_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t5t8(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
 
 def generar_tipo_9_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box); return img.convert("RGB")
-def generar_tipo_9_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box); return img.convert("RGB")
+def generar_tipo_9_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box, True); return img.convert("RGB")
 def generar_tipo_9_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 3); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box); return img.convert("RGB")
-def generar_tipo_9_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box); return img.convert("RGB")
+def generar_tipo_9_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box, True); return img.convert("RGB")
 
 def generar_tipo_10_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
-def generar_tipo_10_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
+def generar_tipo_10_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
 def generar_tipo_10_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 3); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
-def generar_tipo_10_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
+def generar_tipo_10_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
 
 def generar_tipo_11_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box); return img.convert("RGB")
-def generar_tipo_11_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box); return img.convert("RGB")
+def generar_tipo_11_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box, True); return img.convert("RGB")
 def generar_tipo_11_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 3); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box); return img.convert("RGB")
-def generar_tipo_11_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box); return img.convert("RGB")
+def generar_tipo_11_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box, True); return img.convert("RGB")
 
 def generar_tipo_12_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
-def generar_tipo_12_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
+def generar_tipo_12_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
 def generar_tipo_12_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 3); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
-def generar_tipo_12_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
+def generar_tipo_12_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t9t12(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
 
-def generar_tipo_9_c_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box); return img.convert("RGB")
-def generar_tipo_9_c_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box); return img.convert("RGB")
-def generar_tipo_9_c_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 3); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box); return img.convert("RGB")
-def generar_tipo_9_c_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box); return img.convert("RGB")
+def generar_tipo_9_c_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box, True); return img.convert("RGB")
+def generar_tipo_9_c_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box, True); return img.convert("RGB")
+def generar_tipo_9_c_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 3); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box, True); return img.convert("RGB")
+def generar_tipo_9_c_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box, True); return img.convert("RGB")
 
-def generar_tipo_10_c_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
-def generar_tipo_10_c_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
-def generar_tipo_10_c_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 3); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
-def generar_tipo_10_c_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
+def generar_tipo_10_c_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
+def generar_tipo_10_c_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
+def generar_tipo_10_c_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 3); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
+def generar_tipo_10_c_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
 
-def generar_tipo_11_c_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box); return img.convert("RGB")
-def generar_tipo_11_c_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box); return img.convert("RGB")
-def generar_tipo_11_c_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 3); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box); return img.convert("RGB")
-def generar_tipo_11_c_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box); return img.convert("RGB")
+def generar_tipo_11_c_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box, True); return img.convert("RGB")
+def generar_tipo_11_c_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box, True); return img.convert("RGB")
+def generar_tipo_11_c_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 3); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box, True); return img.convert("RGB")
+def generar_tipo_11_c_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box, True); return img.convert("RGB")
 
-def generar_tipo_12_c_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
-def generar_tipo_12_c_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
-def generar_tipo_12_c_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 3); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
-def generar_tipo_12_c_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 600); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
+def generar_tipo_12_c_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
+def generar_tipo_12_c_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
+def generar_tipo_12_c_v3(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 3); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
+def generar_tipo_12_c_v4(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_tc(img, d, 4); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 300); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
 
-def generar_tipo_9_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box); return img.convert("RGB")
-def generar_tipo_9_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box); return img.convert("RGB")
+def generar_tipo_9_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box, True); return img.convert("RGB")
+def generar_tipo_9_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box, True); return img.convert("RGB")
 
-def generar_tipo_10_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
-def generar_tipo_10_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
+def generar_tipo_10_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
+def generar_tipo_10_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
 
-def generar_tipo_11_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box); return img.convert("RGB")
-def generar_tipo_11_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box); return img.convert("RGB")
+def generar_tipo_11_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], "", y_box, True); return img.convert("RGB")
+def generar_tipo_11_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], "", y_box, True); return img.convert("RGB")
 
-def generar_tipo_12_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
-def generar_tipo_12_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box); return img.convert("RGB")
+def generar_tipo_12_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
+def generar_tipo_12_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
+
 
 # ==============================================================================
 # 5. INTERFAZ DE USUARIO Y ENRUTADOR PRINCIPAL
@@ -546,6 +539,9 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
             col_chk1, col_chk2 = st.columns(2)
             with col_chk1: usar_movida = st.checkbox("Usar logo de La Movida", value=st.session_state.get('chk_movida', False), key="chk_movida")
             with col_chk2: usar_orquesta = st.checkbox("Usar logo de La Orquesta", value=st.session_state.get('chk_orquesta', False), key="chk_orquesta")
+        elif area_seleccionada == "Recreación":
+            st.markdown("<div class='label-negro' style='margin-top: 5px;'>LOGO INTERNO DEL DEPARTAMENTO</div>", unsafe_allow_html=True)
+            st.info("El logo de Azuay Extremo se aplicará automáticamente si existe el archivo 'logo.extremo.png'.")
 
         st.markdown("<div class='label-negro' style='margin-top: 15px;'>LOGOS COLABORADORES EXTERNOS</div>", unsafe_allow_html=True)
         col_logo1, col_logo2 = st.columns(2)
@@ -597,8 +593,11 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                 if st.session_state.get('ruta_logo2') and os.path.exists(st.session_state['ruta_logo2']): rutas_externos.append(st.session_state['ruta_logo2'])
                 
                 internos_paths = []
-                if usar_movida and os.path.exists("logo.movida.png"): internos_paths.append("logo.movida.png")
-                if usar_orquesta and os.path.exists("logo.orquesta.png"): internos_paths.append("logo.orquesta.png")
+                if area_seleccionada == "Culturas":
+                    if usar_movida and os.path.exists("logo.movida.png"): internos_paths.append("logo.movida.png")
+                    if usar_orquesta and os.path.exists("logo.orquesta.png"): internos_paths.append("logo.orquesta.png")
+                elif area_seleccionada == "Recreación":
+                    if os.path.exists("logo.extremo.png"): internos_paths.append("logo.extremo.png")
 
                 num_ext = len(rutas_externos)
                 num_int = len(internos_paths)
@@ -628,7 +627,7 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
 
                 elif num_int == 1 and num_ext == 2:
                     datos['logo_interno'] = internos_paths[0]
-                    datos['tipo_interno'] = "movida" if "movida" in internos_paths[0] else "orquesta"
+                    datos['tipo_interno'] = get_tipo_logo(internos_paths[0])
                     datos['logos'] = rutas_externos 
                     if fecha2 and desc2: generated = {'t12c_v1': generar_tipo_12_c_v1(datos), 't12c_v2': generar_tipo_12_c_v2(datos), 't12c_v3': generar_tipo_12_c_v3(datos), 't12c_v4': generar_tipo_12_c_v4(datos)}; tid = "12_Especial"
                     elif fecha2 and not desc2: generated = {'t11c_v1': generar_tipo_11_c_v1(datos), 't11c_v2': generar_tipo_11_c_v2(datos), 't11c_v3': generar_tipo_11_c_v3(datos), 't11c_v4': generar_tipo_11_c_v4(datos)}; tid = "11_Especial"

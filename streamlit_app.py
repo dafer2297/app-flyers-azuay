@@ -16,8 +16,9 @@ st.set_page_config(layout="wide", page_title="Generador Azuay")
 def on_format_change():
     if 'v_fondo' in st.session_state:
         del st.session_state['v_fondo']
+    st.session_state.saved_formato = st.session_state.temp_formato
 
-# EL "ESCUDO" DE MEMORIA: Aquí guardamos todo para que no se borre al cambiar de ventana
+# ESCUDO DE MEMORIA: Protege los datos al cambiar de pantalla
 default_keys = {
     'saved_d1': "", 'saved_d2': "", 'saved_dir': "", 'saved_tel1': "", 'saved_tel2': "",
     'saved_f1': None, 'saved_f2': None, 'saved_h1': None, 'saved_h2': None,
@@ -55,8 +56,9 @@ def set_bg():
     st.markdown(f"<style>.stApp {{ {bg_style} }}</style>", unsafe_allow_html=True)
 set_bg()
 
-# PARÁMETROS DINÁMICOS Y MÁRGENES (105px)
-if st.session_state.saved_formato == "Historia":
+# EVALUACIÓN DINÁMICA DEL FORMATO (Evita el bug del recuadro azul)
+current_format = st.session_state.get('temp_formato', st.session_state.saved_formato)
+if current_format == "Historia":
     W, H = 2400, 4267
     CROP_RATIO = (9, 16)
 else:
@@ -199,11 +201,8 @@ def draw_caja_cuadrada(img, draw, f1, h1, h2, lugar, y_loc_top, is_right):
     y_base = Y_BOTTOM_BASELINE if is_right or not lugar else (y_loc_top - 80)
     if not f1: return y_base
     
-    # LA CAJA SIEMPRE MIDE 438, SIN IMPORTAR SI HAY HORA O NO
-    h_caja, w_caja = 438, 438
-    
-    # Si no hay hora, el offset es más pequeño (la caja baja y se pega a la ubicación)
-    offset_y = 145 if h1 else 80 
+    h_caja, w_caja = 438, 438 # FIJO, NUNCA SE ACHICA EL RECUADRO
+    offset_y = 145 if h1 else 50 # Solo baja el contenedor si no hay hora
     y_box = y_base - offset_y - h_caja
     
     if os.path.exists("flyer_caja_fecha.png"):
@@ -226,8 +225,7 @@ def draw_caja_larga(img, draw, f1, f2, h1, h2, lugar, y_loc_top, is_right):
     y_base = Y_BOTTOM_BASELINE if is_right or not lugar else (y_loc_top - 80)
     if not f1: return y_base
 
-    # LA CAJA LARGA SIEMPRE MIDE 360, NUNCA SE ACHICA
-    h_caja = 360
+    h_caja = 360 # FIJO
     is_dual_month = f2 and (f1.month != f2.month)
     
     if is_dual_month: 
@@ -237,7 +235,6 @@ def draw_caja_larga(img, draw, f1, f2, h1, h2, lugar, y_loc_top, is_right):
         txt_m = obtener_mes_nombre(f1.month)
         w_caja = max(600, int(max(get_text_width(get_font("Canaro-Black.ttf", 150), txt_d), get_text_width(get_font("Canaro-Black.ttf", 120), txt_m)) + 200))
     
-    # Gravedad si no hay hora
     offset_y = 90 if h1 else 40
     if is_dual_month and h1: offset_y = 45 
 
@@ -622,6 +619,8 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                     st.session_state.saved_h1 = None
                     st.session_state.saved_h2 = None
                     st.session_state.saved_f2 = None
+                    for k in ['temp_f1', 'temp_f2', 'temp_h1', 'temp_h2']:
+                        if k in st.session_state: del st.session_state[k]
                     st.rerun()
 
         with c_f2:
@@ -631,6 +630,7 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
             with cc2: 
                 if st.button("❌", key="x_f2", help="Borrar Fecha Final"): 
                     st.session_state.saved_f2 = None
+                    if 'temp_f2' in st.session_state: del st.session_state['temp_f2']
                     st.rerun()
         
         c_h1, c_h2 = st.columns(2)
@@ -642,6 +642,8 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                 if st.button("❌", key="x_h1", help="Borrar Horario"): 
                     st.session_state.saved_h1 = None
                     st.session_state.saved_h2 = None
+                    for k in ['temp_h1', 'temp_h2']:
+                        if k in st.session_state: del st.session_state[k]
                     st.rerun()
 
         with c_h2:
@@ -651,6 +653,7 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
             with cc2:
                 if st.button("❌", key="x_h2", help="Borrar Horario Final"): 
                     st.session_state.saved_h2 = None
+                    if 'temp_h2' in st.session_state: del st.session_state['temp_h2']
                     st.rerun()
         
         st.write("")
@@ -706,7 +709,7 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         if archivo_subido:
             img_orig = Image.open(archivo_subido)
             st.info("Ajusta el recorte y presiona Submit.")
-            img_crop = st_cropper(img_orig, realtime_update=True, aspect_ratio=CROP_RATIO, should_resize_image=False)
+            img_crop = st_cropper(img_orig, realtime_update=True, aspect_ratio=CROP_RATIO, should_resize_image=False, key=f"cropper_{current_format}")
             st.session_state['v_fondo'] = img_crop.resize((W, H), Image.Resampling.LANCZOS)
             st.write("✅ Nueva imagen lista.")
 

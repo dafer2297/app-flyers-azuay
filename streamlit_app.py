@@ -159,9 +159,8 @@ def draw_ubicacion(img, draw, lugar, is_right, min_x_logos, gap):
         return y_top
     else:
         x_start = SIDE_MARGIN + (icon.width + 25 if icon else 0)
-        # CALCULO DINÁMICO DE TOLERANCIA ESTRICTO
         max_w = (W - SIDE_MARGIN - x_start) if min_x_logos >= W else (min_x_logos - gap - x_start)
-        if max_w < 400: max_w = 400 # Límite seguridad
+        if max_w < 400: max_w = 400 
         
         lines = wrap_text_pixel(lugar, f_lug, max_w)
         h_block = max(len(lines) * int(s_lug * 1.1), h_icon)
@@ -208,7 +207,7 @@ def draw_caja_larga(img, draw, f1, f2, h1, h2, y_loc_top, is_right):
 def draw_textos(draw, is_center, is_plural, d1, d2, y_box, three_logos_top=False):
     tit = "INVITAN" if is_plural else "INVITA"
     y_tit = 850 if not d2 else 690
-    if three_logos_top: y_tit -= 80 # Subir titulo si hay 3 logos
+    if three_logos_top: y_tit -= 80 
     
     if is_center:
         dibujar_texto_sombra(draw, tit, W/2, y_tit, get_font("Canaro-Bold.ttf", S_INVITA_CENTER), offset=(6,6))
@@ -223,7 +222,7 @@ def draw_textos(draw, is_center, is_plural, d1, d2, y_box, three_logos_top=False
             for l in lines_d2: dibujar_texto_sombra(draw, l, SIDE_MARGIN, y_d2, f_d2, anchor="ls", offset=(3,3)); y_d2 += int(s_d2*1.15)
     else:
         dibujar_texto_sombra(draw, tit, SIDE_MARGIN, y_tit, get_font("Canaro-Bold.ttf", S_INVITA_LEFT), offset=(5,5), anchor="lm")
-        y_start_d1 = y_tit + 160 # Separacion aumentada
+        y_start_d1 = y_tit + 160
         if d2:
             s_d2, f_d2 = 75, get_font("Canaro-SemiBold.ttf", 75)
             lines_d2 = wrap_text_pixel(d2, f_d2, int(W*0.4*0.75))
@@ -353,7 +352,7 @@ def draw_logos_doble(img, datos, var_type):
     return min_x
 
 # ==============================================================================
-# 4. RENDERIZADORES DE PLANTILLAS 1 AL 12, ESPECIALES C Y DOBLES
+# 4. RENDERIZADORES DE PLANTILLAS
 # ==============================================================================
 
 def generar_tipo_1_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_t1t4(img, True); y_loc = draw_ubicacion(img, draw, d['lugar'], True, min_x, 600); y_box = draw_caja_cuadrada(img, draw, d['fecha1'], d['hora1'], d['hora2'], y_loc, True); draw_textos(draw, True, False, d['desc1'], "", y_box); return img.convert("RGB")
@@ -448,7 +447,6 @@ def generar_tipo_11_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = dr
 def generar_tipo_12_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
 def generar_tipo_12_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True); return img.convert("RGB")
 
-
 # ==============================================================================
 # 5. INTERFAZ DE USUARIO Y ENRUTADOR PRINCIPAL
 # ==============================================================================
@@ -512,14 +510,7 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
             fecha1 = st.date_input("f1", key="f1", label_visibility="collapsed", format="DD/MM/YYYY", value=st.session_state.get('v_f1', datetime.date.today()))
         with c_f2:
             st.markdown("<div class='label-negro'>FECHA FINAL (OPCIONAL)</div>", unsafe_allow_html=True)
-            c_f2_input, c_f2_btn = st.columns([4, 1.5])
-            with c_f2_input:
-                fecha2 = st.date_input("f2", key="f2", label_visibility="collapsed", value=st.session_state.get('v_f2', None), min_value=fecha1, format="DD/MM/YYYY")
-            with c_f2_btn:
-                if st.button("❌ BORRAR"):
-                    st.session_state['v_f2'] = None
-                    if 'f2' in st.session_state: del st.session_state['f2']
-                    st.rerun()
+            fecha2 = st.date_input("f2", key="f2", label_visibility="collapsed", value=st.session_state.get('v_f2', None), min_value=fecha1, format="DD/MM/YYYY")
         
         c_h1, c_h2 = st.columns(2)
         with c_h1:
@@ -539,9 +530,6 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
             col_chk1, col_chk2 = st.columns(2)
             with col_chk1: usar_movida = st.checkbox("Usar logo de La Movida", value=st.session_state.get('chk_movida', False), key="chk_movida")
             with col_chk2: usar_orquesta = st.checkbox("Usar logo de La Orquesta", value=st.session_state.get('chk_orquesta', False), key="chk_orquesta")
-        elif area_seleccionada == "Recreación":
-            st.markdown("<div class='label-negro' style='margin-top: 5px;'>LOGO INTERNO DEL DEPARTAMENTO</div>", unsafe_allow_html=True)
-            st.info("El logo de Azuay Extremo se aplicará automáticamente si existe el archivo 'logo.extremo.png'.")
 
         st.markdown("<div class='label-negro' style='margin-top: 15px;'>LOGOS COLABORADORES EXTERNOS</div>", unsafe_allow_html=True)
         col_logo1, col_logo2 = st.columns(2)
@@ -689,7 +677,7 @@ elif area_seleccionada == "Final":
 
             with c_p:
                 if len(vars_list) > 1: 
-                    if st.button("⬅️ ANTERIOR", key="prev_btn", type="secondary", use_container_width=True):
+                    if st.button("⬅️", key="prev_btn", type="secondary", use_container_width=True):
                         st.session_state.sel_var = vars_list[(idx-1)%len(vars_list)]
                         st.rerun()
             
@@ -713,7 +701,7 @@ elif area_seleccionada == "Final":
 
             with c_n:
                 if len(vars_list) > 1:
-                    if st.button("SIGUIENTE ➡️", key="next_btn", type="secondary", use_container_width=True):
+                    if st.button("➡️", key="next_btn", type="secondary", use_container_width=True):
                         st.session_state.sel_var = vars_list[(idx+1)%len(vars_list)]
                         st.rerun()
 

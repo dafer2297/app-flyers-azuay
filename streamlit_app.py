@@ -199,25 +199,23 @@ def draw_caja_cuadrada(img, draw, f1, h1, h2, lugar, y_loc_top, is_right):
     y_base = Y_BOTTOM_BASELINE if is_right or not lugar else (y_loc_top - 80)
     if not f1: return y_base
     
-    h_caja = 438 if h1 else 320
-    w_caja = 438
-    offset_y = 145 if h1 else 60
+    # LA CAJA SIEMPRE MIDE 438, SIN IMPORTAR SI HAY HORA O NO
+    h_caja, w_caja = 438, 438
+    
+    # Si no hay hora, el offset es más pequeño (la caja baja y se pega a la ubicación)
+    offset_y = 145 if h1 else 80 
     y_box = y_base - offset_y - h_caja
     
     if os.path.exists("flyer_caja_fecha.png"):
-        c = Image.open("flyer_caja_fecha.png").convert("RGBA").resize((w_caja, h_caja), Image.Resampling.LANCZOS)
+        c = resize_por_alto(Image.open("flyer_caja_fecha.png").convert("RGBA"), h_caja)
         img.paste(c, (SIDE_MARGIN, int(y_box)), c); c_f = "white"
     else: draw.rectangle([SIDE_MARGIN, y_box, SIDE_MARGIN+w_caja, y_box+h_caja], fill="white"); c_f = "black"
         
-    cx = SIDE_MARGIN + w_caja/2
-    cy_day = y_box + 186 if h1 else y_box + 120
-    cy_month = y_box + 334 if h1 else y_box + 268
-    cy_dow = y_box + h_caja + 57
-
-    draw.text((cx, cy_day), str(f1.day), font=get_font("Canaro-Black.ttf", 237), fill=c_f, anchor="mm")
-    draw.text((cx, cy_month), obtener_mes_abbr(f1.month), font=get_font("Canaro-Black.ttf", 136), fill=c_f, anchor="mm")
-    dibujar_texto_sombra(draw, obtener_dia_semana(f1), cx, cy_dow, get_font("Canaro-ExtraBold.ttf", 74), offset=(3,3), anchor="mm")
+    cx, cy = SIDE_MARGIN + w_caja/2, y_box + h_caja/2
+    draw.text((cx, cy - 33), str(f1.day), font=get_font("Canaro-Black.ttf", 237), fill=c_f, anchor="mm")
+    draw.text((cx, cy + 115), obtener_mes_abbr(f1.month), font=get_font("Canaro-Black.ttf", 136), fill=c_f, anchor="mm")
     
+    dibujar_texto_sombra(draw, obtener_dia_semana(f1), cx, y_box + h_caja + 57, get_font("Canaro-ExtraBold.ttf", 74), offset=(3,3), anchor="mm")
     if h1:
         s_h = 54 if h2 else 74
         str_h = h1.strftime('%H:%M %p') + (f" a {h2.strftime('%H:%M %p')}" if h2 else "")
@@ -228,7 +226,8 @@ def draw_caja_larga(img, draw, f1, f2, h1, h2, lugar, y_loc_top, is_right):
     y_base = Y_BOTTOM_BASELINE if is_right or not lugar else (y_loc_top - 80)
     if not f1: return y_base
 
-    h_caja = 360 if h1 else 280
+    # LA CAJA LARGA SIEMPRE MIDE 360, NUNCA SE ACHICA
+    h_caja = 360
     is_dual_month = f2 and (f1.month != f2.month)
     
     if is_dual_month: 
@@ -238,6 +237,7 @@ def draw_caja_larga(img, draw, f1, f2, h1, h2, lugar, y_loc_top, is_right):
         txt_m = obtener_mes_nombre(f1.month)
         w_caja = max(600, int(max(get_text_width(get_font("Canaro-Black.ttf", 150), txt_d), get_text_width(get_font("Canaro-Black.ttf", 120), txt_m)) + 200))
     
+    # Gravedad si no hay hora
     offset_y = 90 if h1 else 40
     if is_dual_month and h1: offset_y = 45 
 

@@ -17,11 +17,12 @@ def on_format_change():
     if 'v_fondo' in st.session_state:
         del st.session_state['v_fondo']
 
+# EL "ESCUDO" DE MEMORIA: Aquí guardamos todo para que no se borre al cambiar de ventana
 default_keys = {
-    'v_d1': "", 'v_d2': "", 'v_dir': "", 'v_tel1': "", 'v_tel2': "",
-    'v_f1': None, 'v_f2': None, 'v_h1': None, 'v_h2': None,
-    'v_rad': "Ubicación", 'v_titulo': True, 'v_formato': "Publicación",
-    'v_movida': False, 'v_orquesta': False, 'ruta_logo1': None, 'ruta_logo2': None
+    'saved_d1': "", 'saved_d2': "", 'saved_dir': "", 'saved_tel1': "", 'saved_tel2': "",
+    'saved_f1': None, 'saved_f2': None, 'saved_h1': None, 'saved_h2': None,
+    'saved_rad': "Ubicación", 'saved_titulo': True, 'saved_formato': "Publicación",
+    'saved_movida': False, 'saved_orquesta': False, 'ruta_logo1': None, 'ruta_logo2': None
 }
 for k, v in default_keys.items():
     if k not in st.session_state: st.session_state[k] = v
@@ -54,8 +55,8 @@ def set_bg():
     st.markdown(f"<style>.stApp {{ {bg_style} }}</style>", unsafe_allow_html=True)
 set_bg()
 
-# PARÁMETROS DINÁMICOS
-if st.session_state.v_formato == "Historia":
+# PARÁMETROS DINÁMICOS Y MÁRGENES (105px)
+if st.session_state.saved_formato == "Historia":
     W, H = 2400, 4267
     CROP_RATIO = (9, 16)
 else:
@@ -198,20 +199,25 @@ def draw_caja_cuadrada(img, draw, f1, h1, h2, lugar, y_loc_top, is_right):
     y_base = Y_BOTTOM_BASELINE if is_right or not lugar else (y_loc_top - 80)
     if not f1: return y_base
     
-    h_caja, w_caja = 438, 438
-    offset_y = 145 if h1 else 50 # Baja la caja 95px automáticamente si no hay hora
+    h_caja = 438 if h1 else 320
+    w_caja = 438
+    offset_y = 145 if h1 else 60
     y_box = y_base - offset_y - h_caja
     
     if os.path.exists("flyer_caja_fecha.png"):
-        c = resize_por_alto(Image.open("flyer_caja_fecha.png").convert("RGBA"), h_caja)
+        c = Image.open("flyer_caja_fecha.png").convert("RGBA").resize((w_caja, h_caja), Image.Resampling.LANCZOS)
         img.paste(c, (SIDE_MARGIN, int(y_box)), c); c_f = "white"
     else: draw.rectangle([SIDE_MARGIN, y_box, SIDE_MARGIN+w_caja, y_box+h_caja], fill="white"); c_f = "black"
         
-    cx, cy = SIDE_MARGIN + w_caja/2, y_box + h_caja/2
-    draw.text((cx, cy - 33), str(f1.day), font=get_font("Canaro-Black.ttf", 237), fill=c_f, anchor="mm")
-    draw.text((cx, cy + 115), obtener_mes_abbr(f1.month), font=get_font("Canaro-Black.ttf", 136), fill=c_f, anchor="mm")
+    cx = SIDE_MARGIN + w_caja/2
+    cy_day = y_box + 186 if h1 else y_box + 120
+    cy_month = y_box + 334 if h1 else y_box + 268
+    cy_dow = y_box + h_caja + 57
+
+    draw.text((cx, cy_day), str(f1.day), font=get_font("Canaro-Black.ttf", 237), fill=c_f, anchor="mm")
+    draw.text((cx, cy_month), obtener_mes_abbr(f1.month), font=get_font("Canaro-Black.ttf", 136), fill=c_f, anchor="mm")
+    dibujar_texto_sombra(draw, obtener_dia_semana(f1), cx, cy_dow, get_font("Canaro-ExtraBold.ttf", 74), offset=(3,3), anchor="mm")
     
-    dibujar_texto_sombra(draw, obtener_dia_semana(f1), cx, y_box + h_caja + 57, get_font("Canaro-ExtraBold.ttf", 74), offset=(3,3), anchor="mm")
     if h1:
         s_h = 54 if h2 else 74
         str_h = h1.strftime('%H:%M %p') + (f" a {h2.strftime('%H:%M %p')}" if h2 else "")
@@ -222,7 +228,7 @@ def draw_caja_larga(img, draw, f1, f2, h1, h2, lugar, y_loc_top, is_right):
     y_base = Y_BOTTOM_BASELINE if is_right or not lugar else (y_loc_top - 80)
     if not f1: return y_base
 
-    h_caja = 360
+    h_caja = 360 if h1 else 280
     is_dual_month = f2 and (f1.month != f2.month)
     
     if is_dual_month: 
@@ -540,6 +546,7 @@ def generar_tipo_11_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = dr
 def generar_tipo_12_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250, d.get('icono_contacto','lugar')); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True, d.get('mostrar_titulo',True)); return img.convert("RGB")
 def generar_tipo_12_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250, d.get('icono_contacto','lugar')); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True, d.get('mostrar_titulo',True)); return img.convert("RGB")
 
+
 # ==============================================================================
 # 5. INTERFAZ DE USUARIO Y ENRUTADOR PRINCIPAL
 # ==============================================================================
@@ -588,17 +595,17 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
 
     with col_der:
         st.markdown("<div class='label-negro' style='margin-top: 15px;'>FORMATO DEL FLYER</div>", unsafe_allow_html=True)
-        formato = st.radio("Formato", ["Publicación", "Historia"], key="v_formato", horizontal=True, label_visibility="collapsed", on_change=on_format_change)
+        formato = st.radio("Formato", ["Publicación", "Historia"], key="temp_formato", horizontal=True, label_visibility="collapsed", on_change=on_format_change, index=0 if st.session_state.saved_formato=="Publicación" else 1)
 
         c_tit, _ = st.columns([3,1])
         with c_tit:
-            mostrar_titulo = st.checkbox("Mostrar título (INVITA / INVITAN)", value=st.session_state.v_titulo, key="temp_titulo")
+            mostrar_titulo = st.checkbox("Mostrar título (INVITA / INVITAN)", value=st.session_state.saved_titulo, key="temp_titulo")
 
         st.markdown("<div class='label-negro'>DESCRIPCIÓN 1</div>", unsafe_allow_html=True)
-        desc1 = st.text_area("d1", key="v_d1", label_visibility="collapsed", placeholder="Escribe aqui...", height=150, max_chars=175)
+        desc1 = st.text_area("d1", key="temp_d1", label_visibility="collapsed", placeholder="Escribe aqui...", height=150, max_chars=175, value=st.session_state.saved_d1)
         
         st.markdown("<div class='label-negro'>DESCRIPCIÓN 2 (OPCIONAL)</div>", unsafe_allow_html=True)
-        desc2 = st.text_area("d2", key="v_d2", label_visibility="collapsed", placeholder="", height=100, max_chars=175)
+        desc2 = st.text_area("d2", key="temp_d2", label_visibility="collapsed", placeholder="", height=100, max_chars=175, value=st.session_state.saved_d2)
         
         total_chars = len(desc1) + len(desc2)
         color_c = "red" if total_chars > 175 else "black"
@@ -608,58 +615,58 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         with c_f1:
             st.markdown("<div class='label-negro'>FECHA INICIO (OPCIONAL)</div>", unsafe_allow_html=True)
             cc1, cc2 = st.columns([5, 1])
-            with cc1: fecha1 = st.date_input("f1", key="v_f1", label_visibility="collapsed", format="DD/MM/YYYY")
+            with cc1: fecha1 = st.date_input("f1", key="temp_f1", label_visibility="collapsed", format="DD/MM/YYYY", value=st.session_state.saved_f1)
             with cc2: 
                 if st.button("❌", key="x_f1", help="Borrar Fecha"): 
-                    st.session_state.v_f1 = None
-                    st.session_state.v_h1 = None
-                    st.session_state.v_h2 = None
-                    st.session_state.v_f2 = None
+                    st.session_state.saved_f1 = None
+                    st.session_state.saved_h1 = None
+                    st.session_state.saved_h2 = None
+                    st.session_state.saved_f2 = None
                     st.rerun()
 
         with c_f2:
             st.markdown("<div class='label-negro'>FECHA FINAL (OPCIONAL)</div>", unsafe_allow_html=True)
             cc1, cc2 = st.columns([5, 1])
-            with cc1: fecha2 = st.date_input("f2", key="v_f2", label_visibility="collapsed", format="DD/MM/YYYY")
+            with cc1: fecha2 = st.date_input("f2", key="temp_f2", label_visibility="collapsed", format="DD/MM/YYYY", value=st.session_state.saved_f2)
             with cc2: 
                 if st.button("❌", key="x_f2", help="Borrar Fecha Final"): 
-                    st.session_state.v_f2 = None
+                    st.session_state.saved_f2 = None
                     st.rerun()
         
         c_h1, c_h2 = st.columns(2)
         with c_h1:
             st.markdown("<div class='label-negro'>HORARIO INICIO (OPCIONAL)</div>", unsafe_allow_html=True)
             cc1, cc2 = st.columns([5, 1])
-            with cc1: hora1 = st.time_input("h1", key="v_h1", label_visibility="collapsed")
+            with cc1: hora1 = st.time_input("h1", key="temp_h1", label_visibility="collapsed", value=st.session_state.saved_h1)
             with cc2:
                 if st.button("❌", key="x_h1", help="Borrar Horario"): 
-                    st.session_state.v_h1 = None
-                    st.session_state.v_h2 = None
+                    st.session_state.saved_h1 = None
+                    st.session_state.saved_h2 = None
                     st.rerun()
 
         with c_h2:
             st.markdown("<div class='label-negro'>HORARIO FINAL (OPCIONAL)</div>", unsafe_allow_html=True)
             cc1, cc2 = st.columns([5, 1])
-            with cc1: hora2 = st.time_input("h2", key="v_h2", label_visibility="collapsed")
+            with cc1: hora2 = st.time_input("h2", key="temp_h2", label_visibility="collapsed", value=st.session_state.saved_h2)
             with cc2:
                 if st.button("❌", key="x_h2", help="Borrar Horario Final"): 
-                    st.session_state.v_h2 = None
+                    st.session_state.saved_h2 = None
                     st.rerun()
         
         st.write("")
-        tipo_contacto = st.radio("SELECCIONA TIPO DE CONTACTO:", ["Ubicación", "Celular"], horizontal=True, key="v_rad")
+        tipo_contacto = st.radio("SELECCIONA TIPO DE CONTACTO:", ["Ubicación", "Celular"], horizontal=True, key="temp_rad", index=0 if st.session_state.saved_rad=="Ubicación" else 1)
         
         if tipo_contacto == "Ubicación":
             st.markdown("<div class='label-negro'>DIRECCIÓN</div>", unsafe_allow_html=True)
-            dir_texto = st.text_input("dir", key="v_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80)
-            tel1 = st.session_state.v_tel1
-            tel2 = st.session_state.v_tel2
+            dir_texto = st.text_input("dir", key="temp_dir", label_visibility="collapsed", placeholder="Ubicación del evento", max_chars=80, value=st.session_state.saved_dir)
+            tel1 = st.session_state.saved_tel1
+            tel2 = st.session_state.saved_tel2
             icono_contacto = "lugar"
         else:
             st.markdown("<div class='label-negro'>NÚMEROS DE CELULAR</div>", unsafe_allow_html=True)
             col_t1, col_t2 = st.columns(2)
-            with col_t1: tel1 = st.text_input("tel1", key="v_tel1", label_visibility="collapsed", placeholder="Celular 1")
-            with col_t2: tel2 = st.text_input("tel2", key="v_tel2", label_visibility="collapsed", placeholder="Celular 2")
+            with col_t1: tel1 = st.text_input("tel1", key="temp_tel1", label_visibility="collapsed", placeholder="Celular 1", value=st.session_state.saved_tel1)
+            with col_t2: tel2 = st.text_input("tel2", key="temp_tel2", label_visibility="collapsed", placeholder="Celular 2", value=st.session_state.saved_tel2)
             celulares = []
             if tel1: celulares.append(tel1)
             if tel2: celulares.append(tel2)
@@ -671,8 +678,10 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         if area_seleccionada == "Culturas":
             st.markdown("<div class='label-negro' style='margin-top: 5px;'>LOGOS INTERNOS DEL DEPARTAMENTO</div>", unsafe_allow_html=True)
             col_chk1, col_chk2 = st.columns(2)
-            with col_chk1: usar_movida = st.checkbox("Usar logo de La Movida", key="v_movida")
-            with col_chk2: usar_orquesta = st.checkbox("Usar logo de La Orquesta", key="v_orquesta")
+            with col_chk1: usar_movida = st.checkbox("Usar logo de La Movida", key="temp_movida", value=st.session_state.saved_movida)
+            with col_chk2: usar_orquesta = st.checkbox("Usar logo de La Orquesta", key="temp_orquesta", value=st.session_state.saved_orquesta)
+        elif area_seleccionada == "Recreación":
+            st.markdown("<div class='label-negro' style='margin-top: 5px; color:transparent;'>Espacio Reservado</div>", unsafe_allow_html=True)
 
         st.markdown("<div class='label-negro' style='margin-top: 15px;'>LOGOS COLABORADORES EXTERNOS</div>", unsafe_allow_html=True)
         col_logo1, col_logo2 = st.columns(2)
@@ -723,7 +732,23 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
                     with open("temp_logo2.png", "wb") as f: f.write(logo2.getvalue())
                     st.session_state.ruta_logo2 = "temp_logo2.png"
 
-                st.session_state.v_titulo = mostrar_titulo
+                # G U A R D A D O   D E   M E M O R I A   S E G U R A
+                st.session_state.saved_d1 = desc1
+                st.session_state.saved_d2 = desc2
+                st.session_state.saved_f1 = fecha1
+                st.session_state.saved_f2 = fecha2
+                st.session_state.saved_h1 = hora1
+                st.session_state.saved_h2 = hora2
+                st.session_state.saved_rad = tipo_contacto
+                st.session_state.saved_titulo = mostrar_titulo
+                st.session_state.saved_formato = formato
+                if tipo_contacto == "Ubicación": st.session_state.saved_dir = dir_texto
+                else: 
+                    st.session_state.saved_tel1 = tel1
+                    st.session_state.saved_tel2 = tel2
+                if area_seleccionada == "Culturas":
+                    st.session_state.saved_movida = usar_movida
+                    st.session_state.saved_orquesta = usar_orquesta
 
                 rutas_externos = []
                 if st.session_state.ruta_logo1 and os.path.exists(st.session_state.ruta_logo1): rutas_externos.append(st.session_state.ruta_logo1)

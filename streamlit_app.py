@@ -55,20 +55,15 @@ def set_bg():
     st.markdown(f"<style>.stApp {{ {bg_style} }}</style>", unsafe_allow_html=True)
 set_bg()
 
-# PARÁMETROS GLOBALES
+# PARÁMETROS GLOBALES (Se eliminó la gravedad extra, vuelve a la normalidad)
 current_format = st.session_state.get('temp_formato', st.session_state.saved_formato)
 W = 2400
 H = 4267 if current_format == "Historia" else 3000
 CROP_RATIO = (9, 16) if current_format == "Historia" else (4, 5)
 SIDE_MARGIN = 105
+Y_BOTTOM_BASELINE = H - 150
 S_INVITA_CENTER = 147
 S_INVITA_LEFT = 110
-
-def get_margins(d):
-    fmt = d.get('formato', 'Publicación')
-    h_canvas = 4267 if fmt == "Historia" else 3000
-    # Regresamos a los márgenes normales, sin gravedad extra
-    return 150, h_canvas - 150
 
 def init_canvas(fondo, fmt):
     h_canvas = 4267 if fmt == "Historia" else 3000
@@ -111,11 +106,13 @@ def get_tipo_logo(p):
     return "collab"
 
 def redim_interno(img, t): 
+    # Orquesta configurada igual a La Movida (Horizontal)
     if t in ["movida", "orquesta"]: return resize_por_ancho(img, 600)
     elif t=="extremo": return resize_por_alto(img, 350)
     return img
 
 def redim_interno_comp(img, t, top_count=0):
+    # Orquesta configurada igual a La Movida (Horizontal)
     if t in ["movida", "orquesta"]: return resize_por_ancho(img, 500)
     elif t=="extremo": return resize_por_alto(img, 275) if top_count == 3 else resize_por_alto(img, 350)
     return img
@@ -163,12 +160,11 @@ def calcular_fuente_dinamica(txt, font_path, size_s, max_w, max_h):
     return f, wrap_text_pixel(txt, f, max_w), 30
 
 # ==============================================================================
-# 3. HELPERS DE GRAVEDAD E INTELIGENCIA ESPACIAL
+# 3. HELPERS DE DIBUJO E INTELIGENCIA ESPACIAL
 # ==============================================================================
 
-def draw_ubicacion(img, draw, lugar, is_right, min_x_logos, gap, icono_type, d):
-    mt, y_base = get_margins(d)
-    if not lugar: return y_base
+def draw_ubicacion(img, draw, lugar, is_right, min_x_logos, gap, icono_type):
+    if not lugar: return Y_BOTTOM_BASELINE
     h_icon = int(221 * 0.8)
     s_lug = 61 if len(lugar) < 45 or '\n' in lugar else 51
     f_lug = get_font("Canaro-SemiBold.ttf", s_lug)
@@ -178,7 +174,7 @@ def draw_ubicacion(img, draw, lugar, is_right, min_x_logos, gap, icono_type, d):
     if is_right:
         lines = wrap_text_pixel(lugar, f_lug, int(W * 0.4))
         h_block = max(len(lines) * int(s_lug * 1.1), h_icon)
-        y_top = y_base - h_block
+        y_top = Y_BOTTOM_BASELINE - h_block
         x_start = W - SIDE_MARGIN - (max([get_text_width(f_lug, l) for l in lines]) if lines else 200)
         if icon: img.paste(icon, (int(x_start - icon.width - 25), int(y_top + (h_block - h_icon) / 2)), icon)
         y_txt = y_top + (h_block - len(lines)*int(s_lug*1.1))/2 + int(s_lug*1.1)
@@ -191,15 +187,14 @@ def draw_ubicacion(img, draw, lugar, is_right, min_x_logos, gap, icono_type, d):
         
         lines = wrap_text_pixel(lugar, f_lug, max_w)
         h_block = max(len(lines) * int(s_lug * 1.1), h_icon)
-        y_top = y_base - h_block
+        y_top = Y_BOTTOM_BASELINE - h_block
         if icon: img.paste(icon, (SIDE_MARGIN, int(y_top + (h_block - h_icon) / 2)), icon)
         y_txt = y_top + (h_block - len(lines)*int(s_lug*1.1))/2 + int(s_lug*1.1)
         for l in lines: dibujar_texto_sombra(draw, l, x_start, y_txt, f_lug, anchor="ls", offset=(3,3)); y_txt += int(s_lug*1.1)
         return y_top
 
-def draw_caja_cuadrada(img, draw, f1, h1, h2, lugar, y_loc_top, is_right, d):
-    mt, y_base_abs = get_margins(d)
-    y_base = y_base_abs if is_right or not lugar else (y_loc_top - 80)
+def draw_caja_cuadrada(img, draw, f1, h1, h2, lugar, y_loc_top, is_right):
+    y_base = Y_BOTTOM_BASELINE if is_right or not lugar else (y_loc_top - 80)
     if not f1: return y_base
     
     h_caja, w_caja = 438, 438
@@ -222,9 +217,8 @@ def draw_caja_cuadrada(img, draw, f1, h1, h2, lugar, y_loc_top, is_right, d):
         dibujar_texto_sombra(draw, str_h, cx, y_box + h_caja + 114, get_font("Canaro-ExtraBold.ttf", s_h), offset=(3,3), anchor="mm")
     return y_box
 
-def draw_caja_larga(img, draw, f1, f2, h1, h2, lugar, y_loc_top, is_right, d):
-    mt, y_base_abs = get_margins(d)
-    y_base = y_base_abs if is_right or not lugar else (y_loc_top - 80)
+def draw_caja_larga(img, draw, f1, f2, h1, h2, lugar, y_loc_top, is_right):
+    y_base = Y_BOTTOM_BASELINE if is_right or not lugar else (y_loc_top - 80)
     if not f1: return y_base
 
     h_caja = 360
@@ -268,10 +262,9 @@ def draw_caja_larga(img, draw, f1, f2, h1, h2, lugar, y_loc_top, is_right, d):
         dibujar_texto_sombra(draw, str_h, cx, y_time, get_font("Canaro-ExtraBold.ttf", s_h), offset=(3,3), anchor="mm")
     return y_box
 
-def draw_textos(draw, is_center, is_plural, d1, d2, y_box, three_logos_top, mostrar_titulo, d):
-    mt, y_base = get_margins(d)
+def draw_textos(draw, is_center, is_plural, d1, d2, y_box, three_logos_top, mostrar_titulo):
     tit = "INVITAN" if is_plural else "INVITA"
-    y_tit = (850 if not d2 else 690) + (mt - 150)
+    y_tit = 850 if not d2 else 690
     if three_logos_top: y_tit -= 80 
     
     if is_center:
@@ -322,132 +315,128 @@ def draw_textos(draw, is_center, is_plural, d1, d2, y_box, three_logos_top, most
 
 def draw_logos_t1t4(img, is_center, d):
     min_x = W
-    mt, y_base = get_margins(d)
     pref = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378) if os.path.exists("flyer_logo.png") else None
-    y_center = mt + (pref.height // 2 if pref else 378 // 2)
+    y_center = 150 + (pref.height // 2 if pref else 378 // 2)
     
     if is_center:
-        if pref: img.paste(pref, (200, mt), pref)
+        if pref: img.paste(pref, (200, 150), pref)
         if os.path.exists("flyer_firma.png"): 
             f = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 265)
             img.paste(f, (W-f.width-200, y_center - f.height//2), f)
     else:
-        if pref: img.paste(pref, ((W-pref.width)//2, mt), pref)
+        if pref: img.paste(pref, ((W-pref.width)//2, 150), pref)
         if os.path.exists("flyer_firma.png"): 
             f = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 265)
             x = W-f.width-SIDE_MARGIN
-            img.paste(f, (x, y_base-f.height+50), f)
+            img.paste(f, (x, Y_BOTTOM_BASELINE-f.height+50), f)
             min_x = min(min_x, x)
     return min_x
 
 def draw_logos_t5t8(img, d, var_type):
     min_x = W
-    mt, y_base = get_margins(d)
     l_list = d.get('logos', [])
     collab_img = load_logo_single_bottom(l_list[0]) if (l_list and var_type in [1, 3]) else load_logo_shared(l_list[0], top_count=2) if l_list else None
     pref = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378) if os.path.exists("flyer_logo.png") else None
-    y_center = mt + (pref.height // 2 if pref else 378 // 2)
+    y_center = 150 + (pref.height // 2 if pref else 378 // 2)
     
     if var_type in [1, 3]:
-        if pref: img.paste(pref, (200, mt), pref)
+        if pref: img.paste(pref, (200, 150), pref)
         if os.path.exists("flyer_firma.png"): 
             f = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 265)
             img.paste(f, (W-f.width-200, y_center - f.height//2), f)
         if collab_img: 
             x = W - SIDE_MARGIN - collab_img.width
-            img.paste(collab_img, (x, int(y_base - collab_img.height + 20)), collab_img)
+            img.paste(collab_img, (x, int(Y_BOTTOM_BASELINE - collab_img.height + 20)), collab_img)
             min_x = min(min_x, x)
     else:
-        if pref: img.paste(pref, (300, mt), pref)
+        if pref: img.paste(pref, (300, 150), pref)
         if collab_img: img.paste(collab_img, (W - 300 - collab_img.width, y_center - collab_img.height//2), collab_img)
         if os.path.exists("flyer_firma.png"): 
             f = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 265)
             x = W-f.width-SIDE_MARGIN
-            img.paste(f, (x, y_base-f.height+50), f)
+            img.paste(f, (x, Y_BOTTOM_BASELINE-f.height+50), f)
             min_x = min(min_x, x)
     return min_x
 
 def draw_logos_t9t12(img, d, var_type):
     min_x = W
-    mt, y_base = get_margins(d)
     l_list = d.get('logos', [])
     c1 = load_logo_shared(l_list[0], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 0 else None
     c2 = load_logo_shared(l_list[1], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 1 else None
     pref = resize_por_ancho(Image.open("flyer_logo.png").convert("RGBA"), 775) if os.path.exists("flyer_logo.png") else None
-    y_center = mt + (pref.height // 2 if pref else 378 // 2)
+    y_center = 150 + (pref.height // 2 if pref else 378 // 2)
 
     if var_type in [1, 3]:
         pref_h = resize_por_alto(Image.open("flyer_logo.png").convert("RGBA"), 378) if os.path.exists("flyer_logo.png") else None
-        y_c2 = mt + (pref_h.height//2 if pref_h else 378//2)
-        if pref_h: img.paste(pref_h, (200, mt), pref_h)
+        y_c2 = 150 + (pref_h.height//2 if pref_h else 378//2)
+        if pref_h: img.paste(pref_h, (200, 150), pref_h)
         if os.path.exists("flyer_firma.png"): 
             f = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 265)
             img.paste(f, (W-f.width-200, y_c2 - f.height//2), f)
         xc = W - SIDE_MARGIN
-        if c2: xc -= c2.width; img.paste(c2, (int(xc), int(y_base - c2.height + 20)), c2); min_x = min(min_x, xc); xc -= 65
-        if c1: xc -= c1.width; img.paste(c1, (int(xc), int(y_base - c1.height + 20)), c1); min_x = min(min_x, xc)
+        if c2: xc -= c2.width; img.paste(c2, (int(xc), int(Y_BOTTOM_BASELINE - c2.height + 20)), c2); min_x = min(min_x, xc); xc -= 65
+        if c1: xc -= c1.width; img.paste(c1, (int(xc), int(Y_BOTTOM_BASELINE - c1.height + 20)), c1); min_x = min(min_x, xc)
     else:
         w1, w2, w3 = (c1.width if c1 else 0), (pref.width if pref else 0), (c2.width if c2 else 0)
         gap = (W - (w1+w2+w3))/4
         if c1: img.paste(c1, (int(gap), y_center - c1.height//2), c1)
-        if pref: img.paste(pref, (int(gap*2 + w1), mt), pref)
+        if pref: img.paste(pref, (int(gap*2 + w1), 150), pref)
         if c2: img.paste(c2, (int(gap*3 + w1 + w2), y_center - c2.height//2), c2)
         if os.path.exists("flyer_firma.png"): 
             f = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 265)
             x = W-f.width-SIDE_MARGIN
-            img.paste(f, (x, y_base-f.height+50), f)
+            img.paste(f, (x, Y_BOTTOM_BASELINE-f.height+50), f)
             min_x = min(min_x, x)
     return min_x
 
 def draw_logos_tc(img, d, var_type):
     min_x = W
-    mt, y_base = get_margins(d)
     int_path, t_int, l_list = d.get('logo_interno'), d.get('tipo_interno'), d.get('logos', [])
     c1 = load_logo_shared(l_list[0], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 0 else None
     c2 = load_logo_shared(l_list[1], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 1 else None
     
-    # AQUI ESTA LA CORRECCIÓN CLAVE
+    # === AQUI ESTÁ LA CORRECCIÓN EXACTA AL ERROR QUE TE SALIÓ EN LA PANTALLA ===
     int_img = load_logo_shared(int_path, top_count=(3 if var_type in [1,3] else 0)) if int_path else None
     
     pref_img = resize_por_ancho(Image.open("flyer_logo.png").convert("RGBA"), 775) if os.path.exists("flyer_logo.png") else None
     firma_img = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 265) if os.path.exists("flyer_firma.png") else None
-    y_center = mt + (pref_img.height // 2 if pref_img else 378 // 2)
+    y_center = 150 + (pref_img.height // 2 if pref_img else 378 // 2)
 
     if var_type in [1, 3]: 
         w1, w2, w3 = (int_img.width if int_img else 0), (pref_img.width if pref_img else 0), (firma_img.width if firma_img else 0)
         gap = (W - (w1 + w2 + w3)) / 4
         if int_img: img.paste(int_img, (int(gap), y_center - int_img.height//2), int_img)
-        if pref_img: img.paste(pref_img, (int(gap*2 + w1), mt), pref_img)
+        if pref_img: img.paste(pref_img, (int(gap*2 + w1), 150), pref_img)
         if firma_img: img.paste(firma_img, (int(gap*3 + w1 + w2), y_center - firma_img.height//2), firma_img)
         xc = W - SIDE_MARGIN
-        if c2: xc -= c2.width; img.paste(c2, (int(xc), int(y_base - c2.height + 20)), c2); min_x = min(min_x, xc); xc -= 65
-        if c1: xc -= c1.width; img.paste(c1, (int(xc), int(y_base - c1.height + 20)), c1); min_x = min(min_x, xc)
+        if c2: xc -= c2.width; img.paste(c2, (int(xc), int(Y_BOTTOM_BASELINE - c2.height + 20)), c2); min_x = min(min_x, xc); xc -= 65
+        if c1: xc -= c1.width; img.paste(c1, (int(xc), int(Y_BOTTOM_BASELINE - c1.height + 20)), c1); min_x = min(min_x, xc)
     else:
         w1, w2, w3 = (c1.width if c1 else 0), (pref_img.width if pref_img else 0), (c2.width if c2 else 0)
         gap = (W - (w1 + w2 + w3)) / 4
         if c1: img.paste(c1, (int(gap), y_center - c1.height//2), c1)
-        if pref_img: img.paste(pref_img, (int(gap*2 + w1), mt), pref_img)
+        if pref_img: img.paste(pref_img, (int(gap*2 + w1), 150), pref_img)
         if c2: img.paste(c2, (int(gap*3 + w1 + w2), y_center - c2.height//2), c2)
         xc = W - SIDE_MARGIN
-        if firma_img: xc -= firma_img.width; img.paste(firma_img, (int(xc), int(y_base - firma_img.height + 50)), firma_img); min_x = min(min_x, xc); xc -= 65
-        if int_img: xc -= int_img.width; img.paste(int_img, (int(xc), int(y_base - int_img.height + 20)), int_img); min_x = min(min_x, xc)
+        if firma_img: xc -= firma_img.width; img.paste(firma_img, (int(xc), int(Y_BOTTOM_BASELINE - firma_img.height + 50)), firma_img); min_x = min(min_x, xc); xc -= 65
+        if int_img: xc -= int_img.width; img.paste(int_img, (int(xc), int(Y_BOTTOM_BASELINE - int_img.height + 20)), int_img); min_x = min(min_x, xc)
     return min_x
 
 def draw_logos_doble(img, d, var_type):
     min_x = W
-    mt, y_base = get_margins(d)
     l_list = d.get('logos', [])
     c1 = load_logo_shared(l_list[0], top_count=3) if len(l_list) > 0 else None
     c2 = load_logo_shared(l_list[1], top_count=3) if len(l_list) > 1 else None
     pref = resize_por_ancho(Image.open("flyer_logo.png").convert("RGBA"), 775) if os.path.exists("flyer_logo.png") else None
-    y_center = mt + (pref.height // 2 if pref else 378 // 2)
+    y_center = 150 + (pref.height // 2 if pref else 378 // 2)
 
     w1, w2, w3 = (c1.width if c1 else 0), (pref.width if pref else 0), (c2.width if c2 else 0)
     gap = (W - (w1+w2+w3))/4
     if c1: img.paste(c1, (int(gap), y_center - c1.height//2), c1)
-    if pref: img.paste(pref, (int(gap*2 + w1), mt), pref)
+    if pref: img.paste(pref, (int(gap*2 + w1), 150), pref)
     if c2: img.paste(c2, (int(gap*3 + w1 + w2), y_center - c2.height//2), c2)
 
+    # La orquesta ahora entra como logo horizontal (ancho: 450)
     orq_img = Image.open("logo.orquesta.png").convert("RGBA") if os.path.exists("logo.orquesta.png") else None
     mov_img = Image.open("logo.movida.png").convert("RGBA") if os.path.exists("logo.movida.png") else None
     orq = resize_por_ancho(orq_img, 450) if orq_img else None
@@ -455,12 +444,13 @@ def draw_logos_doble(img, d, var_type):
     firma = resize_por_ancho(Image.open("flyer_firma.png").convert("RGBA"), 400) if os.path.exists("flyer_firma.png") else None
 
     xc = W - SIDE_MARGIN
-    if firma: xc -= firma.width; img.paste(firma, (int(xc), int(y_base - firma.height + 50)), firma); min_x = min(min_x, xc); xc -= 65
-    if mov: xc -= mov.width; img.paste(mov, (int(xc), int(y_base - mov.height + 20)), mov); min_x = min(min_x, xc); xc -= 65
-    if orq: xc -= orq.width; img.paste(orq, (int(xc), int(y_base - orq.height + 20)), orq); min_x = min(min_x, xc)
+    if firma: xc -= firma.width; img.paste(firma, (int(xc), int(Y_BOTTOM_BASELINE - firma.height + 50)), firma); min_x = min(min_x, xc); xc -= 65
+    if mov: xc -= mov.width; img.paste(mov, (int(xc), int(Y_BOTTOM_BASELINE - mov.height + 20)), mov); min_x = min(min_x, xc); xc -= 65
+    if orq: xc -= orq.width; img.paste(orq, (int(xc), int(Y_BOTTOM_BASELINE - orq.height + 20)), orq); min_x = min(min_x, xc)
     return min_x
+
 # ==============================================================================
-# 4. SUPER MOTOR DE RENDERIZADO (Reemplaza las 72 funciones antiguas)
+# 4. SUPER MOTOR DE RENDERIZADO (Comprimido)
 # ==============================================================================
 
 def gen_flyer(d, t_cat, v_num, is_larga, has_d2):

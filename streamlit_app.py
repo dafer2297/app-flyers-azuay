@@ -102,14 +102,12 @@ def get_tipo_logo(p):
     return "collab"
 
 def redim_interno(img, t): 
-    if t=="movida": return resize_por_ancho(img, 600)
-    elif t=="orquesta": return resize_por_alto(img, 375)
+    if t in ["movida", "orquesta"]: return resize_por_ancho(img, 600)
     elif t=="extremo": return resize_por_alto(img, 350)
     return img
 
 def redim_interno_comp(img, t, top_count=0):
-    if t=="movida": return resize_por_ancho(img, 500)
-    elif t=="orquesta": return resize_por_alto(img, 300)
+    if t in ["movida", "orquesta"]: return resize_por_ancho(img, 500)
     elif t=="extremo": return resize_por_alto(img, 275) if top_count == 3 else resize_por_alto(img, 350)
     return img
 
@@ -437,8 +435,10 @@ def draw_logos_doble(img, datos, var_type):
     if pref: img.paste(pref, (int(gap*2 + w1), 150), pref)
     if c2: img.paste(c2, (int(gap*3 + w1 + w2), y_center - c2.height//2), c2)
 
-    orq = redim_doble_orquesta(Image.open("logo.orquesta.png").convert("RGBA")) if os.path.exists("logo.orquesta.png") else None
-    mov = redim_doble_movida(Image.open("logo.movida.png").convert("RGBA")) if os.path.exists("logo.movida.png") else None
+    orq_img = Image.open("logo.orquesta.png").convert("RGBA") if os.path.exists("logo.orquesta.png") else None
+    mov_img = Image.open("logo.movida.png").convert("RGBA") if os.path.exists("logo.movida.png") else None
+    orq = resize_por_ancho(orq_img, 450) if orq_img else None
+    mov = resize_por_ancho(mov_img, 450) if mov_img else None
     firma = resize_por_ancho(Image.open("flyer_firma.png").convert("RGBA"), 400) if os.path.exists("flyer_firma.png") else None
 
     xc = W - SIDE_MARGIN
@@ -681,8 +681,8 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         if area_seleccionada == "Culturas":
             st.markdown("<div class='label-negro' style='margin-top: 5px;'>LOGOS INTERNOS DEL DEPARTAMENTO</div>", unsafe_allow_html=True)
             col_chk1, col_chk2 = st.columns(2)
-            with col_chk1: usar_movida = st.checkbox("Usar logo de La Movida", key="temp_movida", value=st.session_state.saved_movida)
-            with col_chk2: usar_orquesta = st.checkbox("Usar logo de La Orquesta", key="temp_orquesta", value=st.session_state.saved_orquesta)
+            with col_chk1: usar_movida = st.checkbox("Usar logo de la Movida", key="temp_movida", value=st.session_state.saved_movida)
+            with col_chk2: usar_orquesta = st.checkbox("Usar logo de la Banda", key="temp_orquesta", value=st.session_state.saved_orquesta)
         elif area_seleccionada == "Recreación":
             st.markdown("<div class='label-negro' style='margin-top: 5px; color:transparent;'>Espacio Reservado</div>", unsafe_allow_html=True)
 

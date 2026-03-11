@@ -111,13 +111,11 @@ def get_tipo_logo(p):
     return "collab"
 
 def redim_interno(img, t): 
-    # Orquesta ahora se comporta como La Movida (Ajuste por ancho)
     if t in ["movida", "orquesta"]: return resize_por_ancho(img, 600)
     elif t=="extremo": return resize_por_alto(img, 350)
     return img
 
 def redim_interno_comp(img, t, top_count=0):
-    # Orquesta ahora se comporta como La Movida (Ajuste por ancho)
     if t in ["movida", "orquesta"]: return resize_por_ancho(img, 500)
     elif t=="extremo": return resize_por_alto(img, 275) if top_count == 3 else resize_por_alto(img, 350)
     return img
@@ -273,7 +271,7 @@ def draw_caja_larga(img, draw, f1, f2, h1, h2, lugar, y_loc_top, is_right, d):
 def draw_textos(draw, is_center, is_plural, d1, d2, y_box, three_logos_top, mostrar_titulo, d):
     mt, y_base = get_margins(d)
     tit = "INVITAN" if is_plural else "INVITA"
-    y_tit = 850 if not d2 else 690
+    y_tit = (850 if not d2 else 690) + (mt - 150)
     if three_logos_top: y_tit -= 80 
     
     if is_center:
@@ -407,7 +405,10 @@ def draw_logos_tc(img, d, var_type):
     int_path, t_int, l_list = d.get('logo_interno'), d.get('tipo_interno'), d.get('logos', [])
     c1 = load_logo_shared(l_list[0], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 0 else None
     c2 = load_logo_shared(l_list[1], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 1 else None
-    int_img = (redim_interno_comp(Image.open(int_path).convert("RGBA"), t_int, top_count=(3 if var_type in [1,3] else 0)) if t_int in ["movida","orquesta","extremo"] else redim_collab_top(Image.open(int_path).convert("RGBA"))) if int_path else None
+    
+    # AQUI ESTA LA CORRECCIÓN CLAVE
+    int_img = load_logo_shared(int_path, top_count=(3 if var_type in [1,3] else 0)) if int_path else None
+    
     pref_img = resize_por_ancho(Image.open("flyer_logo.png").convert("RGBA"), 775) if os.path.exists("flyer_logo.png") else None
     firma_img = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 265) if os.path.exists("flyer_firma.png") else None
     y_center = mt + (pref_img.height // 2 if pref_img else 378 // 2)
@@ -447,7 +448,6 @@ def draw_logos_doble(img, d, var_type):
     if pref: img.paste(pref, (int(gap*2 + w1), mt), pref)
     if c2: img.paste(c2, (int(gap*3 + w1 + w2), y_center - c2.height//2), c2)
 
-    # Usamos resize_por_ancho 500 para orquesta y movida al final
     orq_img = Image.open("logo.orquesta.png").convert("RGBA") if os.path.exists("logo.orquesta.png") else None
     mov_img = Image.open("logo.movida.png").convert("RGBA") if os.path.exists("logo.movida.png") else None
     orq = resize_por_ancho(orq_img, 450) if orq_img else None
@@ -459,9 +459,8 @@ def draw_logos_doble(img, d, var_type):
     if mov: xc -= mov.width; img.paste(mov, (int(xc), int(y_base - mov.height + 20)), mov); min_x = min(min_x, xc); xc -= 65
     if orq: xc -= orq.width; img.paste(orq, (int(xc), int(y_base - orq.height + 20)), orq); min_x = min(min_x, xc)
     return min_x
-
 # ==============================================================================
-# 4. SUPER MOTOR DE RENDERIZADO
+# 4. SUPER MOTOR DE RENDERIZADO (Reemplaza las 72 funciones antiguas)
 # ==============================================================================
 
 def gen_flyer(d, t_cat, v_num, is_larga, has_d2):

@@ -396,7 +396,7 @@ def draw_logos_tc(img, datos, var_type):
     int_path, t_int, l_list = datos.get('logo_interno'), datos.get('tipo_interno'), datos.get('logos', [])
     c1 = load_logo_shared(l_list[0], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 0 else None
     c2 = load_logo_shared(l_list[1], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 1 else None
-    int_img = (redim_interno_comp(Image.open(int_path).convert("RGBA"), t_int, top_count=(3 if var_type in [1,3] else 0)) if t_int in ["movida","orquesta","extremo"] else redim_collab_top(Image.open(int_path).convert("RGBA"))) if int_path else None
+    int_img = load_logo_shared(int_path, top_count=(3 if var_type in [1,3] else 0)) if int_path else None
     pref_img = resize_por_ancho(Image.open("flyer_logo.png").convert("RGBA"), 775) if os.path.exists("flyer_logo.png") else None
     firma_img = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 265) if os.path.exists("flyer_firma.png") else None
     y_center = 150 + (pref_img.height // 2 if pref_img else 378 // 2)

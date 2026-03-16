@@ -102,12 +102,14 @@ def get_tipo_logo(p):
     return "collab"
 
 def redim_interno(img, t): 
-    if t in ["movida", "orquesta"]: return resize_por_ancho(img, 600)
+    if t=="movida": return resize_por_ancho(img, 600)
+    elif t=="orquesta": return resize_por_ancho(img, 650) # Cambiado a horizontal y +50px
     elif t=="extremo": return resize_por_alto(img, 350)
     return img
 
 def redim_interno_comp(img, t, top_count=0):
-    if t in ["movida", "orquesta"]: return resize_por_ancho(img, 500)
+    if t=="movida": return resize_por_ancho(img, 500)
+    elif t=="orquesta": return resize_por_ancho(img, 550) # Cambiado a horizontal y +50px
     elif t=="extremo": return resize_por_alto(img, 275) if top_count == 3 else resize_por_alto(img, 350)
     return img
 
@@ -199,8 +201,8 @@ def draw_caja_cuadrada(img, draw, f1, h1, h2, lugar, y_loc_top, is_right):
     y_base = Y_BOTTOM_BASELINE if is_right or not lugar else (y_loc_top - 80)
     if not f1: return y_base
     
-    h_caja, w_caja = 438, 438 # FIJO, NUNCA SE ACHICA EL RECUADRO
-    offset_y = 145 if h1 else 50 # Solo baja el contenedor si no hay hora
+    h_caja, w_caja = 438, 438
+    offset_y = 145 if h1 else 50 
     y_box = y_base - offset_y - h_caja
     
     if os.path.exists("flyer_caja_fecha.png"):
@@ -223,7 +225,7 @@ def draw_caja_larga(img, draw, f1, f2, h1, h2, lugar, y_loc_top, is_right):
     y_base = Y_BOTTOM_BASELINE if is_right or not lugar else (y_loc_top - 80)
     if not f1: return y_base
 
-    h_caja = 360 # FIJO
+    h_caja = 360
     is_dual_month = f2 and (f1.month != f2.month)
     
     if is_dual_month: 
@@ -266,7 +268,7 @@ def draw_caja_larga(img, draw, f1, f2, h1, h2, lugar, y_loc_top, is_right):
 
 def draw_textos(draw, is_center, is_plural, d1, d2, y_box, three_logos_top=False, mostrar_titulo=True):
     tit = "INVITAN" if is_plural else "INVITA"
-    y_tit = 850 if not d2 else 690
+    y_tit = 700 if not d2 else 540 # Reducido el espacio superior
     if three_logos_top: y_tit -= 80 
     
     if is_center:
@@ -396,7 +398,10 @@ def draw_logos_tc(img, datos, var_type):
     int_path, t_int, l_list = datos.get('logo_interno'), datos.get('tipo_interno'), datos.get('logos', [])
     c1 = load_logo_shared(l_list[0], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 0 else None
     c2 = load_logo_shared(l_list[1], top_count=(3 if var_type in [2,4] else 0)) if len(l_list) > 1 else None
+    
+    # Aquí está la corrección del NameError
     int_img = load_logo_shared(int_path, top_count=(3 if var_type in [1,3] else 0)) if int_path else None
+    
     pref_img = resize_por_ancho(Image.open("flyer_logo.png").convert("RGBA"), 775) if os.path.exists("flyer_logo.png") else None
     firma_img = resize_por_alto(Image.open("flyer_firma.png").convert("RGBA"), 265) if os.path.exists("flyer_firma.png") else None
     y_center = 150 + (pref_img.height // 2 if pref_img else 378 // 2)
@@ -435,10 +440,12 @@ def draw_logos_doble(img, datos, var_type):
     if pref: img.paste(pref, (int(gap*2 + w1), 150), pref)
     if c2: img.paste(c2, (int(gap*3 + w1 + w2), y_center - c2.height//2), c2)
 
+    # Ambos redimensionados por ancho y la orquesta +50px
     orq_img = Image.open("logo.orquesta.png").convert("RGBA") if os.path.exists("logo.orquesta.png") else None
     mov_img = Image.open("logo.movida.png").convert("RGBA") if os.path.exists("logo.movida.png") else None
-    orq = resize_por_ancho(orq_img, 450) if orq_img else None
+    orq = resize_por_ancho(orq_img, 500) if orq_img else None 
     mov = resize_por_ancho(mov_img, 450) if mov_img else None
+    
     firma = resize_por_ancho(Image.open("flyer_firma.png").convert("RGBA"), 400) if os.path.exists("flyer_firma.png") else None
 
     xc = W - SIDE_MARGIN
@@ -446,7 +453,6 @@ def draw_logos_doble(img, datos, var_type):
     if mov: xc -= mov.width; img.paste(mov, (int(xc), int(Y_BOTTOM_BASELINE - mov.height + 20)), mov); min_x = min(min_x, xc); xc -= 65
     if orq: xc -= orq.width; img.paste(orq, (int(xc), int(Y_BOTTOM_BASELINE - orq.height + 20)), orq); min_x = min(min_x, xc)
     return min_x
-
 # ==============================================================================
 # 4. RENDERIZADORES DE PLANTILLAS
 # ==============================================================================
@@ -542,7 +548,6 @@ def generar_tipo_11_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = dr
 
 def generar_tipo_12_doble_v1(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 1); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250, d.get('icono_contacto','lugar')); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, True, True, d['desc1'], d['desc2'], y_box, True, d.get('mostrar_titulo',True)); return img.convert("RGB")
 def generar_tipo_12_doble_v2(d): img, draw = init_canvas(d['fondo']); min_x = draw_logos_doble(img, d, 2); y_loc = draw_ubicacion(img, draw, d['lugar'], False, min_x, 250, d.get('icono_contacto','lugar')); y_box = draw_caja_larga(img, draw, d['fecha1'], d['fecha2'], d['hora1'], d['hora2'], d['lugar'], y_loc, False); draw_textos(draw, False, True, d['desc1'], d['desc2'], y_box, True, d.get('mostrar_titulo',True)); return img.convert("RGB")
-
 
 # ==============================================================================
 # 5. INTERFAZ DE USUARIO Y ENRUTADOR PRINCIPAL
@@ -681,8 +686,8 @@ elif area_seleccionada in ["Culturas", "Recreación"]:
         if area_seleccionada == "Culturas":
             st.markdown("<div class='label-negro' style='margin-top: 5px;'>LOGOS INTERNOS DEL DEPARTAMENTO</div>", unsafe_allow_html=True)
             col_chk1, col_chk2 = st.columns(2)
-            with col_chk1: usar_movida = st.checkbox("Usar logo de la Movida", key="temp_movida", value=st.session_state.saved_movida)
-            with col_chk2: usar_orquesta = st.checkbox("Usar logo de la Banda", key="temp_orquesta", value=st.session_state.saved_orquesta)
+            with col_chk1: usar_movida = st.checkbox("Usar logo de La Movida", key="temp_movida", value=st.session_state.saved_movida)
+            with col_chk2: usar_orquesta = st.checkbox("Usar logo de La Banda", key="temp_orquesta", value=st.session_state.saved_orquesta)
         elif area_seleccionada == "Recreación":
             st.markdown("<div class='label-negro' style='margin-top: 5px; color:transparent;'>Espacio Reservado</div>", unsafe_allow_html=True)
 
